@@ -489,7 +489,7 @@ const ZOMBIE_PREVIEW_INFO = {
     name: 'BOSS Azir Hoàng Đế Sa Mạc',
     avatar: '🦅',
     hpText: 'HP: 20.000 · Cố Định (2 Hàng) · 3 Phase',
-    desc: 'Hoàng Đế Shurima đầu đại bàng vàng. Phase 1: Triệu hồi quân & Lính Cát trỗi dậy từ cây ngẫu nhiên (tránh 2 ô cuối). Phase 2 (15.000 HP): Bão Cát hủy diệt toàn bộ cây & zombie 3 hàng, sau 20s gọi 1 Wave Zombie có bão cát dưới chân ×2 tốc độ chạy, đồng thời cường hóa Lính Cát thành Quan Tài 800 HP. Phase 3 (7.000 HP): Triệu hồi song thần Cá Sấu & Thần Khuyển!'
+    desc: 'Hoàng Đế Shurima đầu đại bàng vàng. Phase 1: Triệu hồi quân & Lính Cát ưu tiên trồi dậy ở hàng có nhiều cây nhất (tránh 2 ô cuối). Phase 2 (15.000 HP): Bão Cát hủy diệt toàn bộ cây & zombie 3 hàng, sau 20s gọi 1 Wave Zombie có bão cát dưới chân ×2 tốc độ chạy, đồng thời cường hóa Lính Cát thành Quan Tài 800 HP. Phase 3 (7.000 HP): Triệu hồi song thần Cá Sấu & Thần Khuyển!'
   },
   sand_soldier: {
     name: 'Lính Cát Sa Mạc',
@@ -2233,10 +2233,33 @@ class Game {
   }
 
   spawnExplosion(x, y) {
-    for (let i = 0; i < 20; i++) {
-      this.spawnParticles(x, y, '#ff1744', 1);
-      this.spawnParticles(x, y, '#ffd54f', 1);
+    this.spawnParticles(x, y, '#ff9100', 1, {
+      shape: 'ring',
+      vx: 0,
+      vy: 0,
+      radius: 10,
+      maxRadius: 68,
+      gravity: 0,
+      decay: 2.7
+    });
+    for (let i = 0; i < 8; i++) {
+      const ang = (i * Math.PI * 2) / 8 + (Math.random() - 0.5) * 0.35;
+      const spd = 110 + Math.random() * 90;
+      this.spawnParticles(x, y, i % 2 === 0 ? '#ff3d00' : '#ffd54f', 1, {
+        shape: 'spark',
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - 20,
+        radius: 3.4,
+        gravity: 90,
+        decay: 2.6
+      });
     }
+    this.spawnParticles(x, y, '#fff59d', 5, {
+      shape: 'circle',
+      radius: 2.8,
+      gravity: 60,
+      decay: 3.0
+    });
   }
 
   spawnFlyingImp(row, startX, startY, targetX, targetY) {
@@ -2258,19 +2281,26 @@ class Game {
     }
   }
 
-  spawnParticles(x, y, color, count = 4) {
-    // Giới hạn hạt tối đa để đảm bảo 60 FPS mượt mà
-    if (this.particles.length > 30) {
-      this.particles.splice(0, count);
+  spawnParticles(x, y, color, count = 4, opts = null) {
+    const realCount = Math.min(Math.max(1, count), 10);
+    const maxParticles = 72;
+    const overflow = this.particles.length + realCount - maxParticles;
+    if (overflow > 0) {
+      this.particles.splice(0, overflow);
     }
-    const realCount = Math.min(count, 4);
     for (let i = 0; i < realCount; i++) {
-      this.particles.push(new Particle(x, y, color));
+      const particleOpts = opts || (i % 3 === 0 ? { shape: 'spark' } : null);
+      this.particles.push(new Particle(x, y, color, particleOpts));
     }
   }
 
   spawnLightningArc(fromX, fromY, toX, toY) {
-    this.lightningArcs.push({ fromX, fromY, toX, toY, timer: 0.16 });
+    const offsets = [
+      (Math.random() - 0.5) * 18,
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 16
+    ];
+    this.lightningArcs.push({ fromX, fromY, toX, toY, offsets, timer: 0.18, maxTimer: 0.18 });
   }
 
   spawnGasCloud(x, y) {

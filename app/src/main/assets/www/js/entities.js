@@ -3470,7 +3470,7 @@ class Zombie {
         }
       }
 
-      // Skill 1 (Phase 1) / Skill 2 Empowered (Phase 2+): Lính Cát trỗi dậy / Quan Tài 800 HP tại vị trí cây random (tránh 2 ô cuối col 0-1 & boss cols 7-8)
+      // Skill 1 (Phase 1) / Skill 2 Empowered (Phase 2+): Lính Cát trỗi dậy / Quan Tài 800 HP ưu tiên hàng có nhiều cây nhất (tránh 2 ô cuối col 0-1 & boss cols 7-8)
       this.skill1Timer -= dt;
       if (this.skill1Timer <= 0) {
         const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.azir_desert_emperor) ? ZOMBIE_CONFIG.azir_desert_emperor : {};
@@ -5451,7 +5451,28 @@ class Zombie {
 
     if (fallbackPlants.length === 0) return null;
 
-    const targetPlant = fallbackPlants[Math.floor(Math.random() * fallbackPlants.length)];
+    // Ưu tiên hàng có nhiều cây nhất (trong số các hàng có mục tiêu hợp lệ tại cột 2..6)
+    const rowPlantCounts = new Map();
+    for (const p of gameState.plants) {
+      if (!p.alive || p.isRecharging) continue;
+      rowPlantCounts.set(p.row, (rowPlantCounts.get(p.row) || 0) + 1);
+    }
+    let maxRowPlantCount = -1;
+    for (const p of fallbackPlants) {
+      const count = rowPlantCounts.get(p.row) || 0;
+      if (count > maxRowPlantCount) {
+        maxRowPlantCount = count;
+      }
+    }
+    const candidateRows = [];
+    for (const p of fallbackPlants) {
+      if ((rowPlantCounts.get(p.row) || 0) === maxRowPlantCount && !candidateRows.includes(p.row)) {
+        candidateRows.push(p.row);
+      }
+    }
+    const chosenRow = candidateRows[Math.floor(Math.random() * candidateRows.length)];
+    const rowTargets = fallbackPlants.filter(p => p.row === chosenRow);
+    const targetPlant = rowTargets[Math.floor(Math.random() * rowTargets.length)];
     const spawnType = this.sandCoffinEmpowered ? 'sand_coffin' : 'sand_soldier';
     const unit = new Zombie(spawnType, targetPlant.row, gameState);
     unit.x = this.sandCoffinEmpowered ? targetPlant.x : (targetPlant.x + 12);
@@ -6169,8 +6190,17 @@ class Projectile {
         if (this.isGiant) {
           z.takeDamage(this.damage || 600);
           z.applyKnockback(60);
-          gameState.spawnParticles(z.x, z.y - 10, '#76ff03', 18);
-          gameState.spawnParticles(z.x, z.y - 10, '#ffffff', 8);
+          gameState.spawnParticles(z.x, z.y - 10, '#76ff03', 1, {
+            shape: 'ring',
+            vx: 0,
+            vy: 0,
+            radius: 8,
+            maxRadius: 44,
+            gravity: 0,
+            decay: 3.0
+          });
+          gameState.spawnParticles(z.x, z.y - 10, '#76ff03', 8, { shape: 'spark' });
+          gameState.spawnParticles(z.x, z.y - 10, '#ffffff', 5);
           if (gameState.spawnFloatingText) {
             gameState.spawnFloatingText(z.x, z.y - 25, '600 DMG! 💥', '#76ff03', 18);
           }
@@ -6179,7 +6209,7 @@ class Projectile {
         if (this.type === 'ice_pea') {
           z.takeDamage(this.damage);
           z.applySlow(0.5, 10.0); // Làm chậm 50% trong 10s
-          gameState.spawnParticles(z.x, z.y - 10, '#00e5ff', 5);
+          gameState.spawnParticles(z.x, z.y - 10, '#80e5ff', 5, { shape: 'shard', radius: 3.0, gravity: 130, decay: 2.6 });
         } else if (this.type === 'goo_pea') {
           // Đậu Độc: Sát thương cơ bản 30, đánh thẳng vào máu xuyên giáp nón/xô, độc 15 dmg/s dồn tối đa 3 lần, KHÔNG làm chậm
           z.takeDamage(this.damage || 30, true); // bypassArmor = true!
@@ -6364,23 +6394,37 @@ class Lawnmower {
  * LỚP HIỆU ỨNG HẠT (Particle)
  */
 class Particle {
-  constructor(x, y, color) {
+  constructor(x, y, color, opts = null) {
     this.x = x;
     this.y = y;
-    this.vx = (Math.random() - 0.5) * 130;
-    this.vy = (Math.random() - 0.5) * 130 - 40;
     this.color = color;
-    this.radius = 2.5 + Math.random() * 2.5;
+    this.shape = (opts && opts.shape) || 'circle';
+    this.vx = (opts && opts.vx !== undefined) ? opts.vx : (Math.random() - 0.5) * 145;
+    this.vy = (opts && opts.vy !== undefined) ? opts.vy : (Math.random() - 0.5) * 145 - 42;
+    this.radius = (opts && opts.radius !== undefined) ? opts.radius : (2.2 + Math.random() * 2.4);
+    this.maxRadius = (opts && opts.maxRadius !== undefined) ? opts.maxRadius : (this.radius * 6);
     this.alpha = 1.0;
     this.alive = true;
-    this.gravity = 180;
+    this.gravity = (opts && opts.gravity !== undefined) ? opts.gravity : (this.shape === 'ring' ? 0 : 185);
+    this.decay = (opts && opts.decay !== undefined) ? opts.decay : (this.shape === 'ring' ? 2.8 : 2.3);
+    this.angle = (opts && opts.angle !== undefined) ? opts.angle : Math.atan2(this.vy, this.vx);
+    this.spin = (opts && opts.spin !== undefined) ? opts.spin : ((Math.random() - 0.5) * 10);
   }
 
   update(dt) {
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
-    this.vy += this.gravity * dt;
-    this.alpha -= dt * 2.0;
+    if (this.shape === 'ring') {
+      this.radius += (this.maxRadius - this.radius) * Math.min(1, dt * 11);
+    } else {
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.vy += this.gravity * dt;
+      if (this.shape === 'spark') {
+        this.angle = Math.atan2(this.vy, this.vx);
+      } else if (this.shape === 'shard') {
+        this.angle += this.spin * dt;
+      }
+    }
+    this.alpha -= dt * this.decay;
     if (this.alpha <= 0) {
       this.alive = false;
     }

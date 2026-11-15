@@ -380,4 +380,20 @@ class ExampleRobolectricTest {
         auroraCatalog.hpText == "300 HP"
     )
   }
+
+  @Test
+  fun `verify boss azir prioritizes rows with most plants for sand soldier summon`() {
+    val jsDir = File("src/main/assets/www/js")
+    val entitiesContent = File(jsDir, "entities.js").readText()
+    val gameContent = File(jsDir, "game.js").readText()
+
+    assertTrue("entities.js must count plants per row in summonAzirSkill1SoldierOrCoffin",
+      entitiesContent.contains("summonAzirSkill1SoldierOrCoffin(gameState)") &&
+        entitiesContent.contains("rowPlantCounts") &&
+        entitiesContent.contains("maxRowPlantCount")
+    )
+    assertTrue("game.js must describe Azir prioritizing rows with the most plants",
+      gameContent.contains("ưu tiên trồi dậy ở hàng có nhiều cây nhất")
+    )
+  }
 }
