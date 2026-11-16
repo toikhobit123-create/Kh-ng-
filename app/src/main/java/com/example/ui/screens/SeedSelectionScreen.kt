@@ -109,6 +109,7 @@ fun SeedSelectionScreen(
       .fillMaxSize()
       .background(
         when {
+          level in 14..16 -> PvZTheme.colors.nosusSelectionBackdropBrush
           level == 13 -> PvZTheme.colors.desertSelectionBackdropBrush
           levelInfo.isSpecial -> PvZTheme.colors.dragonSelectionBackdropBrush
           else -> PvZTheme.colors.seedSelectionBackdropBrush
@@ -143,12 +144,13 @@ fun SeedSelectionScreen(
           Column {
             Text(
               text = when {
+                level in 14..16 -> "CHIẾN TRƯỜNG NOSUS · CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 level == 13 -> "SA MẠC CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 levelInfo.isSpecial -> "SPECIAL CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 else -> "CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
               },
               style = MaterialTheme.typography.titleMedium,
-              color = if (level == 13) AmberGold else if (levelInfo.isSpecial) CrimsonSoul else AmberGold,
+              color = if (level in 14..16) PvZTheme.colors.crimsonSoft else if (level == 13) AmberGold else if (levelInfo.isSpecial) CrimsonSoul else AmberGold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )

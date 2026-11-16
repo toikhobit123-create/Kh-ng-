@@ -302,7 +302,7 @@ fun SettingsModal(
                   Column(modifier = Modifier.weight(1f)) {
                     Text("Dữ Liệu Lưu (DataStore)", style = MaterialTheme.typography.labelLarge, color = ToxicLime)
                     Text(
-                      text = "Đã qua ${progress.completedLevels.size}/13 màn · Đội hình ${progress.selectedDeck.size} cây",
+                      text = "Đã qua ${progress.completedLevels.size}/16 màn · Đội hình ${progress.selectedDeck.size} cây",
                       style = MaterialTheme.typography.bodySmall,
                       color = TextSecondary
                     )

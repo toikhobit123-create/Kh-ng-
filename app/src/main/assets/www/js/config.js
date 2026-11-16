@@ -1318,6 +1318,7 @@ const ZOMBIE_BASE_STATS = {
     attackInterval: 1.0,
     atkSpeed: 1.0,
     isBoss: false,
+    isMiniBoss: true,
     hasShield: false,
     resistanceKnockback: 0.85
   },
@@ -1334,8 +1335,110 @@ const ZOMBIE_BASE_STATS = {
     attackInterval: 1.0,
     atkSpeed: 1.0,
     isBoss: false,
+    isMiniBoss: true,
     hasShield: false,
     resistanceKnockback: 0.85
+  },
+
+  // ============================================================================
+  // THẾ GIỚI MỚI: CHIẾN TRƯỜNG NOSUS (5 LOẠI ZOMBIE TỪ YẾU TỚI MẠNH)
+  // ============================================================================
+  nosus_thrall: {
+    id: 'nosus_thrall',
+    name: 'Binh Sĩ Nosus',
+    hp: 210,
+    baseHp: 210,
+    armorHp: 0,
+    speed: 0.296,
+    speedPerCell: 4.5,
+    damage: 45,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0
+  },
+
+  nosus_assassin: {
+    id: 'nosus_assassin',
+    name: 'Sát Thủ Huyết Đao Nosus',
+    hp: 340,
+    baseHp: 340,
+    armorHp: 0,
+    speed: 0.333,
+    speedPerCell: 4.0,
+    damage: 65,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    bloodBurstDuration: 3.0,
+    bloodBurstMult: 1.6,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.1
+  },
+
+  nosus_shieldbearer: {
+    id: 'nosus_shieldbearer',
+    name: 'Vệ Binh Khiên Sắt Nosus',
+    hp: 1050,
+    baseHp: 300,
+    armorHp: 750,
+    speed: 0.215,
+    speedPerCell: 6.2,
+    damage: 65,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    isBoss: false,
+    hasShield: true,
+    resistanceKnockback: 0.4
+  },
+
+  nosus_hemomancer: {
+    id: 'nosus_hemomancer',
+    name: 'Huyết Pháp Sư Nosus',
+    hp: 760,
+    baseHp: 760,
+    armorHp: 0,
+    speed: 0.205,
+    speedPerCell: 6.5,
+    damage: 80,
+    attackInterval: 1.4,
+    atkSpeed: 1.4,
+    attackRangeCells: 2.5,
+    bloodPactCooldown: 6.5,
+    bloodPactHeal: 120,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.3
+  },
+
+  nosus_warlord: {
+    id: 'nosus_warlord',
+    name: 'Darius (Đại Tướng Nosus)',
+    hp: 3200,
+    baseHp: 3200,
+    armorHp: 0,
+    speed: 0.222,
+    speedPerCell: 6.0,
+    damage: 240,
+    attackInterval: 1.75,
+    atkSpeed: 1.75,
+    executeThreshold: 0.20,
+    spinCooldown: 5.0,
+    spinDamage: 180,
+    spinHealMin: 150,
+    spinHealMid: 200,
+    spinHealMax: 300,
+    lastStandThreshold: 100,
+    invulnDuration: 2.0,
+    frenzySpeedMult: 2.0,
+    slowImmune: true,
+    hypnoImmune: true,
+    knockbackImmune: true,
+    isBoss: false,
+    isMiniBoss: true,
+    hasShield: false,
+    resistanceKnockback: 1.0
   }
 };
 
@@ -1439,7 +1542,7 @@ const CONFIG = {
 };
 
 // ============================================================================
-// 4. HỆ THỐNG WORLD MAP & ĐỘ KHÓ TĂNG DẦN (5 LEVEL)
+// 4. HỆ THỐNG WORLD MAP & ĐỘ KHÓ TĂNG DẦN
 // ============================================================================
 const LEVEL_CONFIG = {
   1: {
@@ -1599,6 +1702,46 @@ const LEVEL_CONFIG = {
     freeSunCost: true,
     bossType: 'azir_desert_emperor',
     waves: 1
+  },
+  14: {
+    level: 14,
+    title: 'Level 14: Tiền Đồn Thiết Huyết Nosus',
+    subtitle: 'Chiến Trường Nosus · Màn 1/3',
+    description: 'Bước vào pháo đài Chiến Trường Nosus! Đẩy lùi Binh Sĩ Nosus, Sát Thủ Huyết Đao và Vệ Binh Khiên Sắt 1050 HP.',
+    theme: 'nosus',
+    worldName: 'Chiến Trường Nosus',
+    zombiePool: ['nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 2.4,
+    waves: 5
+  },
+  15: {
+    level: 15,
+    title: 'Level 15: Huyết Tế Pháo Đài Nosus',
+    subtitle: 'Chiến Trường Nosus · Màn 2/3',
+    description: 'Huyết Pháp Sư Nosus tham chiến! Bắn cầu huyết từ tầm 2.5 ô và thi triển Huyết Tế hồi máu + tăng tốc đồng minh.',
+    theme: 'nosus',
+    worldName: 'Chiến Trường Nosus',
+    zombiePool: ['nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_hemomancer'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 2.7,
+    waves: 5
+  },
+  16: {
+    level: 16,
+    title: 'Level 16: Đại Tướng Darius Nosus',
+    subtitle: 'Chiến Trường Nosus · Màn 3/3 (Toàn Quân)',
+    description: 'Trận quyết chiến pháo đài Nosus! Đối đầu toàn bộ 5 binh chủng Nosus cùng Darius 3200 HP miễn làm chậm/thôi miên/đẩy lùi, Máy Chém Xoay 3×3 và Huyết Nộ bất tử 2s!',
+    theme: 'nosus',
+    worldName: 'Chiến Trường Nosus',
+    zombiePool: ['nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_warlord'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 3.0,
+    isBossLevel: true,
+    waves: 5
   }
 };
 

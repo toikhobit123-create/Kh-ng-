@@ -722,13 +722,19 @@ class Plant {
             const dagger = gameState.spawnProjectile(
               'kata_dagger',
               this.row,
-              this.x + 14,
-              this.y - 14,
+              this.x + 10,
+              this.y - 26,
               proto.damage || 30,
               proto.projectileSpeed || 11.0
             );
+            const initDist = Math.hypot(primary.x - dagger.x, (primary.y - 14) - dagger.y);
             dagger.isKataDagger = true;
             dagger.lockedTarget = primary;
+            dagger.startX = dagger.x;
+            dagger.startY = dagger.y;
+            dagger.lobProgress = 0;
+            dagger.lobDuration = Math.max(0.24, Math.min(0.46, initDist / 420));
+            dagger.arcHeight = Math.max(68, Math.min(96, 58 + initDist * 0.18));
             dagger.bounceOriginRow = isTwoRowBoss(primary) ? primary.bossRow : primary.row;
             dagger.bounceOriginX = primary.x;
             dagger.hitIds = new Set();
@@ -737,7 +743,7 @@ class Plant {
             this.throwAnimTimer = 0.25;
             this.state = 'shooting';
             this.shootStateTimer = 0.22;
-            gameState.spawnParticles(this.x + 14, this.y - 14, '#ff5252', 4);
+            gameState.spawnParticles(this.x + 10, this.y - 26, '#ff5252', 4);
             if (gameState.audio && gameState.audio.playShoot) {
               gameState.audio.playShoot('pea');
             }
@@ -2188,11 +2194,12 @@ class Plant {
       if (!isBossRowMatch(z, targetRow)) return;
       if (Math.abs(z.x - centerX) <= halfSpanPx) {
         z.takeDamage(realmDamage, false);
-        // Đẩy tất cả zombie (kể cả Gargantuar, Mini-boss...) trừ Zomboss và vật cản văng về rìa phải ngoài cùng
-        if (z.alive && !z.isObstacle && !isTwoRowBoss(z)) {
+        // Đẩy tất cả zombie (kể cả Gargantuar, Mini-boss...) trừ Zomboss, vật cản và Darius (miễn đẩy lùi) văng về rìa phải ngoài cùng
+        if (z.alive && !z.isObstacle && !isTwoRowBoss(z) && z.type !== 'nosus_warlord') {
           if (z.x < spawnEdgeX) {
             z.x = spawnEdgeX;
           }
+          z.isDashing = false;
           z.isEating = false;
           z.eatingPlant = null;
           z.dashBlockedPlant = null;
@@ -2548,6 +2555,7 @@ class Zombie {
     this.armorHp = proto.armorHp || 0;
     this.baseHp = proto.baseHp || proto.hp;
     this.isBoss = proto.isBoss || false;
+    this.isMiniBoss = !!proto.isMiniBoss;
     this.isObstacle = proto.isObstacle || false;
 
     // Tốc độ di chuyển tính từ speedPerCell (giây / ô)
@@ -2720,9 +2728,10 @@ class Zombie {
       this.witherCastAnimTimer = 0;
     }
 
-    // Miễn nhiễm đóng băng, làm chậm & choáng
+    // Miễn nhiễm đóng băng, làm chậm, thôi miên & choáng
     this.freezeImmune = proto.freezeImmune || false;
     this.slowImmune = proto.slowImmune || false;
+    this.hypnoImmune = proto.hypnoImmune || false;
     this.stunImmune = proto.stunImmune || isTwoRowBoss(this);
     this.slowActionDelayDuration = proto.slowActionDelay || 1.5;
     this.actionDelayTimer = 0;
@@ -2850,6 +2859,38 @@ class Zombie {
       this.skipWaterRevive = false;
       this.visualScale = 0.92;
     }
+
+    // Chiến Trường Nosus (5 binh chủng: Thrall, Assassin, Shieldbearer, Hemomancer, Warlord)
+    this.nosusSpeedBuffTimer = 0;
+    this.nosusSpeedBuffMult = 1.0;
+    if (this.type === 'nosus_assassin') {
+      this.hasBloodBurst = false;
+      this.bloodBurstTimer = 0;
+      this.bloodBurstDuration = proto.bloodBurstDuration || 3.0;
+      this.bloodBurstMult = proto.bloodBurstMult || 1.6;
+    } else if (this.type === 'nosus_shieldbearer') {
+      this.hasShield = !!proto.hasShield;
+      this.maxArmorHp = proto.armorHp || 750;
+    } else if (this.type === 'nosus_hemomancer') {
+      this.attackRangeCells = proto.attackRangeCells || 2.5;
+      this.bloodPactTimer = 2.5;
+      this.bloodPactCooldown = proto.bloodPactCooldown || 6.5;
+      this.bloodPactHeal = proto.bloodPactHeal || 120;
+      this.hemoCastAnimTimer = 0;
+      this.attackTimer = this.attackInterval;
+    } else if (this.type === 'nosus_warlord') {
+      this.executeThreshold = proto.executeThreshold || 0.20;
+      this.spinCooldown = proto.spinCooldown || 5.0;
+      this.spinTimer = 0;
+      this.spinAnimTimer = 0;
+      this.spinDamage = proto.spinDamage || 180;
+      this.slashAnimTimer = 0;
+      this.hasDariusLastStand = false;
+      this.isDariusFrenzied = false;
+      this.dariusLastStandThreshold = proto.lastStandThreshold || 100;
+      this.dariusInvulnDuration = proto.invulnDuration || 2.0;
+      this.dariusFrenzySpeedMult = proto.frenzySpeedMult || 2.0;
+    }
   }
 
   registerLuxAssist(luxPlant) {
@@ -2861,7 +2902,7 @@ class Zombie {
   }
 
   hypnotize(gameState) {
-    if (this.isObstacle || !this.alive || this.isHypnotized) return;
+    if (this.hypnoImmune || this.isObstacle || !this.alive || this.isHypnotized) return;
     this.isHypnotized = true;
     this.isEating = false;
     this.isAttacking = false;
@@ -2924,9 +2965,14 @@ class Zombie {
   applySlow(factor, duration) {
     if (this.isObstacle || !this.alive) return;
     if (this.slowImmune || this.freezeImmune) {
-      if (this.type === 'anivia' && this.gameState && this.gameState.spawnFloatingText && this.iceImmunePopupCooldown <= 0) {
-        this.iceImmunePopupCooldown = 1.6;
-        this.gameState.spawnFloatingText(this.x, this.y - 42, 'MIỄN LÀM CHẬM! ❄️', '#80deea', 14);
+      if (this.gameState && this.gameState.spawnFloatingText && this.iceImmunePopupCooldown <= 0) {
+        if (this.type === 'anivia') {
+          this.iceImmunePopupCooldown = 1.6;
+          this.gameState.spawnFloatingText(this.x, this.y - 42, 'MIỄN LÀM CHẬM! ❄️', '#80deea', 14);
+        } else if (this.type === 'nosus_warlord') {
+          this.iceImmunePopupCooldown = 1.8;
+          this.gameState.spawnFloatingText(this.x, this.y - 44, 'MIỄN LÀM CHẬM! 🪓', '#ff5252', 14);
+        }
       }
       return; // Miễn nhiễm hoàn toàn làm chậm và đóng băng!
     }
@@ -2978,6 +3024,12 @@ class Zombie {
     }
     if (this.iceImmunePopupCooldown > 0) {
       this.iceImmunePopupCooldown = Math.max(0, this.iceImmunePopupCooldown - dt);
+    }
+    if (this.hemoCastAnimTimer > 0) {
+      this.hemoCastAnimTimer = Math.max(0, this.hemoCastAnimTimer - dt);
+    }
+    if (this.spinAnimTimer > 0) {
+      this.spinAnimTimer = Math.max(0, this.spinAnimTimer - dt);
     }
 
     // Xử lý Khối Băng (Ice Block) do Troglobite đẩy
@@ -3529,14 +3581,28 @@ class Zombie {
       return;
     }
 
-    // Hiệu ứng làm chậm (Slow Pea), Bình thuốc Tốc Độ (x2 speed), Gió Thuận (x2) & Bão Cát Bé dưới chân (x2)
+    // Hiệu ứng làm chậm (Slow Pea), Bình thuốc Tốc Độ (x2 speed), Gió Thuận (x2), Buff Nosus & Bão Cát Bé dưới chân (x2)
     if (this.windHasteTimer > 0) {
       this.windHasteTimer = Math.max(0, this.windHasteTimer - dt);
     }
+    if (this.nosusSpeedBuffTimer > 0) {
+      this.nosusSpeedBuffTimer = Math.max(0, this.nosusSpeedBuffTimer - dt);
+      if (this.nosusSpeedBuffTimer === 0) {
+        this.nosusSpeedBuffMult = 1.0;
+      }
+    }
+    if (this.bloodBurstTimer > 0) {
+      this.bloodBurstTimer = Math.max(0, this.bloodBurstTimer - dt);
+    }
     const sandstormMult = this.hasMiniSandstorm ? (this.sandstormSpeedMultiplier || 2.0) : 1.0;
+    const dariusFrenzyMult = (this.type === 'nosus_warlord' && this.isDariusFrenzied) ? (this.dariusFrenzySpeedMult || 2.0) : 1.0;
+    const nosusBuffMult = (this.nosusSpeedBuffTimer > 0 ? (this.nosusSpeedBuffMult || 1.25) : 1.0)
+      * (this.bloodBurstTimer > 0 ? (this.bloodBurstMult || 1.6) : 1.0)
+      * dariusFrenzyMult;
     let currentSpeedFactor = (this.potionSpeedMult || 1.0)
       * (this.windHasteTimer > 0 ? (this.windHasteMultiplier || 2.0) : 1.0)
-      * sandstormMult;
+      * sandstormMult
+      * nosusBuffMult;
     if (this.slowTimer > 0) {
       this.slowTimer -= dt;
       currentSpeedFactor *= this.slowFactor;
@@ -4282,6 +4348,105 @@ class Zombie {
       return;
     }
 
+    // ----------------------------------------------------
+    // XỬ LÝ HUYẾT PHÁP SƯ NOSUS (Tầm 2.5 ô bắn cầu huyết + Huyết Tế hồi 120 HP & +25% tốc chạy 3x2)
+    // ----------------------------------------------------
+    if (this.type === 'nosus_hemomancer') {
+      if (this.bloodPactTimer > 0) {
+        this.bloodPactTimer = Math.max(0, this.bloodPactTimer - dt);
+      }
+      if (this.bloodPactTimer <= 0 && this.x <= CONFIG.CANVAS_WIDTH - 10) {
+        this.bloodPactTimer = this.bloodPactCooldown || 6.5;
+        this.castNosusBloodPact(gameState);
+      }
+
+      const rangePx = CONFIG.CELL_WIDTH * (this.attackRangeCells || 2.5) + 12;
+      let bestTarget = null;
+      let maxTargetX = -Infinity;
+
+      if (gameState && gameState.plants) {
+        for (const p of gameState.plants) {
+          if (!p.alive || p.isRecharging || p.isGroundPlant) continue;
+          if (p.row !== this.row) continue;
+          if (p.x <= this.x + 20 && (this.x - p.x) <= rangePx && p.x > maxTargetX) {
+            maxTargetX = p.x;
+            bestTarget = p;
+          }
+        }
+      }
+      if (gameState && gameState.barriers) {
+        for (const b of gameState.barriers) {
+          if (!b.alive) continue;
+          if (b.x <= this.x + 20 && (this.x - b.x) <= rangePx && b.x > maxTargetX) {
+            maxTargetX = b.x;
+            bestTarget = b;
+          }
+        }
+      }
+      if (gameState && gameState.zombies) {
+        for (const z of gameState.zombies) {
+          if (!z.alive || !z.isHypnotized || z.row !== this.row) continue;
+          if (z.x <= this.x + 20 && (this.x - z.x) <= rangePx && z.x > maxTargetX) {
+            maxTargetX = z.x;
+            bestTarget = z;
+          }
+        }
+      }
+
+      if (bestTarget) {
+        this.isAttacking = true;
+        this.isEating = false;
+        this.eatingPlant = null;
+        this.attackTimer += atkDt;
+        if (this.attackTimer >= this.attackInterval) {
+          this.attackTimer = Math.min(this.attackInterval, this.attackTimer - this.attackInterval);
+          this.hemoCastAnimTimer = 0.34;
+          const dmg = this.damage || 80;
+          bestTarget.takeDamage(dmg, false);
+          if (gameState) {
+            gameState.spawnParticles(bestTarget.x, bestTarget.y - 8, '#ff1744', 8);
+            gameState.spawnParticles(bestTarget.x, bestTarget.y - 8, '#b71c1c', 5);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'nosus_blood_bolt',
+                x: this.x - 16,
+                y: this.y - 12,
+                startX: this.x - 16,
+                startY: this.y - 12,
+                endX: bestTarget.x,
+                endY: bestTarget.y - 8,
+                duration: 0.25
+              });
+            }
+          }
+        }
+        return;
+      }
+
+      this.isAttacking = false;
+      this.isEating = false;
+      this.eatingPlant = null;
+      this.attackTimer = Math.min(this.attackInterval, this.attackTimer + atkDt);
+
+      const currentSpeedPxPerSec = (CONFIG.CELL_WIDTH / (this.speedPerCell || 6.5)) * currentSpeedFactor;
+      this.x -= currentSpeedPxPerSec * dt;
+      this.walkCycle = (Number.isFinite(this.walkCycle) ? this.walkCycle : 0) + dt * 4.5 * currentSpeedFactor;
+
+      if (this.x <= CONFIG.GRID_OFFSET_X) {
+        const mower = gameState.lawnmowers[this.row];
+        if (mower && mower.active) {
+          mower.trigger(gameState);
+        } else if (!mower || !mower.active) {
+          if (gameState.isSandbox) {
+            this.alive = false;
+          } else {
+            gameState.triggerGameOver();
+          }
+        }
+      }
+      return;
+    }
+
     // Rồng Hắc Ám: khi ra sân ăn thịt 1 rồng thường (Mới Nở / Trưởng Thành) để biến máu thành Giáp Hắc Ám
     if (this.type === 'dragon_dark' && !this.hasDevouredDragon && !this.isHypnotized && this.x <= CONFIG.CANVAS_WIDTH - 15 && gameState && Array.isArray(gameState.zombies)) {
       const victim = gameState.zombies.find(v =>
@@ -4336,6 +4501,17 @@ class Zombie {
       if (gameState.spawnFloatingText) {
         const msg = buffedCount > 0 ? `GIÓ THUẬN ×2 TỐC (${buffedCount})! 🌪️` : 'CUỒNG PHONG KHỞI! 🌪️';
         gameState.spawnFloatingText(this.x, this.y - 40, msg, '#00e5ff', 16);
+      }
+    }
+
+    // Darius (Đại Tướng Nosus) - Skill 1: Khi còn <= 50% HP kích hoạt Máy Chém Xoay 3x3 mỗi 5s hồi 150-200-300 HP
+    if (this.type === 'nosus_warlord' && !this.isHypnotized && this.alive && this.hp > 0 && this.hp <= this.maxHp * 0.5 && this.x <= CONFIG.CANVAS_WIDTH - 10) {
+      if (this.spinTimer > 0) {
+        this.spinTimer = Math.max(0, this.spinTimer - dt);
+      }
+      if (this.spinTimer <= 0) {
+        this.spinTimer = this.spinCooldown || 5.0;
+        this.performDariusSpin(gameState);
       }
     }
 
@@ -4460,6 +4636,19 @@ class Zombie {
 
           // ĐẶC ĐIỂM BẢN GỐC: KHI THÂY MA ĂN NẤM THÔI MIÊN, CHÚNG SẼ QUAY LẠI VÀ CHIẾN ĐẤU CHO BẠN!
           if (targetToAttack.type === 'hypno_shroom') {
+            if (this.hypnoImmune) {
+              targetToAttack.alive = false;
+              targetToAttack.takeDamage(99999, true);
+              this.isEating = false;
+              this.eatingPlant = null;
+              if (gameState) {
+                gameState.spawnParticles(targetToAttack.x, targetToAttack.y - 6, '#ff1744', 14);
+                if (gameState.spawnFloatingText) {
+                  gameState.spawnFloatingText(this.x, this.y - 42, 'MIỄN THÔI MIÊN! 🪓', '#ff5252', 16);
+                }
+              }
+              return;
+            }
             const isSuper = targetToAttack.isSuperHypno;
             targetToAttack.alive = false;
             targetToAttack.takeDamage(9999);
@@ -4525,6 +4714,42 @@ class Zombie {
                 gameState.spawnFloatingText(targetToAttack.x, targetToAttack.y - 24, `KIẾM HỒN (${this.defensiveBiteCount}/${killBites}) ⚔️`, '#ce93d8', 14);
               }
             }
+          } else if (this.type === 'nosus_warlord') {
+            this.slashAnimTimer = 0.38;
+            const threshold = this.executeThreshold || 0.20;
+            const targetMaxHp = targetToAttack.maxHp || 300;
+            const effectiveHp = (targetToAttack.hp || 0) + (targetToAttack.armorHp || 0);
+            const isOneHitFrenzy = !!this.isDariusFrenzied;
+            const isExecute = !isOneHitFrenzy && effectiveHp > 0 && (effectiveHp / targetMaxHp) < threshold;
+
+            if (isOneHitFrenzy || isExecute) {
+              if (targetToAttack.hasArmor) {
+                targetToAttack.hasArmor = false;
+                targetToAttack.armorHp = 0;
+              }
+              targetToAttack.takeDamage(99999, true);
+              gameState.spawnParticles(targetToAttack.x, targetToAttack.y - 8, '#ff1744', 20);
+              gameState.spawnParticles(targetToAttack.x, targetToAttack.y - 8, '#ffd54f', 10);
+              if (gameState.spawnFloatingText) {
+                const msg = isOneHitFrenzy ? 'TRẢM SÁT ONE-HIT! 🪓💀' : 'HÀNH QUYẾT (<20%)! 🪓🩸';
+                gameState.spawnFloatingText(targetToAttack.x, targetToAttack.y - 30, msg, '#ff1744', 17);
+              }
+            } else {
+              targetToAttack.takeDamage(this.damage || 240, false);
+              gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#d50000', 10);
+              gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ffd54f', 4);
+            }
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'nosus_darius_chop',
+                x: targetToAttack.x,
+                y: targetToAttack.y - 8,
+                startX: this.x - 16,
+                startY: this.y - 24,
+                isExecute: isOneHitFrenzy || isExecute,
+                duration: 0.34
+              });
+            }
           } else {
             let dealDmg = this.damage;
             let isDarkFirstStrike = false;
@@ -4540,6 +4765,8 @@ class Zombie {
             } else if (this.type === 'shen') {
               this.slashAnimTimer = 0.28;
               gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ce93d8', 5);
+            } else if (this.type === 'nosus_thrall' || this.type === 'nosus_assassin' || this.type === 'nosus_shieldbearer') {
+              gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ff5252', 5);
             } else if (this.type === 'dragon_hatchling' || this.type === 'dragon_adult') {
               gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 6, '#ff6d00', 8);
               gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 6, '#ffd54f', 5);
@@ -4626,8 +4853,8 @@ class Zombie {
   takeDamage(amount, bypassArmor = false) {
     if (!this.alive) return;
 
-    // Skill 2 của Lãng Khách Zombie: Khi đang bất tử 3s thì miễn nhiễm mọi sát thương chiến đấu
-    if (this.type === 'lang_khach' && this.invulnerableTimer > 0 && amount < 99999) {
+    // Miễn nhiễm sát thương trong thời gian bất tử (Lãng Khách 3s / Darius Skill 2 2s)
+    if ((this.type === 'lang_khach' || this.type === 'nosus_warlord') && this.invulnerableTimer > 0 && amount < 99999) {
       this.flashTimer = 0.08;
       return;
     }
@@ -4694,6 +4921,24 @@ class Zombie {
     // Kiểm tra mốc Hóa Lớn (< 60% HP) của Thần Khuyển
     if (this.type === 'nasus_hound' && !this.isGiantForm && this.hp > 0 && this.hp < this.maxHp * 0.60 && typeof this.triggerNasusGiantTransform === 'function') {
       this.triggerNasusGiantTransform(this.gameState);
+    }
+
+    // Sát Thủ Huyết Đao Nosus: Lần đầu chịu sát thương -> kích hoạt Cuồng Huyết (×1.6 tốc độ chạy trong 3s)
+    if (this.type === 'nosus_assassin' && !this.hasBloodBurst && !this.isHypnotized && this.hp > 0 && amount > 0 && amount < 99999) {
+      this.hasBloodBurst = true;
+      this.bloodBurstTimer = this.bloodBurstDuration || 3.0;
+      if (this.gameState) {
+        this.gameState.spawnParticles(this.x, this.y - 8, '#ff1744', 12);
+        if (this.gameState.spawnFloatingText) {
+          this.gameState.spawnFloatingText(this.x, this.y - 34, 'CUỒNG HUYẾT ×1.6 TỐC! 🗡️🩸', '#ff5252', 15);
+        }
+      }
+    }
+
+    // Darius (Đại Tướng Nosus) - Skill 2: Sau khi xuống dưới 100 máu -> Bất tử 2s, đòn thường one-hit plant, ×2 tốc độ chạy tới khi chết
+    if (this.type === 'nosus_warlord' && !this.hasDariusLastStand && !this.isHypnotized && amount < 99999 && this.hp < (this.dariusLastStandThreshold || 100)) {
+      this.triggerDariusLastStand(prevHp, this.gameState);
+      return;
     }
 
     // Skill 2 của Lãng Khách Zombie: Khi HP tụt xuống dưới 50% -> Bất tử 3s (1 lần/mạng)
@@ -5076,6 +5321,129 @@ class Zombie {
     }
     if (gameState.audio && gameState.audio.playExplosion) {
       gameState.audio.playExplosion('normal');
+    }
+  }
+
+  // Huyết Pháp Sư Nosus: Huyết Tế hồi +120 HP bản thân & đồng minh trong phạm vi 3x2 + buff 25% tốc chạy 2.5s
+  castNosusBloodPact(gameState) {
+    if (!gameState || !Array.isArray(gameState.zombies)) return;
+    const healAmt = this.bloodPactHeal || 120;
+    const rangeX = CONFIG.CELL_WIDTH * 1.65;
+    let affected = 0;
+
+    for (const ally of gameState.zombies) {
+      if (!ally || !ally.alive || ally.isObstacle || ally.isHypnotized) continue;
+      if (Math.abs(ally.row - this.row) <= 1 && Math.abs(ally.x - this.x) <= rangeX) {
+        ally.hp = Math.min(ally.maxHp, ally.hp + healAmt);
+        ally.nosusSpeedBuffTimer = Math.max(ally.nosusSpeedBuffTimer || 0, 2.5);
+        ally.nosusSpeedBuffMult = Math.max(ally.nosusSpeedBuffMult || 1.0, 1.25);
+        affected++;
+        gameState.spawnParticles(ally.x, ally.y - 10, '#ff1744', 6);
+      }
+    }
+
+    this.hemoCastAnimTimer = 0.45;
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'nosus_blood_pact',
+        x: this.x,
+        y: this.y,
+        row: this.row,
+        duration: 0.55
+      });
+    }
+    if (gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(this.x, this.y - 38, `HUYẾT TẾ +${healAmt} HP (${affected}) 🩸`, '#ff5252', 15);
+    }
+  }
+
+  // Darius - Skill 1: Máy Chém Xoay 3x3 kích hoạt mỗi 5s khi còn <= 50% HP, hồi 150-200-300 HP (máu càng ít hồi càng nhiều)
+  performDariusSpin(gameState) {
+    if (!this.alive || this.isHypnotized || this.hp <= 0) return;
+    this.spinAnimTimer = 0.65;
+
+    const hpRatio = this.hp / Math.max(1, this.maxHp);
+    const healAmt = hpRatio <= 0.20 ? 300 : (hpRatio <= 0.35 ? 200 : 150);
+    this.hp = Math.min(this.maxHp, this.hp + healAmt);
+
+    if (!gameState) return;
+    const spinDmg = this.spinDamage || 180;
+    const rangeX = CONFIG.CELL_WIDTH * 1.65;
+    const minX = Math.max(CONFIG.GRID_OFFSET_X, this.x - rangeX);
+    const maxX = Math.min(CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH, this.x + rangeX);
+    const minRow = Math.max(0, this.row - 1);
+    const maxRow = Math.min(CONFIG.ROWS - 1, this.row + 1);
+
+    (gameState.plants || []).forEach(p => {
+      if (!p.alive || p.isRecharging || p.isGroundPlant) return;
+      if (Math.abs(p.row - this.row) <= 1 && Math.abs(p.x - this.x) <= rangeX) {
+        p.takeDamage(spinDmg, false);
+        gameState.spawnParticles(p.x, p.y - 8, '#ff1744', 10);
+      }
+    });
+    (gameState.barriers || []).forEach(b => {
+      if (b.alive && Math.abs(b.x - this.x) <= rangeX) {
+        b.takeDamage(spinDmg);
+      }
+    });
+    (gameState.zombies || []).forEach(z => {
+      if (z.alive && z.isHypnotized && Math.abs(z.row - this.row) <= 1 && Math.abs(z.x - this.x) <= rangeX) {
+        z.takeDamage(spinDmg, false);
+      }
+    });
+
+    gameState.spawnParticles(this.x, this.y - 10, '#ff1744', 18);
+    gameState.spawnParticles(this.x, this.y - 14, '#69f0ae', 12);
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'nosus_darius_spin',
+        x: this.x,
+        y: this.y,
+        row: this.row,
+        minRow,
+        maxRow,
+        startX: minX,
+        endX: maxX,
+        radius: rangeX,
+        duration: 0.65
+      });
+    }
+    if (gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(this.x, this.y - 46, `MÁY CHÉM XOAY 3×3! +${healAmt} HP 🪓🩸`, '#69f0ae', 16);
+    }
+    if (gameState.audio && gameState.audio.playMelee) {
+      gameState.audio.playMelee();
+    }
+  }
+
+  // Darius - Skill 2: Xuống dưới 100 HP -> Bất tử 2s, đòn thường one-hit plant, tăng ×2 tốc độ chạy tới khi chết
+  triggerDariusLastStand(prevHp, gameState) {
+    if (this.hasDariusLastStand) return;
+    this.hasDariusLastStand = true;
+    this.isDariusFrenzied = true;
+    this.invulnerableTimer = this.dariusInvulnDuration || 2.0;
+
+    // Đảm bảo không bị chết xuyên ngưỡng bất tử (< 100 máu) trừ đòn kết liễu >= 99999
+    if (this.hp <= 0 && prevHp > 0) {
+      this.hp = Math.max(1, Math.min(99, prevHp));
+    }
+
+    if (!gameState) return;
+    gameState.spawnParticles(this.x, this.y - 10, '#ffd54f', 18);
+    gameState.spawnParticles(this.x, this.y - 10, '#ff1744', 22);
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'nosus_darius_last_stand',
+        x: this.x,
+        y: this.y - 6,
+        duration: 0.55
+      });
+    }
+    if (gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(this.x, this.y - 52, 'BẤT TỬ 2s · ×2 TỐC · ONE-HIT! 🪓🔥', '#ffd54f', 17);
+    }
+    if (gameState.audio && gameState.audio.playRoar) {
+      gameState.audio.playRoar();
     }
   }
 
@@ -6071,7 +6439,7 @@ class Projectile {
       return;
     }
 
-    // Dao nảy của Kata Blade Rose (30 DMG, nảy tối đa 3 mục tiêu khác nhau)
+    // Dao nảy cầu vồng từ trên xuống của Kata Blade Rose (30 DMG, nảy tối đa 3 mục tiêu khác nhau)
     if (this.isKataDagger || this.type === 'kata_dagger') {
       const target = this.lockedTarget;
       if (!target || !target.alive || target.isHypnotized) {
@@ -6079,17 +6447,30 @@ class Projectile {
         return;
       }
 
-      const dx = target.x - this.x;
-      const dy = (target.y - 12) - this.y;
-      const dist = Math.hypot(dx, dy);
-      const step = Math.abs(moveStep) * 1.2;
+      if (this.startX === undefined || this.startY === undefined) {
+        this.startX = this.x;
+        this.startY = this.y;
+        this.lobProgress = 0;
+        this.lobDuration = this.lobDuration || 0.30;
+        this.arcHeight = this.arcHeight || 76;
+      }
 
-      if (dist <= Math.max(22, step)) {
+      const destX = target.x;
+      const destY = target.y - 14;
+      this.lobProgress = (this.lobProgress || 0) + dt / (this.lobDuration || 0.32);
+      const t = Math.min(1.0, this.lobProgress);
+
+      this.x = this.startX + (destX - this.startX) * t;
+      const linearY = this.startY + (destY - this.startY) * t;
+      const arc = 4 * (this.arcHeight || 76) * t * (1 - t);
+      this.y = linearY - arc;
+
+      if (t >= 1.0) {
         this.hitIds = this.hitIds || new Set();
         if (!this.hitIds.has(target.id)) {
           this.hitIds.add(target.id);
           target.takeDamage(this.damage || 30, false);
-          gameState.spawnParticles(target.x, target.y - 10, '#ff1744', 6);
+          gameState.spawnParticles(destX, target.y - 10, '#ff1744', 6);
           if (gameState.audio && gameState.audio.playHit) {
             gameState.audio.playHit();
           }
@@ -6103,7 +6484,7 @@ class Projectile {
 
         // Tìm mục tiêu tiếp theo trong phạm vi 3x2 (gồm hàng trên, cùng hàng, hàng dưới; rộng 2 ô)
         const originRow = (this.bounceOriginRow !== undefined) ? this.bounceOriginRow : (isTwoRowBoss(target) ? target.bossRow : target.row);
-        const originX = (this.bounceOriginX !== undefined) ? this.bounceOriginX : target.x;
+        const originX = (this.bounceOriginX !== undefined) ? this.bounceOriginX : destX;
         const maxBounceHorizontalPx = CONFIG.CELL_WIDTH * 2.05;
         let nextTarget = null;
         let minBounceDist = Infinity;
@@ -6113,7 +6494,7 @@ class Projectile {
             ? (Math.abs(z.bossRow - originRow) <= 1 || Math.abs((z.bossRow + 1) - originRow) <= 1)
             : (Math.abs(z.row - originRow) <= 1);
           if (!rowMatch || Math.abs(z.x - originX) > maxBounceHorizontalPx) continue;
-          const d = Math.hypot(z.x - target.x, z.y - target.y);
+          const d = Math.hypot(z.x - destX, z.y - target.y);
           if (d < minBounceDist) {
             minBounceDist = d;
             nextTarget = z;
@@ -6121,20 +6502,24 @@ class Projectile {
         }
 
         if (nextTarget) {
-          this.x = target.x;
-          this.y = target.y - 12;
+          this.x = destX;
+          this.y = destY;
+          this.startX = destX;
+          this.startY = destY;
+          this.row = isTwoRowBoss(nextTarget) ? nextTarget.bossRow : nextTarget.row;
+          const bounceDist = Math.hypot(nextTarget.x - destX, (nextTarget.y - 14) - destY);
+          this.lobProgress = 0;
+          this.lobDuration = Math.max(0.18, Math.min(0.32, bounceDist / 450));
+          this.arcHeight = Math.max(44, Math.min(72, 36 + bounceDist * 0.2));
           this.lockedTarget = nextTarget;
         } else {
           this.alive = false;
         }
-      } else {
-        this.x += (dx / dist) * step - moveStep;
-        this.y += (dy / dist) * step;
       }
       return;
     }
 
-    // Linh hồn thỏ kiểu cầu vồng của Aurora (40 DMG, xuyên 4 mục tiêu, đẩy lùi zombie đầu tiên chạm phải 1 ô)
+    // Linh hồn thỏ kiểu cầu vồng của Aurora (40 DMG, xuyên 4 mục tiêu, đẩy lùi zombie đầu tiên chạm phải 1 ô; không đẩy lùi Mini-Boss/Boss)
     if (this.isAuroraRabbit || this.type === 'aurora_rabbit') {
       this.hitIds = this.hitIds || new Set();
       this.flightTime = (this.flightTime || 0) + dt;
@@ -6159,10 +6544,13 @@ class Projectile {
           }
 
           if (this.hitIds.size === 1) {
-            z.applyKnockback(this.firstKnockbackPx || CONFIG.CELL_WIDTH);
-            z.isEating = false;
-            z.eatingPlant = null;
-            z.dashBlockedPlant = null;
+            const isMiniBoss = !!(z.isMiniBoss || z.type === 'renekton_croc' || z.type === 'nasus_hound');
+            if (!isMiniBoss && !z.isBoss && !z.knockbackImmune) {
+              z.applyKnockback(this.firstKnockbackPx || CONFIG.CELL_WIDTH);
+              z.isEating = false;
+              z.eatingPlant = null;
+              z.dashBlockedPlant = null;
+            }
           }
 
           if (this.hitIds.size >= maxPierces) {

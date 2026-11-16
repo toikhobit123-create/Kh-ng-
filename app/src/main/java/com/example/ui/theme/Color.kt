@@ -83,6 +83,12 @@ val DesertSandTop = Color(0xFF3E2307)
 val DesertCardTop = Color(0xFF472909)
 val DesertCardBottom = Color(0xFF221304)
 
+// Chien Truong Nosus Theme (Maps 14-16)
+val NosusCrimsonTop = Color(0xFF3A0C14)
+val NosusCardTop = Color(0xFF431119)
+val NosusCardBottom = Color(0xFF1A070B)
+val NosusBorderCrimson = Color(0xFFE53935)
+
 // Typography & Borders
 val TextPrimary = Color(0xFFF3EFFA)
 val CssSlateText = Color(0xFFE2E8F0)        // CSS body color

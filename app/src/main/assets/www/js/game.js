@@ -315,7 +315,7 @@ const PLANT_SHOWCASE_DATA = {
     rate: '1.0s / dao · Xoay 3s (hồi đầy HP khi hạ)',
     cooldown: '9.0s',
     hp: '450 HP',
-    desc: 'Hoa hồng lưỡi kiếm tầm đánh 2 ô: ném dao 30 DMG nảy tối đa 3 mục tiêu trong phạm vi 3×2 (gồm hàng trên/dưới; chỉ đánh 1 lần nếu chỉ có 1 zombie). Sau 3s tấn công zombie sẽ xoay Bão Dao 3×3 trong 3s gây 30 DMG mỗi 0.25s; lập tức hồi đầy máu nếu hạ gục zombie khi đang xoay rồi đánh thường đủ 3s cho lần xoay tiếp.',
+    desc: 'Hoa hồng lưỡi kiếm tầm đánh 2 ô: ném dao cầu vồng từ trên xuống gây 30 DMG nảy tối đa 3 mục tiêu trong phạm vi 3×2 (gồm hàng trên/dưới; chỉ đánh 1 lần nếu chỉ có 1 zombie). Sau 3s tấn công zombie sẽ xoay Bão Dao 3×3 trong 3s gây 30 DMG mỗi 0.25s; lập tức hồi đầy máu nếu hạ gục zombie khi đang xoay rồi đánh thường đủ 3s cho lần xoay tiếp.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><circle cx="22" cy="22" r="11" fill="#b71c1c" stroke="#ff5252" stroke-width="1.6"/><polygon points="22,4 26,18 40,22 26,26 22,40 18,26 4,22 18,18" fill="#eceff1" stroke="#d50000" stroke-width="1.2"/></svg>`
   },
   aurora: {
@@ -327,7 +327,7 @@ const PLANT_SHOWCASE_DATA = {
     rate: '2.0s / thỏ · 15s / Pháp Trận',
     cooldown: '15.0s',
     hp: '300 HP',
-    desc: 'Bắn linh hồn thỏ theo quỹ đạo cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên 1 ô. Mỗi 15s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (tránh hàng đã có Aurora khác bật chiêu), gây 200 DMG phạm vi 2 ô và đẩy tất cả zombie (trừ Zomboss) văng về rìa phải ngoài cùng.',
+    desc: 'Bắn linh hồn thỏ theo quỹ đạo cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên 1 ô (không đẩy lùi Mini-Boss/Boss). Mỗi 15s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (tránh hàng đã có Aurora khác bật chiêu), gây 200 DMG phạm vi 2 ô và đẩy tất cả zombie (kể cả Mini-Boss, trừ Zomboss) văng về rìa phải ngoài cùng.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><ellipse cx="16" cy="12" rx="4" ry="9" fill="#e0f7fa" stroke="#f48fb1" stroke-width="1.2"/><ellipse cx="28" cy="12" rx="4" ry="9" fill="#e0f7fa" stroke="#f48fb1" stroke-width="1.2"/><circle cx="22" cy="26" r="11" fill="#80deea" stroke="#f06292" stroke-width="1.5"/></svg>`
   }
 };
@@ -514,6 +514,36 @@ const ZOMBIE_PREVIEW_INFO = {
     avatar: '🐺',
     hpText: 'HP: 3000 · 6.0s/ô · 100/s → Hủy Diệt Cây',
     desc: 'Skill 1 Lão Hóa (tầm 2 ô, hồi 10s): Gây vùng 2×2 làm chậm 50% tốc đánh trong 5s và đốt 10 DMG/0.5s. Khi xuống dưới 60% HP hóa lớn (ngừng Lão Hóa), tốc đánh 2s/lần nhưng mỗi đòn hủy diệt ngay 1 cây và hồi +350 HP!'
+  },
+  nosus_thrall: {
+    name: 'Binh Sĩ Nosus',
+    avatar: '🪓',
+    hpText: 'HP: 210 · 4.5s/ô · 45 DMG / 0.5s',
+    desc: 'Bộ binh tiên phong của đế chế Nosus mang rìu thép thẫm máu. Tốc độ áp sát nhanh hơn Zombie thường để gây áp lực từ đầu trận.'
+  },
+  nosus_assassin: {
+    name: 'Sát Thủ Huyết Đao Nosus',
+    avatar: '🗡️',
+    hpText: 'HP: 340 · 4.0s/ô → ×1.6 Cuồng Huyết · 65 DMG / 0.5s',
+    desc: 'Sát thủ song đao hắc huyết. Ngay lần đầu trúng sát thương không chí tử sẽ kích hoạt Cuồng Huyết (×1.6 tốc độ di chuyển trong 3s) lao thẳng vào tuyến phòng thủ!'
+  },
+  nosus_shieldbearer: {
+    name: 'Vệ Binh Khiên Sắt Nosus',
+    avatar: '🛡️',
+    hpText: 'HP: 1050 (300 + 750 Khiên Sắt) · 6.2s/ô · 65 DMG / 0.5s',
+    desc: 'Vệ binh bọc đại khiên sắt Nosus 750 HP, kháng 40% đẩy lùi. Có thể dùng Nấm Nam Châm (Magnet-shroom) để hút bay khiên sắt!'
+  },
+  nosus_hemomancer: {
+    name: 'Huyết Pháp Sư Nosus',
+    avatar: '🩸',
+    hpText: 'HP: 760 · 6.5s/ô · Cầu Máu 80 DMG (2.5 ô) · Huyết Tế',
+    desc: 'Pháp sư huyết thuật tầm xa: bắn cầu máu tầm 2.5 ô gây 80 DMG mỗi 1.4s. Mỗi 6.5s niệm Huyết Tế hồi +120 HP và tăng +25% tốc độ cho bản thân cùng đồng minh phạm vi 3×2 trong 2.5s.'
+  },
+  nosus_warlord: {
+    name: 'Darius (Đại Tướng Nosus)',
+    avatar: '🪓',
+    hpText: 'HP: 3200 (Mini-Boss) · 6.0s/ô · Miễn Làm Chậm/Thôi Miên/Đẩy',
+    desc: 'Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 2s, ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!'
   }
 };
 
@@ -529,7 +559,7 @@ class Game {
 
     this.currentLevel = 1;
     this.pendingLevel = 1;
-    this.unlockedLevel = 13; // Mở khóa tất cả các map (1-13)
+    this.unlockedLevel = 16; // Mở khóa tất cả các map (1-16)
     this.completedLevels = [];
     this.isSandbox = false;
     this.sandboxNoCooldown = false;
@@ -805,13 +835,13 @@ class Game {
   // ==========================================================================
   loadProgress() {
     try {
-      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 12/12 map theo yêu cầu)
+      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 16/16 map theo yêu cầu)
       const savedLevel = localStorage.getItem('pvz_unlocked_level');
       const parsedLevel = parseInt(savedLevel, 10);
-      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 12) {
-        this.unlockedLevel = Math.max(parsedLevel, 12); // Đảm bảo luôn mở khóa hết cả 12 map
+      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 16) {
+        this.unlockedLevel = Math.max(parsedLevel, 16); // Đảm bảo luôn mở khóa hết cả 16 map
       } else {
-        this.unlockedLevel = 12;
+        this.unlockedLevel = 16;
       }
 
       // 2. Danh sách các màn đã vượt qua (chiến thắng)
@@ -820,7 +850,7 @@ class Game {
         try {
           const list = JSON.parse(savedCompleted);
           if (Array.isArray(list)) {
-            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 12);
+            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 16);
           } else {
             this.completedLevels = [];
           }
@@ -849,7 +879,7 @@ class Game {
       console.log(`[PvZ Progress] Đã tải tiến trình: Đã mở Cấp ${this.unlockedLevel}, Đã vượt qua: [${this.completedLevels.join(', ')}]`);
     } catch (err) {
       console.warn('Lỗi đọc localStorage:', err);
-      this.unlockedLevel = 12;
+      this.unlockedLevel = 16;
       this.completedLevels = [];
     }
   }
@@ -869,9 +899,9 @@ class Game {
 
   resetProgress() {
     try {
-      this.unlockedLevel = 12; // Luôn mở khóa tất cả các map
+      this.unlockedLevel = 16; // Luôn mở khóa tất cả các map
       this.completedLevels = [];
-      localStorage.setItem('pvz_unlocked_level', '12');
+      localStorage.setItem('pvz_unlocked_level', '16');
       localStorage.setItem('pvz_completed_levels', JSON.stringify([]));
     } catch (err) {
       console.warn('Lỗi reset tiến trình:', err);
@@ -964,7 +994,15 @@ class Game {
       'sb-spawn-dragon-chemtech': 'dragon_chemtech',
       'sb-spawn-dragon-wind': 'dragon_wind',
       'sb-spawn-dragon-water': 'dragon_water',
-      'sb-spawn-ancient-dragon': 'ancient_dragon_boss'
+      'sb-spawn-ancient-dragon': 'ancient_dragon_boss',
+      'sb-spawn-azir': 'azir_desert_emperor',
+      'sb-spawn-renekton': 'renekton_croc',
+      'sb-spawn-nasus': 'nasus_hound',
+      'sb-spawn-nosus-thrall': 'nosus_thrall',
+      'sb-spawn-nosus-assassin': 'nosus_assassin',
+      'sb-spawn-nosus-shieldbearer': 'nosus_shieldbearer',
+      'sb-spawn-nosus-hemomancer': 'nosus_hemomancer',
+      'sb-spawn-nosus-warlord': 'nosus_warlord'
     };
 
     for (const [btnId, zType] of Object.entries(btnToType)) {
@@ -1035,7 +1073,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1044,7 +1082,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1221,12 +1259,14 @@ class Game {
     this.gameDeltaTime = 0;
     this.realDeltaTime = 0;
 
-    // Thiết lập chế độ chơi: Map 6 là Conveyor Belt; Map 11-12 là Dragon Realm; Map 13 là Desert Realm
+    // Thiết lập chế độ chơi: Map 6 là Conveyor Belt; Map 11-12 là Dragon Realm; Map 13 là Desert Realm; Map 14-16 là Nosus Realm
     const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined') ? LEVEL_CONFIG[this.currentLevel] : null;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
       const isDesertRealm = !this.isSandbox && !!(lvlCfg && lvlCfg.theme === 'desert');
-      const isDragonRealm = !this.isSandbox && !isDesertRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
+      const isNosusRealm = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'nosus') || (this.currentLevel >= 14 && this.currentLevel <= 16));
+      const isDragonRealm = !this.isSandbox && !isDesertRealm && !isNosusRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
       document.body.classList.toggle('desert-realm', isDesertRealm);
+      document.body.classList.toggle('nosus-realm', isNosusRealm);
       document.body.classList.toggle('dragon-realm', isDragonRealm);
     }
     this.gameMode = (!this.isSandbox && (this.currentLevel === 6 || (lvlCfg && (lvlCfg.isConveyor || lvlCfg.gameMode === 'conveyor')))) ? 'conveyor' : 'normal';
@@ -1268,7 +1308,10 @@ class Game {
           6: 'CẤP 6 · ZOMBOT DARK DRAGON',
           11: 'CẤP 11 · VƯƠNG QUỐC LONG TỘC',
           12: 'CẤP 12 · BOSS RỒNG NGÀN TUỔI',
-          13: 'CẤP 13 · HOÀNG ĐẾ SA MẠC AZIR'
+          13: 'CẤP 13 · HOÀNG ĐẾ SA MẠC AZIR',
+          14: 'CẤP 14 · TIỀN ĐỒN NOSUS',
+          15: 'CẤP 15 · PHÁO ĐÀI HUYẾT TẾ',
+          16: 'CẤP 16 · ĐẠI TƯỚNG DARIUS NOSUS'
         };
         this.levelBadgeEl.textContent = lvlNames[this.currentLevel] || `CẤP ${this.currentLevel}`;
         this.levelBadgeEl.classList.remove('sandbox-mode-badge');
@@ -2415,8 +2458,8 @@ class Game {
       this.completedLevels.push(this.currentLevel);
     }
 
-    // Mở khóa màn tiếp theo (tối đa cấp 13)
-    if (this.currentLevel < 13) {
+    // Mở khóa màn tiếp theo (tối đa cấp 16)
+    if (this.currentLevel < 16) {
       this.unlockedLevel = Math.max(this.unlockedLevel, this.currentLevel + 1);
     }
 
@@ -2424,7 +2467,13 @@ class Game {
     this.saveProgress();
 
     if (this.dialogTitle) {
-      if (this.currentLevel === 13) {
+      if (this.currentLevel === 16) {
+        this.dialogTitle.textContent = 'VICTORY! CHINH PHỤC CHIẾN TRƯỜNG NOSUS!';
+      } else if (this.currentLevel === 15) {
+        this.dialogTitle.textContent = 'VICTORY! PHÁ TAN PHÁO ĐÀI HUYẾT TẾ NOSUS!';
+      } else if (this.currentLevel === 14) {
+        this.dialogTitle.textContent = 'VICTORY! HẠ GỤC TIỀN ĐỒN THIẾT HUYẾT NOSUS!';
+      } else if (this.currentLevel === 13) {
         this.dialogTitle.textContent = 'VICTORY! ĐÁNH BẠI HOÀNG ĐẾ SA MẠC AZIR!';
       } else if (this.currentLevel === 12) {
         this.dialogTitle.textContent = 'VICTORY! ĐÁNH BẠI BOSS RỒNG NGÀN TUỔI!';
@@ -2442,8 +2491,14 @@ class Game {
       this.dialogTitle.className = 'win';
     }
     if (this.dialogMessage) {
-      if (this.currentLevel === 13) {
-        this.dialogMessage.textContent = 'CHỦ NHÂN ĐĨA MẶT TRỜI! Bạn đã hạ gục Hoàng Đế Sa Mạc Azir 20.000 HP, vượt qua Bão Cát 3 hàng và đánh bại cả Thần Cá Sấu lẫn Thần Khuyển!';
+      if (this.currentLevel === 16) {
+        this.dialogMessage.textContent = 'BÁ CHỦ CHIẾN TRƯỜNG! Bạn đã hạ gục song Đại Tướng Darius, phá tan pháo đài sắt máu và chinh phục hoàn toàn thế giới Chiến Trường Nosus!';
+      } else if (this.currentLevel === 15) {
+        this.dialogMessage.textContent = 'XUẤT SẮC! Bạn đã ngăn chặn Huyết Tế của Huyết Pháp Sư Nosus! Cấp 16: Đại Tướng Darius Nosus đang chờ ở trận cuối!';
+      } else if (this.currentLevel === 14) {
+        this.dialogMessage.textContent = 'CHIẾN THẮNG MỞ MÀN! Bạn đã vượt qua Binh Sĩ, Sát Thủ và Vệ Binh Khiên Sắt Nosus! Tiến lên Cấp 15 đối đầu Huyết Pháp Sư!';
+      } else if (this.currentLevel === 13) {
+        this.dialogMessage.textContent = 'CHỦ NHÂN ĐĨA MẶT TRỜI! Bạn đã hạ gục Hoàng Đế Sa Mạc Azir 20.000 HP! Thế giới mới Chiến Trường Nosus (Cấp 14–16) đang chờ đón!';
       } else if (this.currentLevel === 12) {
         this.dialogMessage.textContent = 'ĐẠI TÔNG SƯ LONG TỘC! Bạn đã hạ gục Boss Rồng Ngàn Tuổi 10.000 HP! Hãy tiến vào Sa Mạc Shurima ở Cấp 13 đối đầu Hoàng Đế Azir!';
       } else if (this.currentLevel === 11) {
@@ -2451,7 +2506,7 @@ class Game {
       } else if (this.currentLevel === 10) {
         this.dialogMessage.textContent = 'HUYỀN THOẠI BÁ KHÍ! Bạn đã vượt qua Đêm Tận Thế Hắc Ám ở Cấp 10! Hãy thử sức ngay với Map Special Vương Quốc Long Tộc!';
       } else if (this.currentLevel === 6) {
-        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–13 đã sẵn sàng!';
+        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–16 đã sẵn sàng!';
       } else if (this.currentLevel === 5) {
         this.dialogMessage.textContent = 'Xuất sắc! Bạn đã đánh bại BOSS Gargantuar! Hãy chuẩn bị tiến vào CẤP 6 đối đầu Zombot Dark Dragon!';
       } else {
@@ -2460,7 +2515,7 @@ class Game {
     }
     if (this.dialogNextBtn) {
       this.dialogNextBtn.classList.remove('hidden');
-      this.dialogNextBtn.textContent = this.currentLevel < 13 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
+      this.dialogNextBtn.textContent = this.currentLevel < 16 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
     }
     if (this.dialogOverlay) this.dialogOverlay.classList.remove('hidden');
   }
@@ -2806,7 +2861,11 @@ class Game {
               ? '200 DMG (Tấn công 1 cây rồi biến mất)'
               : key === 'sand_coffin'
                 ? '0 DMG (Vật cản 800 HP)'
-                : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
+                : key === 'nosus_hemomancer'
+                  ? '80 DMG / 1.4s (Tầm 2.5 ô) · Huyết Tế +120 HP'
+                  : key === 'nosus_warlord'
+                    ? '240 / 1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit (<100 HP)'
+                    : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
     if (this.almanacStatsEl) {
       this.almanacStatsEl.innerHTML = `
         <div class="almanac-stat-chip" style="grid-column: span 2;"><span class="stat-label">SỨC CHỊU ĐỰNG & GIÁP:</span><span class="stat-val">${z.hpText}</span></div>

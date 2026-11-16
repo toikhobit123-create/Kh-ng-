@@ -222,11 +222,14 @@ fun MatchResultModal(
         Text(
           text = if (result.victory) {
             when {
-              result.level >= 13 -> "HOÀNG ĐẾ SA MẠC ĐÃ BẠI! Bạn đã đánh bại Boss Azir, Thần Cá Sấu, Thần Khuyển và chinh phục hoàn toàn Đấu Trường Sa Mạc Cấp 13!"
+              result.level >= 16 -> "BÁ CHỦ CHIẾN TRƯỜNG NOSUS! Bạn đã hạ gục song Đại Tướng Darius, phá tan pháo đài sắt máu và chinh phục hoàn toàn Cấp 16!"
+              result.level == 15 -> "XUẤT SẮC! Bạn đã ngăn chặn Huyết Tế của Huyết Pháp Sư Nosus (Cấp 15)! Trận quyết chiến Đại Tướng Darius Nosus (Cấp 16) đang chờ đón!"
+              result.level == 14 -> "CHIẾN THẮNG MỞ MÀN! Bạn đã đẩy lùi Tiền Đồn Thiết Huyết Nosus (Cấp 14)! Tiến vào Pháo Đài Huyết Tế ở Cấp 15!"
+              result.level == 13 -> "HOÀNG ĐẾ SA MẠC ĐÃ BẠI! Bạn đã đánh bại Boss Azir, Thần Cá Sấu & Thần Khuyển! Thế giới mới Chiến Trường Nosus (Cấp 14–16) đã sẵn sàng!"
               result.level == 12 -> "ĐỈNH CAO HUYỀN THOẠI! Bạn đã tiêu diệt Boss Rồng Ngàn Tuổi (Cấp 12)! Đấu Trường Sa Mạc Cấp 13: Boss Azir đang chờ đón!"
               result.level == 11 -> "Xuất sắc! Bạn đã chinh phục Vương Quốc Long Tộc (Cấp 11)! Thử thách tối thượng Boss Rồng Ngàn Tuổi (Cấp 12) đang chờ đón!"
               result.level == 10 -> "Xuất sắc! Bạn đã chinh phục Đêm Tận Thế Hắc Ám (Cấp 10)! Map Special Vương Quốc Long Tộc (Cấp 11) đang chờ đón!"
-              result.level == 6 -> "Chúc mừng! Bạn đã đánh bại Zombot Dark Dragon! Các màn thử thách Cấp 7–13 đang chờ đón!"
+              result.level == 6 -> "Chúc mừng! Bạn đã đánh bại Zombot Dark Dragon! Các màn thử thách Cấp 7–16 đang chờ đón!"
               else -> "Tuyệt vời! Bạn đã đẩy lùi toàn bộ đợt tấn công ở Cấp ${result.level}."
             }
           } else {
@@ -237,7 +240,7 @@ fun MatchResultModal(
           textAlign = TextAlign.Center
         )
 
-        if (result.victory && result.level < 13) {
+        if (result.victory && result.level < 16) {
           GothicActionButton(
             onClick = onNextLevel,
             modifier = Modifier.fillMaxWidth().testTag("result_next_level_btn"),
@@ -248,6 +251,9 @@ fun MatchResultModal(
             Spacer(Modifier.width(6.dp))
             Text(
               when (result.level + 1) {
+                16 -> "Quyết Chiến Darius Nosus"
+                15 -> "Tiến Công Pháo Đài Huyết Tế"
+                14 -> "Vào Thế Giới Mới: Chiến Trường Nosus"
                 13 -> "Chinh Phục Sa Mạc Boss Azir"
                 12 -> "Thách Đấu Boss Rồng Ngàn Tuổi"
                 11 -> "Vào Map Special: Long Tộc"

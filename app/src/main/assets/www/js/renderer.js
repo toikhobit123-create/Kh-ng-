@@ -275,6 +275,9 @@ class GameRenderer {
   // ==========================================================================
   drawBossHealthBar(ctx, gameState) {
     if (!gameState) return;
+    if (typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('native-compose-hud')) {
+      return;
+    }
     const isDesertMap = gameState.currentLevel === 13 ||
       (gameState.zombies && gameState.zombies.some(z => z.type === 'azir_desert_emperor'));
     const isAncientMap = !isDesertMap && (gameState.currentLevel === 12 ||
@@ -303,19 +306,20 @@ class GameRenderer {
 
     ctx.save();
 
-    const barW = 540;
-    const barH = 26;
-    const cx = CONFIG.CANVAS_WIDTH / 2;
+    const isConveyorBoss = (gameState.currentLevel === 6 || gameState.gameMode === 'conveyor') && !isDesertMap && !isAncientMap;
+    const barW = isConveyorBoss ? 300 : 540;
+    const barH = isConveyorBoss ? 20 : 26;
+    const cx = isConveyorBoss ? 500 : (CONFIG.CANVAS_WIDTH / 2);
     const x = cx - barW / 2;
     const y = 8;
-    const r = 6;
+    const r = isConveyorBoss ? 5 : 6;
 
     // 1. Khung nền kim loại phát sáng
     ctx.fillStyle = isDesertMap ? 'rgba(26, 17, 6, 0.95)' : 'rgba(10, 12, 18, 0.95)';
     ctx.strokeStyle = isDesertMap
       ? ((hpRatio <= 0.35 && currentHp > 0) ? '#ff6d00' : '#ffca28')
       : ((hpRatio < 0.30 && currentHp > 0) ? '#ff1744' : '#ffd700');
-    ctx.lineWidth = 2.0;
+    ctx.lineWidth = isConveyorBoss ? 1.6 : 2.0;
 
     ctx.beginPath();
     if (ctx.roundRect) {
@@ -327,7 +331,7 @@ class GameRenderer {
     ctx.stroke();
 
     // 2. Lòng thanh máu (Inner track)
-    const pad = 3;
+    const pad = isConveyorBoss ? 2.5 : 3;
     const innerX = x + pad;
     const innerY = y + pad;
     const innerW = barW - pad * 2;
@@ -386,15 +390,15 @@ class GameRenderer {
     ctx.fillRect(innerX + innerW * m2 - 1, innerY, 2, innerH);
 
     // 6. Huy hiệu bên trái thanh máu
-    ctx.font = '16px sans-serif';
+    ctx.font = isConveyorBoss ? '13px sans-serif' : '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(isDesertMap ? '🦅' : '🐲', x - 14, y + barH / 2);
+    ctx.fillText(isDesertMap ? '🦅' : '🐲', x - (isConveyorBoss ? 12 : 14), y + barH / 2);
 
     // 7. Huy hiệu trạng thái / Giai đoạn
     let phaseText = '';
     if (!boss && !gameState.isVictory && !hasSpawnedYet) {
-      phaseText = '⏳ ĐANG GIÁNG LÂM...';
+      phaseText = isConveyorBoss ? 'SẮP RA' : '⏳ ĐANG GIÁNG LÂM...';
     } else if (isDesertMap) {
       if (currentHp <= 0) {
         phaseText = 'DỌN SẠCH ĐỘI QUÂN CÁT!';
@@ -416,32 +420,38 @@ class GameRenderer {
         phaseText = '7 TUYỆT KỸ LONG VƯƠNG';
       }
     } else if (hpRatio > 0.65) {
-      phaseText = 'GĐ 1: GẦM THẢ LÍNH';
+      phaseText = isConveyorBoss ? 'GĐ 1' : 'GĐ 1: GẦM THẢ LÍNH';
     } else if (hpRatio >= 0.30) {
-      phaseText = 'GĐ 2: CẦU LỬA & IMP';
+      phaseText = isConveyorBoss ? 'GĐ 2' : 'GĐ 2: CẦU LỬA & IMP';
     } else if (currentHp > 0) {
-      phaseText = 'GĐ 3: CUỒNG BỘ! 🔥';
+      phaseText = isConveyorBoss ? 'GĐ 3 🔥' : 'GĐ 3: CUỒNG BỘ! 🔥';
     } else {
       phaseText = 'ĐÃ HẠ GỤC!';
     }
 
     // 8. Chữ hiển thị thông số máu thời gian thực
-    ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = isConveyorBoss
+      ? 'bold 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const bossTitle = isDesertMap
       ? 'HOÀNG ĐẾ SA MẠC AZIR'
-      : (isAncientMap ? 'BOSS RỒNG NGÀN TUỔI' : 'ZOMBOT DARK DRAGON');
+      : (isAncientMap ? 'BOSS RỒNG NGÀN TUỔI' : (isConveyorBoss ? 'RỒNG ĐEN' : 'ZOMBOT DARK DRAGON'));
     let hpLabel = '';
     if (currentHp <= 0 || gameState.isVictory) {
-      hpLabel = `💀 ${bossTitle} ĐÃ BỊ HẠ GỤC! (0 / ${maxHp.toLocaleString()} HP) [${phaseText}]`;
+      hpLabel = isConveyorBoss
+        ? `💀 ${bossTitle} HẠ GỤC! (0/${maxHp.toLocaleString()})`
+        : `💀 ${bossTitle} ĐÃ BỊ HẠ GỤC! (0 / ${maxHp.toLocaleString()} HP) [${phaseText}]`;
     } else {
-      hpLabel = `${bossTitle}  ·  ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP  (${(hpRatio * 100).toFixed(1)}%)  [${phaseText}]`;
+      hpLabel = isConveyorBoss
+        ? `${bossTitle} · ${Math.ceil(currentHp).toLocaleString()}/${maxHp.toLocaleString()} (${(hpRatio * 100).toFixed(0)}%) [${phaseText}]`
+        : `${bossTitle}  ·  ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP  (${(hpRatio * 100).toFixed(1)}%)  [${phaseText}]`;
     }
 
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = isConveyorBoss ? 3.0 : 3.5;
     ctx.strokeText(hpLabel, cx, y + barH / 2);
 
     ctx.fillStyle = (hpRatio <= m2 && currentHp > 0) ? '#ffea00' : '#ffffff';
@@ -453,6 +463,11 @@ class GameRenderer {
   drawLawn(ctx, gameState = null) {
     const lvl = gameState ? gameState.currentLevel : 0;
     const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[lvl]) ? LEVEL_CONFIG[lvl] : null;
+    const isNosusRealm = !!(gameState && !gameState.isSandbox && ((lvl >= 14 && lvl <= 16) || (lvlCfg && lvlCfg.theme === 'nosus')));
+    if (isNosusRealm) {
+      this.drawNosusLawn(ctx, gameState);
+      return;
+    }
     const isDesertRealm = !!(gameState && !gameState.isSandbox && (lvl === 13 || (lvlCfg && lvlCfg.theme === 'desert')));
     if (isDesertRealm) {
       this.drawDesertLawn(ctx, gameState);
@@ -1098,6 +1113,239 @@ class GameRenderer {
       ctx.fillStyle = `rgba(255, 236, 179, ${alpha})`;
       ctx.beginPath();
       ctx.arc(sx, sy, rDot, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ==========================================
+  // CHIẾN TRƯỜNG NOSUS (MAP 14-16: PHÁO ĐÀI THIẾT HUYẾT)
+  // Cache phần tĩnh (bầu trời huyết thực, tường thành sắt đen, sàn đá nạm thép đỏ, chậu than)
+  // ==========================================
+  drawNosusLawn(ctx, gameState) {
+    const t = this.getFrameTimeSec();
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const patioWidth = CONFIG.GRID_OFFSET_X;
+    const lawnEndX = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
+
+    this.drawCachedBg(ctx, 'nosus', w, h, (bCtx) => {
+      // 1. Bầu trời pháo đài rực đỏ sẫm & sắt đen
+      const skyGrad = bCtx.createLinearGradient(0, 0, 0, h);
+      skyGrad.addColorStop(0, '#140508');
+      skyGrad.addColorStop(0.24, '#2c0a12');
+      skyGrad.addColorStop(0.65, '#1d090e');
+      skyGrad.addColorStop(1, '#100407');
+      bCtx.fillStyle = skyGrad;
+      bCtx.fillRect(0, 0, w, h);
+
+      // 2. Thềm phòng thủ thép Nosus bên trái (Patio)
+      const patioGrad = bCtx.createLinearGradient(0, 0, patioWidth, 0);
+      patioGrad.addColorStop(0, '#1c181d');
+      patioGrad.addColorStop(0.85, '#2b2228');
+      patioGrad.addColorStop(1, '#151014');
+      bCtx.fillStyle = patioGrad;
+      bCtx.fillRect(0, 0, patioWidth, h);
+
+      for (let y = CONFIG.GRID_OFFSET_Y; y < CONFIG.GRID_OFFSET_Y + CONFIG.ROWS * CONFIG.CELL_HEIGHT; y += CONFIG.CELL_HEIGHT) {
+        bCtx.fillStyle = '#32262c';
+        bCtx.fillRect(6, y + 6, patioWidth - 20, CONFIG.CELL_HEIGHT - 12);
+        bCtx.strokeStyle = '#78909c';
+        bCtx.lineWidth = 1.6;
+        bCtx.strokeRect(6, y + 6, patioWidth - 20, CONFIG.CELL_HEIGHT - 12);
+
+        // Đinh tán thép & dấu huyết ấn Nosus
+        bCtx.fillStyle = '#b71c1c';
+        bCtx.beginPath();
+        bCtx.moveTo(patioWidth - 22, y + CONFIG.CELL_HEIGHT / 2 - 5);
+        bCtx.lineTo(patioWidth - 15, y + CONFIG.CELL_HEIGHT / 2);
+        bCtx.lineTo(patioWidth - 22, y + CONFIG.CELL_HEIGHT / 2 + 5);
+        bCtx.lineTo(patioWidth - 29, y + CONFIG.CELL_HEIGHT / 2);
+        bCtx.closePath();
+        bCtx.fill();
+      }
+
+      bCtx.fillStyle = '#120b0e';
+      bCtx.fillRect(patioWidth - 10, 0, 10, h);
+
+      // 3. Doanh trại thép gai & cờ chiến bên phải (Zombie Entry Zone)
+      const eastGrad = bCtx.createLinearGradient(lawnEndX, 0, w, 0);
+      eastGrad.addColorStop(0, '#2a161c');
+      eastGrad.addColorStop(0.55, '#1d0d12');
+      eastGrad.addColorStop(1, '#12060a');
+      bCtx.fillStyle = eastGrad;
+      bCtx.fillRect(lawnEndX, 0, w - lawnEndX, h);
+
+      bCtx.fillStyle = '#372329';
+      bCtx.fillRect(lawnEndX, 0, 14, h);
+      bCtx.strokeStyle = '#d50000';
+      bCtx.lineWidth = 1.8;
+      bCtx.beginPath();
+      bCtx.moveTo(lawnEndX + 2, 0);
+      bCtx.lineTo(lawnEndX + 2, h);
+      bCtx.stroke();
+
+      // Chậu than thiết huyết & cờ hiệu Nosus ở 5 hàng bên phải
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        const bY = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT + 24;
+        const bX = lawnEndX + 22;
+
+        // Cờ đỏ Nosus
+        bCtx.fillStyle = '#8e0000';
+        bCtx.strokeStyle = '#ff5252';
+        bCtx.lineWidth = 1.2;
+        bCtx.beginPath();
+        bCtx.moveTo(bX + 34, bY - 4);
+        bCtx.lineTo(bX + 54, bY - 4);
+        bCtx.lineTo(bX + 54, bY + 26);
+        bCtx.lineTo(bX + 44, bY + 36);
+        bCtx.lineTo(bX + 34, bY + 26);
+        bCtx.closePath();
+        bCtx.fill();
+        bCtx.stroke();
+
+        // Chữ V thép trên cờ
+        bCtx.strokeStyle = '#cfd8dc';
+        bCtx.lineWidth = 1.8;
+        bCtx.beginPath();
+        bCtx.moveTo(bX + 39, bY + 4);
+        bCtx.lineTo(bX + 44, bY + 18);
+        bCtx.lineTo(bX + 49, bY + 4);
+        bCtx.stroke();
+
+        // Chậu than sắt đen
+        bCtx.fillStyle = '#263238';
+        bCtx.strokeStyle = '#78909c';
+        bCtx.lineWidth = 1.5;
+        bCtx.beginPath();
+        bCtx.moveTo(bX + 2, bY + 14);
+        bCtx.lineTo(bX + 24, bY + 14);
+        bCtx.lineTo(bX + 20, bY + 34);
+        bCtx.lineTo(bX + 6, bY + 34);
+        bCtx.closePath();
+        bCtx.fill();
+        bCtx.stroke();
+      }
+
+      // 4. Lưới sân đấu Pháo Đài Đá Sắt & Huyết Ấn (5x9)
+      const tile1 = '#2c1c21';
+      const tile2 = '#221519';
+
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        for (let c = 0; c < CONFIG.COLS; c++) {
+          const x = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH;
+          const y = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT;
+          const isAlt = (r + c) % 2 === 0;
+
+          bCtx.fillStyle = isAlt ? tile1 : tile2;
+          bCtx.fillRect(x, y, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
+
+          // Viền ô nạm sắt & mạch huyết đỏ
+          bCtx.strokeStyle = 'rgba(176, 190, 197, 0.24)';
+          bCtx.lineWidth = 1.1;
+          bCtx.strokeRect(x, y, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
+
+          // Đinh tán sắt 4 góc
+          bCtx.fillStyle = '#546e7a';
+          bCtx.fillRect(x + 4, y + 4, 3, 3);
+          bCtx.fillRect(x + CONFIG.CELL_WIDTH - 7, y + 4, 3, 3);
+          bCtx.fillRect(x + 4, y + CONFIG.CELL_HEIGHT - 7, 3, 3);
+          bCtx.fillRect(x + CONFIG.CELL_WIDTH - 7, y + CONFIG.CELL_HEIGHT - 7, 3, 3);
+
+          // Vết nứt huyết ngọc chìm trên mặt đá
+          if ((r * 3 + c * 5) % 4 === 0) {
+            bCtx.strokeStyle = 'rgba(255, 23, 68, 0.26)';
+            bCtx.lineWidth = 1.2;
+            bCtx.beginPath();
+            bCtx.moveTo(x + 16, y + 20);
+            bCtx.lineTo(x + 38, y + 44);
+            bCtx.lineTo(x + 62, y + 36);
+            bCtx.stroke();
+          }
+
+          // Huyết ấn chữ thập giữa sân
+          if (r === 2 && (c === 2 || c === 4 || c === 6)) {
+            bCtx.strokeStyle = 'rgba(213, 0, 0, 0.28)';
+            bCtx.lineWidth = 1.6;
+            bCtx.beginPath();
+            bCtx.arc(x + CONFIG.CELL_WIDTH / 2, y + CONFIG.CELL_HEIGHT / 2, 18, 0, Math.PI * 2);
+            bCtx.stroke();
+          }
+        }
+      }
+
+      // 5. Nhật thực đỏ & tường thành răng cưa Nosus phía trên
+      const moonX = 685;
+      const moonY = 30;
+      const moonHalo = bCtx.createRadialGradient(moonX, moonY, 8, moonX, moonY, 105);
+      moonHalo.addColorStop(0, 'rgba(255, 23, 68, 0.55)');
+      moonHalo.addColorStop(0.45, 'rgba(183, 28, 28, 0.24)');
+      moonHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      bCtx.fillStyle = moonHalo;
+      bCtx.beginPath();
+      bCtx.arc(moonX, moonY, 105, 0, Math.PI * 2);
+      bCtx.fill();
+
+      bCtx.fillStyle = '#ff1744';
+      bCtx.beginPath();
+      bCtx.arc(moonX, moonY, 21, 0, Math.PI * 2);
+      bCtx.fill();
+      bCtx.fillStyle = '#180509';
+      bCtx.beginPath();
+      bCtx.arc(moonX - 2, moonY + 1, 16.5, 0, Math.PI * 2);
+      bCtx.fill();
+
+      // Tháp nhọn pháo đài thép phía bắc
+      bCtx.fillStyle = '#16090d';
+      bCtx.strokeStyle = '#61252f';
+      bCtx.lineWidth = 1.4;
+      for (let bx = 24; bx < w - 20; bx += 68) {
+        bCtx.beginPath();
+        bCtx.moveTo(bx, CONFIG.GRID_OFFSET_Y);
+        bCtx.lineTo(bx + 12, 22);
+        bCtx.lineTo(bx + 24, 34);
+        bCtx.lineTo(bx + 36, 18);
+        bCtx.lineTo(bx + 48, 34);
+        bCtx.lineTo(bx + 60, CONFIG.GRID_OFFSET_Y);
+        bCtx.closePath();
+        bCtx.fill();
+        bCtx.stroke();
+      }
+    });
+
+    // Lớp động siêu nhẹ (mép huyết quang, lửa chậu than và tàn lửa đỏ)
+    ctx.save();
+    const rimAlpha = 0.72 + Math.sin(t * 2.6) * 0.18;
+    ctx.fillStyle = `rgba(255, 23, 68, ${rimAlpha})`;
+    ctx.fillRect(patioWidth - 4, 0, 3.5, h);
+
+    for (let r = 0; r < CONFIG.ROWS; r++) {
+      const bY = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT + 24;
+      const bX = lawnEndX + 22;
+      const flame = Math.sin(t * 6.8 + r * 1.5);
+
+      ctx.fillStyle = '#ff1744';
+      ctx.beginPath();
+      ctx.moveTo(bX + 6, bY + 14);
+      ctx.quadraticCurveTo(bX + 13 + flame * 2.2, bY - 4, bX + 20, bY + 14);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffab40';
+      ctx.beginPath();
+      ctx.arc(bX + 13 + flame * 0.9, bY + 10, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (let i = 0; i < 16; i++) {
+      const seed = i * 43.9;
+      const ex = (seed * 17 + t * (28 + (i % 4) * 8)) % w;
+      const ey = h - ((seed * 13 + t * (24 + (i % 5) * 6)) % h);
+      const radius = 1.2 + (i % 3) * 0.65;
+      const alpha = 0.25 + 0.35 * Math.abs(Math.sin(t * 2.5 + i));
+      ctx.fillStyle = i % 3 === 0 ? `rgba(255, 171, 64, ${alpha})` : `rgba(255, 23, 68, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, radius, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -3700,6 +3948,16 @@ class GameRenderer {
       this.drawLangKhachZombie(ctx, zombie);
     } else if (zombie.type === 'shen') {
       this.drawShenMatHoangHon(ctx, zombie);
+    } else if (zombie.type === 'nosus_thrall') {
+      this.drawNosusThrall(ctx, zombie);
+    } else if (zombie.type === 'nosus_assassin') {
+      this.drawNosusAssassin(ctx, zombie);
+    } else if (zombie.type === 'nosus_shieldbearer') {
+      this.drawNosusShieldbearer(ctx, zombie);
+    } else if (zombie.type === 'nosus_hemomancer') {
+      this.drawNosusHemomancer(ctx, zombie);
+    } else if (zombie.type === 'nosus_warlord') {
+      this.drawNosusWarlord(ctx, zombie);
     } else {
       this.drawRegularZombie(ctx, zombie);
     }
@@ -3712,6 +3970,17 @@ class GameRenderer {
     // Hiệu ứng Khiên Kiếm Linh Hồn từ Shen Mắt Hoàng Hôn (350 Giáp, độc xuyên qua)
     if (zombie.alive && zombie.spiritShieldHp > 0) {
       this.drawSpiritShieldOverlay(ctx, zombie);
+    }
+
+    // Hào quang Cuồng Huyết / Chiến Hống Nosus
+    if (zombie.alive && (zombie.nosusSpeedBuffTimer > 0 || zombie.bloodBurstTimer > 0)) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 23, 68, 0.85)';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.ellipse(zombie.x, zombie.y + 22, 22, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
 
     // Vòng hào quang Bình Thuốc Hóa Kỹ đang buff trên zombie/rồng
@@ -4743,6 +5012,596 @@ class GameRenderer {
     if (zombie.hp < zombie.maxHp) {
       this.drawHealthBar(ctx, -20, -38, 40, 5, zombie.hp / zombie.maxHp, '#ab47bc');
     }
+    ctx.restore();
+  }
+
+  // ==========================================
+  // 5 BINH CHỦNG CHIẾN TRƯỜNG NOSUS (TỪ YẾU ĐẾN MẠNH)
+  // ==========================================
+
+  // 1. Binh Sĩ Nosus (Tier 1 - Rìu chiến & giáp sắt đen-đỏ)
+  drawNosusThrall(ctx, zombie) {
+    const time = this.getFrameTimeSec();
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 3.5;
+    const armSwing = zombie.isEating ? Math.sin(time * 14) * 0.55 - 0.35 : Math.sin(time * 4.5) * 0.16;
+
+    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 17, 7, zombie.animTime, zombie.isEating, zombie.hp < zombie.maxHp * 0.35);
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    // Chân bọc sắt
+    const legAngle = zombie.isEating ? 0 : Math.sin(zombie.walkCycle || 0) * 0.25;
+    for (const [lx, ang] of [[-5, legAngle], [5, -legAngle]]) {
+      ctx.save();
+      ctx.translate(lx, 12 + walkY);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#263238';
+      ctx.fillRect(-3.5, 0, 7, 14);
+      ctx.fillStyle = '#546e7a';
+      ctx.fillRect(-4, 7, 8, 5);
+      ctx.restore();
+    }
+
+    // Thân áo giáp thép xỉn & dải băng đỏ
+    ctx.fillStyle = '#37474f';
+    ctx.strokeStyle = '#90a4ae';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.roundRect(-10, -8 + walkY, 20, 21, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#b71c1c';
+    ctx.fillRect(-10, 5 + walkY, 20, 4);
+
+    // Giáp vai gai nhỏ
+    ctx.fillStyle = '#455a64';
+    ctx.beginPath();
+    ctx.moveTo(-13, -8 + walkY); ctx.lineTo(-5, -10 + walkY); ctx.lineTo(-7, -2 + walkY); ctx.closePath();
+    ctx.moveTo(13, -8 + walkY); ctx.lineTo(5, -10 + walkY); ctx.lineTo(7, -2 + walkY); ctx.closePath();
+    ctx.fill();
+
+    // Đầu + Mũ sắt sừng nhỏ
+    ctx.save();
+    ctx.translate(-1, -17 + walkY);
+    ctx.fillStyle = '#78909c';
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mũ sắt Nosus
+    ctx.fillStyle = '#263238';
+    ctx.strokeStyle = '#b0bec5';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, -2, 10.5, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Mắt đỏ rực
+    ctx.fillStyle = '#ff1744';
+    ctx.beginPath();
+    ctx.arc(-4.5, 0, 2, 0, Math.PI * 2);
+    ctx.arc(2.5, 0, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Rìu chiến cầm tay trước
+    ctx.save();
+    ctx.translate(-9, -2 + walkY);
+    ctx.rotate(armSwing);
+    ctx.fillStyle = '#455a64';
+    ctx.fillRect(-11, -2, 12, 4.5);
+    ctx.fillStyle = '#3e2723';
+    ctx.fillRect(-13, -12, 3, 18);
+    ctx.fillStyle = '#cfd8dc';
+    ctx.strokeStyle = '#d50000';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-13, -11);
+    ctx.lineTo(-22, -14);
+    ctx.lineTo(-20, -3);
+    ctx.lineTo(-13, -5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawZombieStatus(ctx, zombie, walkY, -46, -34);
+    if (zombie.hp < zombie.maxHp) {
+      this.drawHealthBar(ctx, -18, -33, 36, 4.5, zombie.hp / zombie.maxHp, '#ef5350');
+    }
+    ctx.restore();
+  }
+
+  // 2. Sát Thủ Huyết Đao Nosus (Tier 2 - Áo choàng đỏ, song đao răng cưa, Cuồng Huyết)
+  drawNosusAssassin(ctx, zombie) {
+    const time = this.getFrameTimeSec();
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 4;
+    const isBurst = zombie.bloodBurstTimer > 0;
+    const armSwing = zombie.isEating ? Math.sin(time * 16) * 0.65 - 0.3 : Math.sin(time * 5.5) * 0.22;
+
+    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 17, 7, zombie.animTime, zombie.isEating, false);
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    if (isBurst) {
+      ctx.fillStyle = 'rgba(255, 23, 68, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(2, -4, 22, 28, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Khăn choàng rách đỏ thẫm
+    const capeWave = Math.sin(time * 8) * 4;
+    ctx.fillStyle = '#8e0000';
+    ctx.beginPath();
+    ctx.moveTo(4, -7 + walkY);
+    ctx.quadraticCurveTo(19, -2 + capeWave, 23, 14 + capeWave * 0.7);
+    ctx.lineTo(10, 14 + walkY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Thân giáp da đen gọn gàng
+    ctx.fillStyle = '#1c1518';
+    ctx.strokeStyle = isBurst ? '#ff5252' : '#78909c';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.roundRect(-9, -8 + walkY, 18, 22, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Đai chéo đỏ ngực
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-8, -7 + walkY);
+    ctx.lineTo(8, 10 + walkY);
+    ctx.stroke();
+
+    // Đầu trùm khăn sát thủ
+    ctx.save();
+    ctx.translate(-1, -17 + walkY);
+    ctx.fillStyle = '#261419';
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isBurst ? '#ffea00' : '#ff1744';
+    ctx.beginPath();
+    ctx.ellipse(-4.5, 0, 2.4, 1.3, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(2.2, 0, 2.2, 1.3, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Lưỡi huyết đao sắc bén
+    ctx.save();
+    ctx.translate(-9, -1 + walkY);
+    ctx.rotate(armSwing);
+    ctx.fillStyle = '#212121';
+    ctx.fillRect(-10, -2, 11, 4);
+    ctx.fillStyle = '#eceff1';
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-10, -2);
+    ctx.lineTo(-27, -7);
+    ctx.lineTo(-21, 3);
+    ctx.lineTo(-10, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawZombieStatus(ctx, zombie, walkY, -46, -34);
+    if (zombie.hp < zombie.maxHp) {
+      this.drawHealthBar(ctx, -18, -34, 36, 4.5, zombie.hp / zombie.maxHp, isBurst ? '#ffea00' : '#ff1744');
+    }
+    ctx.restore();
+  }
+
+  // 3. Vệ Binh Khiên Sắt Nosus (Tier 3 - Đại thuẫn thép đen viền đỏ 750 Giáp)
+  drawNosusShieldbearer(ctx, zombie) {
+    const time = this.getFrameTimeSec();
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 2.5;
+    const hasMetalShield = (zombie.armorHp || 0) > 0 && zombie.hasShield !== false;
+
+    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 20, 8, zombie.animTime, zombie.isEating, false);
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    // Giáp nặng toàn thân
+    ctx.fillStyle = '#263238';
+    ctx.strokeStyle = '#90a4ae';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.roundRect(-12, -10 + walkY, 24, 24, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Huy hiệu Nosus đỏ giữa ngực
+    ctx.fillStyle = '#d50000';
+    ctx.beginPath();
+    ctx.moveTo(0, -6 + walkY); ctx.lineTo(6, 2 + walkY); ctx.lineTo(0, 10 + walkY); ctx.lineTo(-6, 2 + walkY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Đầu đội mũ trụ chiến binh
+    ctx.save();
+    ctx.translate(0, -20 + walkY);
+    ctx.fillStyle = '#37474f';
+    ctx.strokeStyle = '#cfd8dc';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.roundRect(-10, -10, 20, 20, 6);
+    ctx.fill();
+    ctx.stroke();
+    // Chỏm mũ đỏ
+    ctx.fillStyle = '#b71c1c';
+    ctx.fillRect(-3, -15, 6, 6);
+    // Khe mắt sáng đỏ
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-8, -2, 13, 4);
+    ctx.fillStyle = '#ff1744';
+    ctx.fillRect(-6, -1, 4, 2.2);
+    ctx.fillRect(0, -1, 4, 2.2);
+    ctx.restore();
+
+    // ĐẠI THUẪN THIẾT HUYẾT phía trước
+    if (hasMetalShield) {
+      const shieldShake = zombie.flashTimer > 0 ? -2 : 0;
+      ctx.save();
+      ctx.translate(-15 + shieldShake, -2 + walkY);
+      const sGrad = ctx.createLinearGradient(-8, -22, 8, 22);
+      sGrad.addColorStop(0, '#455a64');
+      sGrad.addColorStop(0.5, '#263238');
+      sGrad.addColorStop(1, '#102027');
+      ctx.fillStyle = sGrad;
+      ctx.strokeStyle = '#ff1744';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-7, -21);
+      ctx.lineTo(7, -18);
+      ctx.lineTo(7, 16);
+      ctx.lineTo(-1, 24);
+      ctx.lineTo(-7, 16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Gai nhọn & huyết ấn trên khiên
+      ctx.fillStyle = '#d50000';
+      ctx.beginPath();
+      ctx.arc(-1, 0, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#cfd8dc';
+      ctx.beginPath();
+      ctx.moveTo(-7, -8); ctx.lineTo(-13, -6); ctx.lineTo(-7, -4);
+      ctx.moveTo(-7, 4); ctx.lineTo(-13, 6); ctx.lineTo(-7, 8);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    this.drawZombieStatus(ctx, zombie, walkY, -52, -40);
+    if (hasMetalShield && zombie.maxArmorHp) {
+      this.drawHealthBar(ctx, -20, -45, 40, 4, zombie.armorHp / zombie.maxArmorHp, '#90a4ae');
+    }
+    if (zombie.hp < zombie.maxHp) {
+      this.drawHealthBar(ctx, -20, -39, 40, 4.5, zombie.hp / zombie.maxHp, '#ef5350');
+    }
+    ctx.restore();
+  }
+
+  // 4. Huyết Pháp Sư Nosus (Tier 4 - Áo choàng pháp sư, trượng huyết cầu & aura Huyết Tế)
+  drawNosusHemomancer(ctx, zombie) {
+    const time = this.getFrameTimeSec();
+    const walkY = (zombie.isAttacking || zombie.isEating) ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 2.5;
+    const isCasting = zombie.hemoCastAnimTimer > 0;
+
+    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 19, 7.5, zombie.animTime, zombie.isEating, false);
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    // Áo choàng huyết thuật dài
+    const robeGrad = ctx.createLinearGradient(-12, -12 + walkY, 12, 22 + walkY);
+    robeGrad.addColorStop(0, '#880e4f');
+    robeGrad.addColorStop(0.5, '#4a0014');
+    robeGrad.addColorStop(1, '#1a0007');
+    ctx.fillStyle = robeGrad;
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-10, -10 + walkY);
+    ctx.lineTo(10, -10 + walkY);
+    ctx.lineTo(15, 22 + walkY);
+    ctx.lineTo(-14, 22 + walkY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Cổ áo cao & huy hiệu hồng ngọc
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath();
+    ctx.arc(-1, -4 + walkY, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mũ trùm pháp sư Nosus
+    ctx.save();
+    ctx.translate(-1, -19 + walkY);
+    ctx.fillStyle = '#310010';
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-11, 6);
+    ctx.quadraticCurveTo(-12, -13, 0, -14);
+    ctx.quadraticCurveTo(12, -13, 12, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Mắt phát sáng huyền bí đỏ tươi
+    ctx.fillStyle = isCasting ? '#ffeb3b' : '#ff1744';
+    ctx.beginPath();
+    ctx.arc(-4, -1, 2.2, 0, Math.PI * 2);
+    ctx.arc(3, -1, 2.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Trượng Huyết Cầu lơ lửng phía trước
+    ctx.save();
+    ctx.translate(-16, -4 + walkY);
+    ctx.strokeStyle = '#4e342e';
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.moveTo(0, 22);
+    ctx.lineTo(-2, -16);
+    ctx.stroke();
+
+    const orbR = isCasting ? 8 : 6;
+    ctx.fillStyle = 'rgba(255, 23, 68, 0.35)';
+    ctx.beginPath();
+    ctx.arc(-2, -20 + Math.sin(time * 5) * 2, orbR + 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ff1744';
+    ctx.strokeStyle = '#ffcdd2';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(-2, -20 + Math.sin(time * 5) * 2, orbR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawZombieStatus(ctx, zombie, walkY, -54, -40);
+    if (zombie.hp < zombie.maxHp) {
+      this.drawHealthBar(ctx, -20, -39, 40, 5, zombie.hp / zombie.maxHp, '#ff1744');
+    }
+    ctx.restore();
+  }
+
+  // 5. Darius - Đại Tướng Nosus (Giáp Noxian sừng thép, đại rìu hành quyết rõ động tác bổ rìu / xoay 3x3 / bất tử 2s / cuồng nộ x2)
+  drawNosusWarlord(ctx, zombie) {
+    const time = this.getFrameTimeSec();
+    const spinTimer = zombie.spinAnimTimer || 0;
+    const isSpinning = spinTimer > 0;
+    const chopTimer = zombie.slashAnimTimer || 0;
+    const isChopping = chopTimer > 0;
+    const isFrenzied = !!zombie.isDariusFrenzied;
+    const isInvuln = (zombie.invulnerableTimer || 0) > 0;
+    const isHalfHp = zombie.hp <= zombie.maxHp * 0.5;
+    const walkY = (zombie.isEating || isSpinning) ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 3;
+
+    // Tính góc vung đại rìu rõ ràng: giơ rìu lên theo attackTimer -> bổ xuống cực mạnh khi slashAnimTimer > 0
+    let axeAngle = Math.sin(zombie.walkCycle || 0) * 0.14;
+    let torsoLean = 0;
+    if (isSpinning) {
+      const spinProg = 1 - Math.max(0, Math.min(1, spinTimer / 0.65));
+      axeAngle = -spinProg * Math.PI * 4;
+    } else if (isChopping) {
+      const chopProg = 1 - Math.max(0, Math.min(1, chopTimer / 0.38));
+      // Bổ từ trên cao (+0.95 rad) chém gập mạnh xuống phía trước (-1.45 rad)
+      axeAngle = 0.95 - Math.min(1, chopProg * 1.45) * 2.4;
+      torsoLean = -0.18 * Math.sin(Math.min(1, chopProg * 1.3) * Math.PI);
+    } else if (zombie.isEating) {
+      const atkRatio = Math.max(0, Math.min(1, (zombie.attackTimer || 0) / (zombie.attackInterval || 1.75)));
+      // Giơ rìu dần lên cao chuẩn bị bổ
+      axeAngle = -0.15 + atkRatio * 1.1;
+      torsoLean = atkRatio * 0.12;
+    }
+
+    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 28, 10, zombie.animTime, zombie.isEating, false);
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    // 1. Hào quang Cuồng Nộ (<100 HP) hoặc Nửa Máu (<=50% HP)
+    if (isFrenzied) {
+      const pulse = 0.6 + 0.35 * Math.sin(time * 12);
+      ctx.strokeStyle = `rgba(255, 23, 68, ${pulse})`;
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 33, 41, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Vệt huyết hỏa bốc lên khi tăng tốc x2
+      ctx.fillStyle = 'rgba(255, 82, 82, 0.55)';
+      for (let i = 0; i < 4; i++) {
+        const fx = -14 + i * 9 + Math.sin(time * 9 + i) * 3;
+        const fy = 18 - ((time * 48 + i * 13) % 44);
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, 3.2, 6.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (isHalfHp) {
+      ctx.strokeStyle = `rgba(255, 23, 68, ${0.38 + 0.25 * Math.sin(time * 6)})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 30, 38, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 2. Khiên Bất Tử 2s (<100 HP)
+    if (isInvuln) {
+      ctx.fillStyle = 'rgba(255, 213, 79, 0.18)';
+      ctx.strokeStyle = '#ffd54f';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.ellipse(0, -8, 35, 43, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Áo choàng chiến tướng đỏ sẫm
+    const capeWave = Math.sin(time * (isFrenzied ? 10 : 5)) * 4.5;
+    ctx.fillStyle = isFrenzied ? '#b71c1c' : '#7f0000';
+    ctx.beginPath();
+    ctx.moveTo(8, -14 + walkY);
+    ctx.quadraticCurveTo(30, -4 + capeWave, 33, 22 + capeWave * 0.6);
+    ctx.lineTo(10, 22 + walkY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Chân thiết giáp to bản
+    const legAng = (zombie.isEating || isSpinning) ? 0 : Math.sin(zombie.walkCycle || 0) * 0.22;
+    for (const [lx, ang] of [[-8, legAng], [8, -legAng]]) {
+      ctx.save();
+      ctx.translate(lx, 13 + walkY);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#1c1f24';
+      ctx.strokeStyle = isFrenzied ? '#ffd54f' : '#ff5252';
+      ctx.lineWidth = 1.3;
+      ctx.fillRect(-5, 0, 10, 17);
+      ctx.strokeRect(-5, 0, 10, 17);
+      ctx.restore();
+    }
+
+    // Thân trên nghiêng theo nhịp bổ rìu
+    ctx.save();
+    ctx.rotate(torsoLean);
+
+    // Thân giáp Thiết Huyết đồ sộ
+    const bodyGrad = ctx.createLinearGradient(-16, -16 + walkY, 16, 16 + walkY);
+    bodyGrad.addColorStop(0, isFrenzied ? '#4a1c1c' : '#37474f');
+    bodyGrad.addColorStop(0.55, '#1c242b');
+    bodyGrad.addColorStop(1, '#0d1115');
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = isInvuln ? '#ffd54f' : (isFrenzied || isHalfHp ? '#ff1744' : '#b0bec5');
+    ctx.lineWidth = 1.9;
+    ctx.beginPath();
+    ctx.roundRect(-16, -16 + walkY, 32, 31, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Huyết ấn Noxus trước ngực
+    ctx.fillStyle = isFrenzied ? '#ffd54f' : '#ff1744';
+    ctx.beginPath();
+    ctx.moveTo(0, -10 + walkY); ctx.lineTo(8, -1 + walkY); ctx.lineTo(0, 9 + walkY); ctx.lineTo(-8, -1 + walkY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Giáp vai gai nhọn khổng lồ
+    for (const dir of [-1, 1]) {
+      ctx.fillStyle = '#263238';
+      ctx.strokeStyle = isFrenzied ? '#ffd54f' : '#ff5252';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(dir * 12, -16 + walkY);
+      ctx.lineTo(dir * 26, -25 + walkY);
+      ctx.lineTo(dir * 23, -6 + walkY);
+      ctx.lineTo(dir * 12, -6 + walkY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Đầu Darius: chiến tướng giáp sừng thép & vệt sẹo mặt
+    ctx.save();
+    ctx.translate(-1, -28 + walkY);
+    ctx.fillStyle = '#212529';
+    ctx.strokeStyle = isInvuln ? '#ffd54f' : '#ff5252';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Sừng sắt hai bên
+    ctx.fillStyle = isFrenzied ? '#ffd54f' : '#cfd8dc';
+    ctx.beginPath();
+    ctx.moveTo(-10, -6); ctx.lineTo(-21, -20); ctx.lineTo(-6, -11); ctx.closePath();
+    ctx.moveTo(10, -6); ctx.lineTo(21, -20); ctx.lineTo(6, -11); ctx.closePath();
+    ctx.fill();
+
+    // Đôi mắt rực lửa chiến tướng
+    ctx.fillStyle = isFrenzied ? '#ffd54f' : '#ff1744';
+    ctx.fillRect(-7, -2, 5, 3);
+    ctx.fillRect(1, -2, 5, 3);
+    ctx.restore();
+
+    // ĐẠI RÌU HÀNH QUYẾT DARIUS (Xoay 360 độ khi Máy Chém Xoay hoặc Bổ thẳng xuống)
+    ctx.save();
+    ctx.translate(isSpinning ? 0 : -15, (isSpinning ? -4 : -6) + walkY);
+    ctx.rotate(axeAngle);
+
+    if (isSpinning) {
+      // Vệt lưỡi rìu xoay tròn 360 độ rõ nét quanh Darius
+      ctx.strokeStyle = 'rgba(255, 23, 68, 0.85)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 34, 0, Math.PI * 1.45);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 213, 79, 0.9)';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 36, 0.2, Math.PI * 1.3);
+      ctx.stroke();
+    } else if (isChopping) {
+      // Vệt chém bổ dọc
+      ctx.strokeStyle = 'rgba(255, 23, 68, 0.78)';
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 32, Math.PI * 0.72, Math.PI * 1.38);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#3e2723';
+    ctx.fillRect(-4, -24, 5, 38);
+    ctx.fillStyle = isFrenzied ? '#ff8a80' : '#cfd8dc';
+    ctx.strokeStyle = isFrenzied ? '#ffd54f' : '#ff1744';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(-4, -22);
+    ctx.lineTo(-25, -28);
+    ctx.quadraticCurveTo(-31, -14, -23, 0);
+    ctx.lineTo(-4, -8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore(); // End torsoLean
+
+    // Nhãn trạng thái rõ ràng trên đầu Darius
+    if (isInvuln || isFrenzied) {
+      ctx.save();
+      ctx.font = 'bold 9.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 2.6;
+      const badgeText = isInvuln
+        ? `BẤT TỬ ${Math.max(0, zombie.invulnerableTimer).toFixed(1)}s`
+        : 'CUỒNG NỘ ×2 · ONE-HIT';
+      ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+      ctx.strokeText(badgeText, 0, -58);
+      ctx.fillStyle = isInvuln ? '#ffd54f' : '#ff5252';
+      ctx.fillText(badgeText, 0, -58);
+      ctx.restore();
+    }
+
+    this.drawZombieStatus(ctx, zombie, walkY, -68, -50);
+    this.drawHealthBar(ctx, -27, -50, 54, 5.8, zombie.hp / zombie.maxHp, isFrenzied ? '#ffd54f' : '#ff1744');
     ctx.restore();
   }
 
@@ -7926,6 +8785,96 @@ class GameRenderer {
 
         ctx.strokeStyle = `rgba(255, 245, 157, ${0.98 * alpha})`;
         ctx.lineWidth = 2.5 * (1 - p * 0.3);
+        ctx.stroke();
+      } else if (eff.kind === 'nosus_blood_bolt') {
+        const alpha = 1 - p;
+        const bx = (eff.startX ?? eff.x) + ((eff.endX ?? eff.x) - (eff.startX ?? eff.x)) * p;
+        const by = (eff.startY ?? eff.y) + ((eff.endY ?? eff.y) - (eff.startY ?? eff.y)) * p;
+
+        ctx.strokeStyle = `rgba(255, 23, 68, ${0.82 * alpha})`;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(eff.startX ?? eff.x, eff.startY ?? eff.y);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff1744';
+        ctx.beginPath();
+        ctx.arc(bx, by, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffcdd2';
+        ctx.beginPath();
+        ctx.arc(bx, by, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (eff.kind === 'nosus_blood_pact') {
+        const alpha = 1 - p;
+        const rx = 32 + p * 86;
+        const ry = 22 + p * 68;
+        ctx.fillStyle = `rgba(213, 0, 0, ${0.14 * alpha})`;
+        ctx.strokeStyle = `rgba(255, 23, 68, ${0.9 * alpha})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (eff.kind === 'nosus_darius_spin') {
+        const alpha = 1 - p;
+        const tY = CONFIG.GRID_OFFSET_Y + (eff.minRow ?? 0) * CONFIG.CELL_HEIGHT + 6;
+        const bY = CONFIG.GRID_OFFSET_Y + ((eff.maxRow ?? 4) + 1) * CONFIG.CELL_HEIGHT - 6;
+        const sx = eff.startX ?? (eff.x - 130);
+        const ex = eff.endX ?? (eff.x + 130);
+        const spinAng = p * Math.PI * 6;
+
+        // Vùng quét Máy Chém Xoay 3x3
+        ctx.fillStyle = `rgba(213, 0, 0, ${0.14 * alpha})`;
+        ctx.fillRect(sx, tY, Math.max(20, ex - sx), bY - tY);
+        ctx.strokeStyle = `rgba(255, 82, 82, ${0.55 * alpha})`;
+        ctx.lineWidth = 2.2;
+        ctx.strokeRect(sx, tY, Math.max(20, ex - sx), bY - tY);
+
+        // Vòng lưỡi rìu xoay 360 độ
+        ctx.strokeStyle = `rgba(255, 23, 68, ${0.95 * alpha})`;
+        ctx.lineWidth = 7 * (1 - p * 0.35);
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, 112 * (0.72 + p * 0.28), spinAng, spinAng + Math.PI * 1.45);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 213, 79, ${0.9 * alpha})`;
+        ctx.lineWidth = 3 * (1 - p * 0.35);
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, 96 * (0.75 + p * 0.25), spinAng + Math.PI, spinAng + Math.PI * 2.2);
+        ctx.stroke();
+
+        // Sóng hồi máu xanh ngọc nhẹ ở tâm
+        ctx.strokeStyle = `rgba(105, 240, 174, ${0.8 * alpha})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, 20 + p * 45, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (eff.kind === 'nosus_darius_chop') {
+        const alpha = 1 - p;
+        const rad = eff.isExecute ? 58 : 44;
+        ctx.strokeStyle = eff.isExecute
+          ? `rgba(255, 213, 79, ${0.98 * alpha})`
+          : `rgba(255, 23, 68, ${0.95 * alpha})`;
+        ctx.lineWidth = (eff.isExecute ? 8 : 6) * (1 - p * 0.4);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(eff.x + 12, eff.y, rad, Math.PI * 0.72, Math.PI * 1.42);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.85 * alpha})`;
+        ctx.lineWidth = 2.4 * (1 - p * 0.4);
+        ctx.stroke();
+      } else if (eff.kind === 'nosus_darius_last_stand') {
+        const alpha = 1 - p;
+        ctx.fillStyle = `rgba(255, 23, 68, ${0.2 * alpha})`;
+        ctx.strokeStyle = `rgba(255, 213, 79, ${0.98 * alpha})`;
+        ctx.lineWidth = 4.5 * (1 - p * 0.3);
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, 26 + p * 115, 0, Math.PI * 2);
+        ctx.fill();
         ctx.stroke();
       }
 
@@ -12562,43 +13511,6 @@ class GameRenderer {
     ctx.stroke();
 
     ctx.restore();
-    ctx.restore();
-  }
-
-  drawBossHealthBar(ctx, boss) {
-    if (!boss || !boss.alive) return;
-    const barW = 380;
-    const barH = 22;
-    const x = (CONFIG.CANVAS_WIDTH - barW) / 2;
-    const y = 38;
-    const ratio = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
-
-    ctx.save();
-    // Khung viền đá hắc ám
-    ctx.fillStyle = 'rgba(10, 8, 12, 0.9)';
-    ctx.strokeStyle = '#b71c1c';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.roundRect(x - 4, y - 4, barW + 8, barH + 8, 6);
-    ctx.fill();
-    ctx.stroke();
-
-    // Lớp máu gradient rực lửa
-    const hpGrad = ctx.createLinearGradient(x, 0, x + barW, 0);
-    hpGrad.addColorStop(0, '#d50000');
-    hpGrad.addColorStop(0.5, '#ff3d00');
-    hpGrad.addColorStop(1, '#ff9100');
-    ctx.fillStyle = hpGrad;
-    ctx.beginPath();
-    ctx.roundRect(x, y, barW * ratio, barH, 4);
-    ctx.fill();
-
-    // Văn bản tên Boss & HP chi tiết (Hiển thị chính xác theo boss.maxHp)
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`🐲 ZOMBOT DARK DRAGON: ${Math.ceil(boss.hp).toLocaleString()} / ${Math.ceil(boss.maxHp).toLocaleString()} HP`, CONFIG.CANVAS_WIDTH / 2, y + 15);
-
     ctx.restore();
   }
 

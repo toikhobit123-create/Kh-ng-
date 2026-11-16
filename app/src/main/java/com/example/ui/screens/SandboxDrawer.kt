@@ -309,7 +309,12 @@ fun SandboxDrawer(
                 "renekton_croc" to "CS",
                 "nasus_hound" to "TK",
                 "sand_soldier" to "LC",
-                "sand_coffin" to "QT"
+                "sand_coffin" to "QT",
+                "nosus_thrall" to "NT",
+                "nosus_assassin" to "NA",
+                "nosus_shieldbearer" to "NS",
+                "nosus_hemomancer" to "NH",
+                "nosus_warlord" to "DR"
               )
             }
 

@@ -115,6 +115,11 @@ class WaveManager {
       gargantuar: 10,
       sand_soldier: 4,
       sand_coffin: 6,
+      nosus_thrall: 2,
+      nosus_assassin: 4,
+      nosus_shieldbearer: 6,
+      nosus_hemomancer: 8,
+      nosus_warlord: 11,
       renekton_croc: 12,
       nasus_hound: 12,
       zombot_dark_dragon: 20,
@@ -279,6 +284,45 @@ class WaveManager {
     } else if (level === 13) {
       // MAP 13: ĐẠI CHIẾN BOSS AZIR HOÀNG ĐẾ SA MẠC (20.000 HP)
       chosenList.push('azir_desert_emperor');
+    } else if (level === 14) {
+      // CHIẾN TRƯỜNG NOSUS - MÀN 1/3: TIỀN ĐỒN THIẾT HUYẾT (Binh Sĩ, Sát Thủ & Vệ Binh Khiên Sắt)
+      if (waveNumber === 1) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall');
+      } else if (waveNumber === 2) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin');
+      } else if (waveNumber === 3) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer');
+      } else if (waveNumber === 4) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer');
+      } else {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
+      }
+    } else if (level === 15) {
+      // CHIẾN TRƯỜNG NOSUS - MÀN 2/3: HUYẾT TẾ PHÁO ĐÀI (+ Huyết Pháp Sư Nosus)
+      if (waveNumber === 1) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer');
+      } else if (waveNumber === 2) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_hemomancer');
+      } else if (waveNumber === 3) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer');
+      } else if (waveNumber === 4) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer');
+      } else {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
+      }
+    } else if (level === 16) {
+      // CHIẾN TRƯỜNG NOSUS - MÀN 3/3: ĐẠI TƯỚNG THIẾT HUYẾT (Hội tụ toàn quân 5 loại từ yếu tới mạnh)
+      if (waveNumber === 1) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer');
+      } else if (waveNumber === 2) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer');
+      } else if (waveNumber === 3) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
+      } else if (waveNumber === 4) {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
+      } else {
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord', 'nosus_warlord');
+      }
     }
 
     // 2. BẮT BUỘC: SẮP XẾP ZOMBIE YẾU RA TRƯỚC, ZOMBIE MẠNH DẦN VỀ SAU
@@ -300,7 +344,10 @@ class WaveManager {
       const type = chosenList[i];
       const assignedRow = Math.floor(Math.random() * CONFIG.ROWS);
 
-      const paceScale = level === 11 ? 0.85
+      const paceScale = level === 16 ? 0.76
+        : level === 15 ? 0.82
+        : level === 14 ? 0.88
+        : level === 11 ? 0.85
         : level >= 10 ? 0.72
         : level === 9 ? 0.78
         : level === 8 ? 0.84
@@ -950,6 +997,11 @@ class InputHandler {
     bindSpawn('sb-spawn-azir', 'azir_desert_emperor');
     bindSpawn('sb-spawn-renekton', 'renekton_croc');
     bindSpawn('sb-spawn-nasus', 'nasus_hound');
+    bindSpawn('sb-spawn-nosus-thrall', 'nosus_thrall');
+    bindSpawn('sb-spawn-nosus-assassin', 'nosus_assassin');
+    bindSpawn('sb-spawn-nosus-shieldbearer', 'nosus_shieldbearer');
+    bindSpawn('sb-spawn-nosus-hemomancer', 'nosus_hemomancer');
+    bindSpawn('sb-spawn-nosus-warlord', 'nosus_warlord');
 
     const resetCdBtn = document.getElementById('sb-reset-cooldowns');
     if (resetCdBtn) {

@@ -6,11 +6,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,10 +52,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.model.CampaignProgress
 import com.example.model.HudSnapshot
 import com.example.model.PlantCatalogItem
@@ -116,7 +120,22 @@ fun InGameHudOverlay(
     Modifier
   }
 
-  Box(modifier = Modifier.fillMaxSize()) {
+  BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val layoutDirection = LocalLayoutDirection.current
+    val safeStartDp = if (settings.respectCutoutInsets) {
+      WindowInsets.safeDrawing.asPaddingValues().calculateLeftPadding(layoutDirection).value
+    } else {
+      0f
+    }
+    val conveyorStartPad = if (isConveyor) {
+      val canvasWidthDp = minOf(maxWidth.value, maxHeight.value * (16f / 9f))
+      val canvasLeftDp = ((maxWidth.value - canvasWidthDp) / 2f).coerceAtLeast(0f)
+      val beltRightAbsDp = canvasLeftDp + canvasWidthDp * (68f / 960f)
+      ((beltRightAbsDp - safeStartDp - 6f) + 8f).coerceAtLeast(64f).dp
+    } else {
+      0.dp
+    }
+
     // Interactive HUD Layer (leaves Canvas lawn untouched everywhere else)
     Box(
       modifier = Modifier
@@ -138,7 +157,11 @@ fun InGameHudOverlay(
       }
 
       // 2. Top Gutter Bar (Wave / Boss Progress + Quick Controls)
-      val gutterStartPad = if (!isConveyor && !settings.hudOnRight) 94.dp else 0.dp
+      val gutterStartPad = when {
+        isConveyor -> conveyorStartPad
+        !settings.hudOnRight -> 94.dp
+        else -> 0.dp
+      }
       val gutterEndPad = if (!isConveyor && settings.hudOnRight) 94.dp else 0.dp
       TopGutterBar(
         hud = hud,
@@ -448,42 +471,61 @@ private fun TopGutterBar(
       modifier = Modifier.weight(1f, fill = false)
     ) {
       Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(if (isConveyor) 8.dp else 10.dp),
         color = PlumSurface.copy(alpha = 0.88f),
         border = BorderStroke(1.2.dp, if (hud.isBossLevel) CrimsonSoul else BorderMauve)
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+          modifier = Modifier.padding(
+            horizontal = if (isConveyor) 7.dp else 10.dp,
+            vertical = if (isConveyor) 3.dp else 6.dp
+          ),
           verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
+          horizontalArrangement = Arrangement.spacedBy(if (isConveyor) 5.dp else 8.dp)
         ) {
           Text(
             text = if (hud.isSandbox) "SANDBOX" else "CẤP ${hud.currentLevel}",
-            style = MaterialTheme.typography.labelLarge,
+            style = if (isConveyor) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.ExtraBold,
             color = if (hud.isSandbox) AmberGold else ToxicLime
           )
 
           if (hud.isBossLevel) {
+            val compactBossBar = isConveyor
             Row(
               verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(6.dp)
+              horizontalArrangement = Arrangement.spacedBy(if (compactBossBar) 4.dp else 6.dp)
             ) {
-              Icon(Icons.Filled.Whatshot, contentDescription = null, tint = CrimsonSoul, modifier = Modifier.size(16.dp))
+              Icon(
+                Icons.Filled.Whatshot,
+                contentDescription = null,
+                tint = CrimsonSoul,
+                modifier = Modifier.size(if (compactBossBar) 13.dp else 16.dp)
+              )
               Column {
                 Text(
                   text = when (hud.currentLevel) {
                     13 -> "AZIR SA MẠC: ${hud.bossHp} / ${hud.bossMaxHp}"
                     12 -> "RỒNG NGÀN TUỔI: ${hud.bossHp} / ${hud.bossMaxHp}"
-                    else -> "RỒNG ĐEN: ${hud.bossHp} / ${hud.bossMaxHp}"
+                    else -> if (compactBossBar) {
+                      "RỒNG ĐEN ${hud.bossHp}/${hud.bossMaxHp}"
+                    } else {
+                      "RỒNG ĐEN: ${hud.bossHp} / ${hud.bossMaxHp}"
+                    }
                   },
-                  style = PvZTheme.gothicTypography.hudBadge,
-                  color = PvZTheme.colors.bossEmber
+                  style = if (compactBossBar) {
+                    PvZTheme.gothicTypography.hudBadge.copy(fontSize = 10.sp, lineHeight = 12.sp)
+                  } else {
+                    PvZTheme.gothicTypography.hudBadge
+                  },
+                  color = PvZTheme.colors.bossEmber,
+                  maxLines = 1
                 )
                 LinearProgressIndicator(
                   progress = { (hud.bossHp.toFloat() / hud.bossMaxHp.coerceAtLeast(1)).coerceIn(0f, 1f) },
                   modifier = Modifier
-                    .width(120.dp)
-                    .height(6.dp)
+                    .width(if (compactBossBar) 84.dp else 120.dp)
+                    .height(if (compactBossBar) 4.dp else 6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                   color = CrimsonSoul,
                   trackColor = ObsidianBg
@@ -518,6 +560,7 @@ private fun TopGutterBar(
           hud.waveStatusTitle
         }
         Surface(
+          modifier = Modifier.weight(1f, fill = false),
           shape = RoundedCornerShape(10.dp),
           color = PlumSurfaceElevated.copy(alpha = 0.9f),
           border = BorderStroke(1.dp, AmberGold.copy(alpha = 0.7f))
@@ -528,7 +571,7 @@ private fun TopGutterBar(
             color = AmberGold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = if (isConveyor) 4.dp else 6.dp)
           )
         }
       }

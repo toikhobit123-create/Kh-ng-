@@ -75,7 +75,11 @@ data class PvZColorPalette(
   val borderHighlightMauve: Color = BorderHighlightMauve,
   val desertSandTop: Color = DesertSandTop,
   val desertCardTop: Color = DesertCardTop,
-  val desertCardBottom: Color = DesertCardBottom
+  val desertCardBottom: Color = DesertCardBottom,
+  val nosusCrimsonTop: Color = NosusCrimsonTop,
+  val nosusCardTop: Color = NosusCardTop,
+  val nosusCardBottom: Color = NosusCardBottom,
+  val nosusBorderCrimson: Color = NosusBorderCrimson
 ) {
   val worldMapBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(midnightPlum, obsidianBg))
@@ -89,6 +93,9 @@ data class PvZColorPalette(
   val desertSelectionBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(desertSandTop, obsidianBg))
 
+  val nosusSelectionBackdropBrush: Brush
+    get() = Brush.verticalGradient(listOf(nosusCrimsonTop, obsidianBg))
+
   val gothicCardBrush: Brush
     get() = Brush.verticalGradient(listOf(plumSurfaceCard, plumSurfaceElevated))
 
@@ -100,6 +107,9 @@ data class PvZColorPalette(
 
   val desertCardBrush: Brush
     get() = Brush.verticalGradient(listOf(desertCardTop, desertCardBottom))
+
+  val nosusCardBrush: Brush
+    get() = Brush.verticalGradient(listOf(nosusCardTop, nosusCardBottom))
 
   val rusticWoodBrush: Brush
     get() = Brush.verticalGradient(listOf(rusticWoodTop, rusticWoodBottom))
