@@ -2887,8 +2887,10 @@ class Zombie {
       this.slashAnimTimer = 0;
       this.hasDariusLastStand = false;
       this.isDariusFrenzied = false;
+      this.baseAttackInterval = this.attackInterval || 1.75;
       this.dariusLastStandThreshold = proto.lastStandThreshold || 100;
-      this.dariusInvulnDuration = proto.invulnDuration || 2.0;
+      this.dariusInvulnDuration = proto.invulnDuration || 4.0;
+      this.dariusInvulnAttackInterval = proto.invulnAttackInterval || 1.0;
       this.dariusFrenzySpeedMult = proto.frenzySpeedMult || 2.0;
     }
   }
@@ -4504,14 +4506,19 @@ class Zombie {
       }
     }
 
-    // Darius (Đại Tướng Nosus) - Skill 1: Khi còn <= 50% HP kích hoạt Máy Chém Xoay 3x3 mỗi 5s hồi 150-200-300 HP
-    if (this.type === 'nosus_warlord' && !this.isHypnotized && this.alive && this.hp > 0 && this.hp <= this.maxHp * 0.5 && this.x <= CONFIG.CANVAS_WIDTH - 10) {
-      if (this.spinTimer > 0) {
-        this.spinTimer = Math.max(0, this.spinTimer - dt);
-      }
-      if (this.spinTimer <= 0) {
-        this.spinTimer = this.spinCooldown || 5.0;
-        this.performDariusSpin(gameState);
+    // Darius (Đại Tướng Nosus) - Tốc đánh 1s/đòn khi đang Bất Tử, và Skill 1 Máy Chém Xoay 3x3 mỗi 5s khi <= 50% HP
+    if (this.type === 'nosus_warlord') {
+      this.attackInterval = this.invulnerableTimer > 0
+        ? (this.dariusInvulnAttackInterval || 1.0)
+        : (this.baseAttackInterval || 1.75);
+      if (!this.isHypnotized && this.alive && this.hp > 0 && this.hp <= this.maxHp * 0.5 && this.x <= CONFIG.CANVAS_WIDTH - 10) {
+        if (this.spinTimer > 0) {
+          this.spinTimer = Math.max(0, this.spinTimer - dt);
+        }
+        if (this.spinTimer <= 0) {
+          this.spinTimer = this.spinCooldown || 5.0;
+          this.performDariusSpin(gameState);
+        }
       }
     }
 
@@ -5416,12 +5423,13 @@ class Zombie {
     }
   }
 
-  // Darius - Skill 2: Xuống dưới 100 HP -> Bất tử 2s, đòn thường one-hit plant, tăng ×2 tốc độ chạy tới khi chết
+  // Darius - Skill 2: Xuống dưới 100 HP -> Bất tử 4s (tốc đánh 1s/đòn), đòn thường one-hit plant, tăng ×2 tốc độ chạy tới khi chết
   triggerDariusLastStand(prevHp, gameState) {
     if (this.hasDariusLastStand) return;
     this.hasDariusLastStand = true;
     this.isDariusFrenzied = true;
-    this.invulnerableTimer = this.dariusInvulnDuration || 2.0;
+    this.invulnerableTimer = this.dariusInvulnDuration || 4.0;
+    this.attackInterval = this.dariusInvulnAttackInterval || 1.0;
 
     // Đảm bảo không bị chết xuyên ngưỡng bất tử (< 100 máu) trừ đòn kết liễu >= 99999
     if (this.hp <= 0 && prevHp > 0) {
@@ -5440,7 +5448,7 @@ class Zombie {
       });
     }
     if (gameState.spawnFloatingText) {
-      gameState.spawnFloatingText(this.x, this.y - 52, 'BẤT TỬ 2s · ×2 TỐC · ONE-HIT! 🪓🔥', '#ffd54f', 17);
+      gameState.spawnFloatingText(this.x, this.y - 52, 'BẤT TỬ 4s · 1s/ĐÒN · ×2 TỐC · ONE-HIT! 🪓🔥', '#ffd54f', 17);
     }
     if (gameState.audio && gameState.audio.playRoar) {
       gameState.audio.playRoar();

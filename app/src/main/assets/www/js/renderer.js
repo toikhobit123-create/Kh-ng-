@@ -5383,7 +5383,7 @@ class GameRenderer {
     ctx.restore();
   }
 
-  // 5. Darius - Đại Tướng Nosus (Giáp Noxian sừng thép, đại rìu hành quyết rõ động tác bổ rìu / xoay 3x3 / bất tử 2s / cuồng nộ x2)
+  // 5. Darius - Đại Tướng Nosus (Giáp Noxian sừng thép, đại rìu hành quyết rõ động tác bổ rìu / xoay 3x3 / bất tử 4s / cuồng nộ x2)
   drawNosusWarlord(ctx, zombie) {
     const time = this.getFrameTimeSec();
     const spinTimer = zombie.spinAnimTimer || 0;
@@ -5443,7 +5443,7 @@ class GameRenderer {
       ctx.stroke();
     }
 
-    // 2. Khiên Bất Tử 2s (<100 HP)
+    // 2. Khiên Bất Tử 4s (<100 HP)
     if (isInvuln) {
       ctx.fillStyle = 'rgba(255, 213, 79, 0.18)';
       ctx.strokeStyle = '#ffd54f';
@@ -5591,7 +5591,7 @@ class GameRenderer {
       ctx.textAlign = 'center';
       ctx.lineWidth = 2.6;
       const badgeText = isInvuln
-        ? `BẤT TỬ ${Math.max(0, zombie.invulnerableTimer).toFixed(1)}s`
+        ? `BẤT TỬ ${Math.max(0, zombie.invulnerableTimer).toFixed(1)}s · 1s/ĐÒN`
         : 'CUỒNG NỘ ×2 · ONE-HIT';
       ctx.strokeStyle = 'rgba(0,0,0,0.9)';
       ctx.strokeText(badgeText, 0, -58);

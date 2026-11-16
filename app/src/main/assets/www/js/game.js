@@ -543,7 +543,7 @@ const ZOMBIE_PREVIEW_INFO = {
     name: 'Darius (Đại Tướng Nosus)',
     avatar: '🪓',
     hpText: 'HP: 3200 (Mini-Boss) · 6.0s/ô · Miễn Làm Chậm/Thôi Miên/Đẩy',
-    desc: 'Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 2s, ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!'
+    desc: 'Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 4s (tốc đánh tăng lên 1s/đòn), ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!'
   }
 };
 

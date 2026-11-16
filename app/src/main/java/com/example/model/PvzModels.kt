@@ -549,7 +549,7 @@ object PvzCatalog {
     ZombieCatalogItem("nosus_assassin", "Sát Thủ Huyết Đao Nosus", "🗡️", "340 HP", "4.0s / ô → ×1.6 Cuồng Huyết", "65 DMG / 0.5s", "Sát thủ song đao hắc huyết. Ngay lần đầu trúng sát thương không chí tử sẽ kích hoạt Cuồng Huyết (×1.6 tốc độ di chuyển trong 3s) lao thẳng vào tuyến phòng thủ!"),
     ZombieCatalogItem("nosus_shieldbearer", "Vệ Binh Khiên Sắt Nosus", "🛡️", "1050 HP (300 + 750 Khiên Sắt)", "6.2s / ô · Kháng 40% đẩy", "65 DMG / 0.5s", "Vệ binh bọc đại khiên sắt Nosus 750 HP, kháng 40% đẩy lùi. Có thể dùng Nấm Nam Châm (Magnet-shroom) để hút bay khiên sắt!"),
     ZombieCatalogItem("nosus_hemomancer", "Huyết Pháp Sư Nosus", "🩸", "760 HP", "6.5s / ô · Tầm 2.5 ô", "Cầu Máu 80 DMG / 1.4s · Huyết Tế", "Pháp sư huyết thuật tầm xa: bắn cầu máu tầm 2.5 ô gây 80 DMG mỗi 1.4s. Mỗi 6.5s niệm Huyết Tế hồi +120 HP và tăng +25% tốc độ cho bản thân cùng đồng minh phạm vi 3×2 trong 2.5s."),
-    ZombieCatalogItem("nosus_warlord", "Darius (Đại Tướng Nosus)", "🪓", "3.200 HP (Mini-Boss)", "6.0s / ô · Miễn Làm Chậm / Thôi Miên / Đẩy", "240 DMG/1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit", "Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 2s, ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!", isBoss = true)
+    ZombieCatalogItem("nosus_warlord", "Darius (Đại Tướng Nosus)", "🪓", "3.200 HP (Mini-Boss)", "6.0s / ô · Miễn Làm Chậm / Thôi Miên / Đẩy", "240 DMG/1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit", "Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 4s (tốc đánh tăng lên 1s/đòn), ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!", isBoss = true)
   )
 
   val zombieById: Map<String, ZombieCatalogItem> = zombies.associateBy { it.id }
@@ -689,7 +689,7 @@ object PvzCatalog {
       subtitle = "Chiến Trường Nosus · Màn 3/3 (BOSS TƯỚNG)",
       description = "Trận quyết chiến tại trung tâm pháo đài Nosus! Toàn bộ 5 binh chủng tinh nhuệ tràn lên cùng song Đại Tướng Darius 3200 HP miễn khống chế.",
       zombieIds = listOf("nosus_thrall", "nosus_assassin", "nosus_shieldbearer", "nosus_hemomancer", "nosus_warlord"),
-      tacticalTip = "Darius miễn Làm Chậm, Thôi Miên & Đẩy Lùi! Thay cây dưới 20% HP kịp thời để tránh Hành Quyết và dồn sát thương hạ nhanh khi hắn <100 HP (Bất Tử 2s + One-Hit)!",
+      tacticalTip = "Darius miễn Làm Chậm, Thôi Miên & Đẩy Lùi! Thay cây dưới 20% HP kịp thời để tránh Hành Quyết và dồn sát thương hạ nhanh khi hắn <100 HP (Bất Tử 4s · 1s/đòn + One-Hit)!",
       isBoss = true
     )
   )
