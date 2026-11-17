@@ -74,8 +74,15 @@ class WaveManager {
     this.totalZombiesInWave = 0;
     this.spawnedZombiesInWave = 0;
     this.killedZombiesInWave = 0;
+    this.lastRegularSpawnTime = 0;
+    this.lastMiniBossSpawnTime = -999;
 
     this.prepareWave(1);
+  }
+
+  static isWaveMiniBossType(type) {
+    if (type === 'gargantuar') return true;
+    return !!(typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG[type] && ZOMBIE_CONFIG[type].isMiniBoss);
   }
 
   prepareWave(waveNumber) {
@@ -147,17 +154,12 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('basic', 'basic', 'imp');
       } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'imp');
+        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'imp', 'imp', 'imp');
       } else {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'imp', 'imp');
+        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'basic', 'basic', 'imp', 'imp', 'imp', 'imp');
       }
     } else if (level === 2) {
       // MAP 2: BẮT ĐẦU XUẤT HIỆN THÊM CONEHEAD ZOMBIE & POLE VAULTING ZOMBIE (Nhảy sào)
-      // Wave 1: 2 Basic
-      // Wave 2: 2 Basic + 1 Conehead
-      // Wave 3: 2 Basic + 1 Conehead + 1 Pole Vaulting
-      // Wave 4: 3 Basic + 2 Conehead + 1 Pole Vaulting
-      // Wave 5: 3 Basic + 2 Conehead + 2 Pole Vaulting
       if (waveNumber === 1) {
         chosenList.push('basic', 'basic');
       } else if (waveNumber === 2) {
@@ -165,9 +167,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('basic', 'basic', 'conehead', 'pole_vaulting');
       } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'pole_vaulting');
+        chosenList.push('basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'conehead', 'pole_vaulting', 'pole_vaulting');
       } else {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'pole_vaulting', 'pole_vaulting');
+        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'conehead', 'conehead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting');
       }
     } else if (level === 3) {
       // MAP 3: BẮT ĐẦU XUẤT HIỆN BUCKETHEAD, TURQUOISE SKULL, BÓNG BAY, JETPACK & THRESH
@@ -178,9 +180,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('basic', 'basic', 'conehead', 'balloon', 'jetpack', 'buckethead', 'thresh');
       } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'balloon', 'jetpack', 'buckethead', 'thresh', 'turquoise_skull');
+        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'turquoise_skull');
       } else {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'turquoise_skull', 'turquoise_skull');
+        chosenList.push('basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull');
       }
     } else if (level === 4) {
       // MAP 4: KỶ BĂNG HÀ & JURASSIC BULLY + TROGLOBITE + LÃNG KHÁCH + THRESH + ANIVIA + QUẬN CHÚA
@@ -191,9 +193,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('basic', 'basic', 'conehead', 'balloon', 'buckethead', 'thresh', 'lang_khach', 'troglobite', 'quan_chua');
       } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'jetpack', 'thresh', 'lang_khach', 'jurassic_bully', 'troglobite', 'anivia', 'quan_chua');
+        chosenList.push('basic', 'basic', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'anivia', 'quan_chua');
       } else {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'balloon', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'anivia', 'quan_chua');
+        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'anivia', 'anivia', 'quan_chua', 'quan_chua');
       }
     } else if (level === 5) {
       // MAP 5: ĐẠI CHIẾN TẤT CẢ BINH CHỦNG + BOSS GARGANTUAR Ở WAVE 5
@@ -204,9 +206,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('basic', 'basic', 'balloon', 'thresh', 'lang_khach', 'turquoise_skull', 'jurassic_bully', 'troglobite', 'quan_chua');
       } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'imp', 'conehead', 'conehead', 'balloon', 'jetpack', 'buckethead', 'buckethead', 'pole_vaulting', 'thresh', 'lang_khach', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'shen', 'anivia', 'quan_chua');
+        chosenList.push('basic', 'basic', 'imp', 'imp', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'shen', 'anivia', 'quan_chua');
       } else {
-        chosenList.push('basic', 'basic', 'imp', 'imp', 'conehead', 'conehead', 'balloon', 'jetpack', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar');
+        chosenList.push('basic', 'basic', 'basic', 'imp', 'imp', 'imp', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar', 'gargantuar');
       }
     } else if (level === 6) {
       // MAP 6: ĐẠI CHIẾN ZOMBOT DARK DRAGON (27.000 HP)
@@ -221,9 +223,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('imp', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'quan_chua', 'anivia');
       } else if (waveNumber === 4) {
-        chosenList.push('imp', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'lang_khach', 'jurassic_bully', 'shen', 'quan_chua', 'anivia', 'anivia', 'buckethead');
+        chosenList.push('imp', 'imp', 'conehead', 'conehead', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'quan_chua', 'quan_chua', 'anivia', 'anivia');
       } else {
-        chosenList.push('imp', 'imp', 'conehead', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'jurassic_bully', 'shen', 'quan_chua', 'quan_chua', 'anivia', 'anivia', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'balloon', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'shen', 'quan_chua', 'quan_chua', 'anivia', 'anivia', 'gargantuar', 'gargantuar');
       }
     } else if (level === 8) {
       // MAP 8: KỶ BĂNG HÀ & KIẾM HỒN (Không Zomboss - Giáp trâu, băng giá & sát thủ)
@@ -234,9 +236,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('imp', 'conehead', 'buckethead', 'buckethead', 'jetpack', 'jetpack', 'thresh', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'anivia', 'quan_chua', 'turquoise_skull');
       } else if (waveNumber === 4) {
-        chosenList.push('imp', 'conehead', 'buckethead', 'buckethead', 'balloon', 'balloon', 'jetpack', 'thresh', 'thresh', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'gargantuar');
+        chosenList.push('imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'troglobite', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
       } else {
-        chosenList.push('imp', 'imp', 'conehead', 'buckethead', 'buckethead', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'troglobite', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'troglobite', 'troglobite', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
       }
     } else if (level === 9) {
       // MAP 9: BINH ĐOÀN TINH NHUỆ (Không Zomboss - Phối hợp đa binh chủng dồn dập)
@@ -247,9 +249,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('imp', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar');
       } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar');
       } else {
-        chosenList.push('imp', 'imp', 'conehead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar', 'gargantuar');
       }
     } else if (level === 10) {
       // MAP 10: ĐÊM TẬN THẾ HẮC ÁM (Cấp cuối chiến dịch - Thử thách cực đại không Zomboss)
@@ -260,9 +262,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('imp', 'imp', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar');
       } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
       } else {
-        chosenList.push('imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar', 'gargantuar');
+        chosenList.push('imp', 'imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'troglobite', 'shen', 'shen', 'shen', 'anivia', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar', 'gargantuar');
       }
     } else if (level === 11) {
       // MAP SPECIAL (LEVEL 11): VƯƠNG QUỐC LONG TỘC (Chỉ có 6 loài Rồng, 0 zombie cũ; Rồng Nước xuất trận ở giữa game Wave 3)
@@ -273,9 +275,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_dark', 'dragon_chemtech');
       } else if (waveNumber === 4) {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech');
+        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech');
       } else {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech');
+        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_water', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech');
       }
     } else if (level === 12) {
       // MAP 12: ĐẠI CHIẾN BOSS RỒNG NGÀN TUỔI (10.000 HP - 7 Tuyệt Kỹ)
@@ -293,9 +295,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer');
       } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
       } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
       }
     } else if (level === 15) {
       // CHIẾN TRƯỜNG NOSUS - MÀN 2/3: HUYẾT TẾ PHÁO ĐÀI (+ Huyết Pháp Sư Nosus)
@@ -306,9 +308,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer');
       } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
       } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
       }
     } else if (level === 16) {
       // CHIẾN TRƯỜNG NOSUS - MÀN 3/3: ĐẠI TƯỚNG THIẾT HUYẾT (Hội tụ toàn quân 5 loại từ yếu tới mạnh)
@@ -319,9 +321,9 @@ class WaveManager {
       } else if (waveNumber === 3) {
         chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
       } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
       } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord', 'nosus_warlord');
+        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord', 'nosus_warlord');
       }
     }
 
@@ -336,23 +338,45 @@ class WaveManager {
     this.spawnedZombiesInWave = 0;
     this.killedZombiesInWave = 0;
     this.waveSpawnQueue = [];
+    this.lastRegularSpawnTime = 0;
+    this.lastMiniBossSpawnTime = -999;
+
+    const paceScale = level === 16 ? 0.76
+      : level === 15 ? 0.82
+      : level === 14 ? 0.88
+      : level === 11 ? 0.85
+      : level >= 10 ? 0.72
+      : level === 9 ? 0.78
+      : level === 8 ? 0.84
+      : level === 7 ? 0.90
+      : 1.0;
 
     // 3. Lên lịch thời gian xuất kích cho từng Zombie theo thứ tự yếu trước, mạnh sau
-    // Giãn cách thời gian hợp lý: Đầu game cách nhau 8.5s - 11s, người chơi đủ thời gian trồng cây
+    // Mini-boss luôn được gắn cờ isMiniBoss để chốt điều kiện đi sau wave thường ~2 ô
     let currentDelay = 0;
+    let regularCount = 0;
+    let lastRegularDelay = 0;
+    let miniBossIndex = 0;
+
     for (let i = 0; i < chosenList.length; i++) {
       const type = chosenList[i];
       const assignedRow = Math.floor(Math.random() * CONFIG.ROWS);
+      const isMiniBoss = WaveManager.isWaveMiniBossType(type);
 
-      const paceScale = level === 16 ? 0.76
-        : level === 15 ? 0.82
-        : level === 14 ? 0.88
-        : level === 11 ? 0.85
-        : level >= 10 ? 0.72
-        : level === 9 ? 0.78
-        : level === 8 ? 0.84
-        : level === 7 ? 0.90
-        : 1.0;
+      if (isMiniBoss) {
+        const miniBossGap = Math.max(2.2, 2.8 * paceScale);
+        const minGateDelay = regularCount > 0 ? lastRegularDelay + 1.0 : 0;
+        const bossDelay = minGateDelay + miniBossIndex * miniBossGap;
+        miniBossIndex++;
+        this.waveSpawnQueue.push({
+          type: type,
+          row: assignedRow,
+          delay: bossDelay,
+          isMiniBoss: true,
+          miniBossGap: miniBossGap
+        });
+        continue;
+      }
 
       let interval;
       if (waveNumber === 1) {
@@ -365,19 +389,22 @@ class WaveManager {
         // Wave 3: 5.5s - 7.5s
         interval = (5.5 + Math.random() * 2.0) * paceScale;
       } else if (waveNumber === 4) {
-        // Wave 4: 4.5s - 6.0s
-        interval = (4.5 + Math.random() * 1.5) * paceScale;
+        // Wave 4 (Tăng áp lực): 3.4s - 4.6s
+        interval = (3.4 + Math.random() * 1.2) * paceScale;
       } else {
-        // Wave 5 (Tổng lực): 3.2s - 4.5s, Boss xuất hiện cuối cùng
-        interval = (3.2 + Math.random() * 1.3) * paceScale;
+        // Wave 5 (Tổng lực): 2.3s - 3.3s, Mini-Boss đi sau wave thường ~2 ô
+        interval = (2.3 + Math.random() * 1.0) * paceScale;
       }
 
-      currentDelay += (i === 0 ? 0 : interval);
+      currentDelay += (regularCount === 0 ? 0 : interval);
+      lastRegularDelay = currentDelay;
+      regularCount++;
 
       this.waveSpawnQueue.push({
         type: type,
         row: assignedRow,
-        delay: currentDelay
+        delay: currentDelay,
+        isMiniBoss: false
       });
     }
 
@@ -425,10 +452,46 @@ class WaveManager {
     // 3. Đang sinh quái của Wave hiện tại (yếu ra trước, mạnh dần về sau)
     if (this.state === 'spawning') {
       this.spawnTimer += dt;
+      const spawnX = CONFIG.CANVAS_WIDTH + 20;
+      const twoCellPx = CONFIG.CELL_WIDTH * 2;
+
       while (this.waveSpawnQueue.length > 0 && this.waveSpawnQueue[0].delay <= this.spawnTimer) {
-        const item = this.waveSpawnQueue.shift();
-        gameState.spawnZombie(item.type, item.row);
-        this.spawnedZombiesInWave++;
+        const nextItem = this.waveSpawnQueue[0];
+
+        if (nextItem.isMiniBoss) {
+          const bossGap = nextItem.miniBossGap || 2.8;
+          if (this.lastMiniBossSpawnTime >= 0 && (this.spawnTimer - this.lastMiniBossSpawnTime) < bossGap) {
+            break;
+          }
+
+          const liveRegulars = (gameState.zombies || []).filter(z =>
+            z.alive && !z.isObstacle && !z.isHypnotized &&
+            !WaveManager.isWaveMiniBossType(z.type) && !z.isBoss
+          );
+
+          let maxRegularX = -Infinity;
+          if (liveRegulars.length > 0) {
+            maxRegularX = Math.max(...liveRegulars.map(z => z.x));
+            const maxAllowedRegularX = spawnX - twoCellPx;
+            const elapsedSinceLastRegular = this.spawnTimer - this.lastRegularSpawnTime;
+            if (maxRegularX > maxAllowedRegularX && elapsedSinceLastRegular < 18.0) {
+              break;
+            }
+          }
+
+          const item = this.waveSpawnQueue.shift();
+          const spawnedZ = gameState.spawnZombie(item.type, item.row);
+          if (spawnedZ && maxRegularX > spawnX - twoCellPx) {
+            spawnedZ.x = Math.max(spawnedZ.x, maxRegularX + twoCellPx);
+          }
+          this.lastMiniBossSpawnTime = this.spawnTimer;
+          this.spawnedZombiesInWave++;
+        } else {
+          const item = this.waveSpawnQueue.shift();
+          gameState.spawnZombie(item.type, item.row);
+          this.lastRegularSpawnTime = this.spawnTimer;
+          this.spawnedZombiesInWave++;
+        }
       }
 
       if (this.waveSpawnQueue.length === 0) {

@@ -1580,8 +1580,8 @@ class GameRenderer {
       if (isDamaged) {
         this.drawHealthBar(ctx, -20, -49, 40, 5, plant.hp / plant.maxHp, '#ff1744');
       }
-    } else if (plant.type === 'aurora' && !plant.isIcon) {
-      const ratio = Math.max(0, Math.min(1, (plant.skillTimer || 0) / (plant.skillInterval || 15.0)));
+    } else if (plant.type === 'aurora' && !plant.isIcon && plant.isAuroraSkillOwner === true) {
+      const ratio = Math.max(0, Math.min(1, (plant.skillTimer || 0) / (plant.skillInterval || 20.0)));
       ctx.fillStyle = 'rgba(12, 22, 32, 0.85)';
       ctx.beginPath();
       ctx.roundRect(-18, -40, 36, 5, 2.5);
@@ -1595,8 +1595,84 @@ class GameRenderer {
       if (isDamaged) {
         this.drawHealthBar(ctx, -20, -49, 40, 5, plant.hp / plant.maxHp, '#ff1744');
       }
+    } else if (plant.type === 'ahri' && !plant.isIcon) {
+      const ratio = Math.max(0, Math.min(1, (plant.skillTimer || 0) / (plant.skillInterval || 15.0)));
+      ctx.fillStyle = 'rgba(26, 12, 28, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(-18, -40, 36, 5, 2.5);
+      ctx.fill();
+      if (ratio > 0) {
+        ctx.fillStyle = ratio >= 1 ? '#ff4081' : '#f48fb1';
+        ctx.beginPath();
+        ctx.roundRect(-17, -39, 34 * ratio, 3, 2);
+        ctx.fill();
+      }
+      if (isDamaged) {
+        this.drawHealthBar(ctx, -20, -49, 40, 5, plant.hp / plant.maxHp, '#ff1744');
+      }
+    } else if (plant.type === 'irelia' && !plant.isIcon) {
+      const cdMax = plant.skillCooldown || 2.0;
+      const cdRem = Math.max(0, plant.skillCooldownTimer || 0);
+      const readyRatio = Math.max(0, Math.min(1, 1 - cdRem / cdMax));
+      const stacks = Math.max(0, Math.min(3, plant.ireStacks || 0));
+      ctx.fillStyle = 'rgba(10, 20, 32, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(-20, -42, 40, 8, 3);
+      ctx.fill();
+      for (let s = 0; s < 3; s++) {
+        ctx.fillStyle = s < stacks ? '#00e5ff' : '#1b3a4b';
+        ctx.beginPath();
+        ctx.arc(-11 + s * 11, -38, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = cdRem <= 0 ? '#ffd54f' : '#4fc3f7';
+      ctx.fillRect(-18, -35, 36 * readyRatio, 1.8);
+      if (isDamaged) {
+        this.drawHealthBar(ctx, -20, -52, 40, 5, plant.hp / plant.maxHp, '#ff1744');
+      }
+    } else if (plant.type === 'karma' && !plant.isIcon) {
+      const stacks = Math.max(0, Math.min(3, plant.mantraCount || 0));
+      const ratio = Math.max(0, Math.min(1, (plant.skillTimer || 0) / (plant.skillInterval || 5.0)));
+      ctx.fillStyle = 'rgba(8, 26, 22, 0.88)';
+      ctx.beginPath();
+      ctx.roundRect(-20, -42, 40, 8, 3);
+      ctx.fill();
+      for (let s = 0; s < 3; s++) {
+        ctx.fillStyle = s < stacks ? '#00e676' : '#143d32';
+        ctx.beginPath();
+        ctx.arc(-11 + s * 11, -38, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = stacks >= 3 ? '#ffd54f' : '#1de9b6';
+      ctx.fillRect(-18, -35, 36 * ratio, 1.8);
+      if (isDamaged) {
+        this.drawHealthBar(ctx, -20, -52, 40, 5, plant.hp / plant.maxHp, '#ff1744');
+      }
     } else if (isDamaged) {
       this.drawHealthBar(ctx, -20, -38, 40, 5, plant.hp / plant.maxHp, '#ff1744');
+    }
+
+    // Khiên năng lượng Karma Mantra bọc quanh & thanh khiên trên đầu cây
+    if (plant.shieldHp > 0 && !plant.isIcon) {
+      const shieldPulse = 0.72 + Math.sin((plant.animTime || 0) * 5.0) * 0.2;
+      ctx.save();
+      ctx.strokeStyle = `rgba(29, 233, 182, ${shieldPulse})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 23, 25, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(0, 230, 118, 0.10)';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 22, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const maxShield = Math.max(plant.maxShieldHp || 200, plant.shieldHp);
+      const shieldBarY = (plant.type === 'syndra' || plant.type === 'lux' || plant.type === 'irelia' || plant.type === 'karma')
+        ? (isDamaged ? -59 : -50)
+        : (isDamaged ? -46 : -38);
+      this.drawHealthBar(ctx, -20, shieldBarY, 40, 4.5, Math.min(1, plant.shieldHp / maxShield), '#1de9b6');
     }
 
     // Vòng xích & sao choáng nếu cây bị Thresh trói choáng
@@ -1719,6 +1795,12 @@ class GameRenderer {
       this.drawKataGraphics(ctx, plant);
     } else if (plant.type === 'aurora') {
       this.drawAuroraGraphics(ctx, plant);
+    } else if (plant.type === 'ahri') {
+      this.drawAhriGraphics(ctx, plant);
+    } else if (plant.type === 'irelia') {
+      this.drawIreliaGraphics(ctx, plant);
+    } else if (plant.type === 'karma') {
+      this.drawKarmaGraphics(ctx, plant);
     } else {
       this.drawGenericPlantGraphics(ctx, plant);
     }
@@ -4002,6 +4084,14 @@ class GameRenderer {
     // Hào quang thôi miên xoay trên đầu
     if (zombie.isHypnotized && zombie.alive) {
       this.drawHypnotizedHalo(ctx, zombie);
+      if (zombie.isTempHypnotized && zombie.tempHypnoTimer > 0) {
+        ctx.save();
+        ctx.fillStyle = '#f48fb1';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`💖 ${zombie.tempHypnoTimer.toFixed(1)}s`, zombie.x, zombie.y - 52);
+        ctx.restore();
+      }
     }
   }
 
@@ -7880,6 +7970,59 @@ class GameRenderer {
       ctx.beginPath();
       ctx.arc(4.5, -1, 1.6, 0, Math.PI * 2);
       ctx.fill();
+    } else if (proj.type === 'ahri_orb' || proj.isAhriOrb) {
+      // Quả cầu Boomerang của Ahri: Lượt đi xanh-hồng linh hồn -> Lượt về quả cầu TRẮNG rực sáng (50 Sát Thương Chuẩn)
+      const isRet = !!proj.isReturning;
+      const spin = proj.spinAngle || (Date.now() * 0.012);
+      ctx.save();
+      ctx.rotate(spin);
+
+      if (isRet) {
+        // Vệt hào quang trắng tinh khiết (Sát thương chuẩn xuyên khiên/giáp)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        const whiteGrad = ctx.createRadialGradient(-2, -2, 1.5, 0, 0, 11);
+        whiteGrad.addColorStop(0, '#ffffff');
+        whiteGrad.addColorStop(0.65, '#f5f5f5');
+        whiteGrad.addColorStop(1, '#b3e5fc');
+        ctx.fillStyle = whiteGrad;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.arc(0, 0, 10.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Chữ thập ánh sáng trắng bên trong
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-6, 0); ctx.lineTo(6, 0);
+        ctx.moveTo(0, -6); ctx.lineTo(0, 6);
+        ctx.stroke();
+      } else {
+        // Lượt đi: Quả cầu xanh ngọc-tím linh hồ
+        ctx.fillStyle = 'rgba(128, 222, 234, 0.38)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 13, 0, Math.PI * 2);
+        ctx.fill();
+
+        const orbGrad = ctx.createRadialGradient(-2, -2, 1.5, 0, 0, 9.5);
+        orbGrad.addColorStop(0, '#ffffff');
+        orbGrad.addColorStop(0.45, '#4dd0e1');
+        orbGrad.addColorStop(1, '#f06292');
+        ctx.fillStyle = orbGrad;
+        ctx.strokeStyle = '#80deea';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
     } else {
       // Đạn đậu năng lượng xanh rực sắc nét + vệt đuôi thuôn gọn
       ctx.fillStyle = 'rgba(118, 255, 3, 0.44)';
@@ -8581,6 +8724,111 @@ class GameRenderer {
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.ellipse(eff.x, eff.y + 8, spanW * 0.68, 24, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (eff.kind === 'ahri_charm') {
+        // Tia Hôn Gió trái tim hồng từ Ahri tới zombie
+        const sx = eff.startX ?? eff.x;
+        const sy = eff.startY ?? eff.y;
+        const ex = eff.endX ?? (sx + 80);
+        const ey = eff.endY ?? sy;
+        const alpha = Math.max(0, 1 - p);
+
+        ctx.strokeStyle = `rgba(244, 143, 177, ${0.88 * alpha})`;
+        ctx.lineWidth = 3.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo((sx + ex) * 0.5, Math.min(sy, ey) - 18, ex, ey);
+        ctx.stroke();
+
+        const hx = sx + (ex - sx) * Math.min(1, p * 1.4);
+        const hy = sy + (ey - sy) * Math.min(1, p * 1.4) - Math.sin(Math.min(1, p * 1.4) * Math.PI) * 18;
+        ctx.fillStyle = `rgba(255, 64, 129, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(hx - 3, hy - 2, 4, 0, Math.PI * 2);
+        ctx.arc(hx + 3, hy - 2, 4, 0, Math.PI * 2);
+        ctx.moveTo(hx - 6.5, hy);
+        ctx.lineTo(hx, hy + 7);
+        ctx.lineTo(hx + 6.5, hy);
+        ctx.closePath();
+        ctx.fill();
+      } else if (eff.kind === 'irelia_dash') {
+        // Vệt lướt kiếm xanh ngọc-vàng khi Kiếm Vũ Ire kết liễu & dịch chuyển
+        const sx = eff.startX ?? eff.x;
+        const sy = eff.startY ?? eff.y;
+        const ex = eff.endX ?? eff.x;
+        const ey = eff.endY ?? eff.y;
+        const alpha = Math.max(0, 1 - p);
+
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.9 * alpha})`;
+        ctx.lineWidth = 5 * (1 - p * 0.5);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 213, 79, ${0.95 * alpha})`;
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(ex - 18, ey - 14); ctx.lineTo(ex + 18, ey + 14);
+        ctx.moveTo(ex + 18, ey - 14); ctx.lineTo(ex - 18, ey + 14);
+        ctx.stroke();
+      } else if (eff.kind === 'irelia_slash') {
+        const sx = eff.startX ?? eff.x;
+        const sy = eff.startY ?? eff.y;
+        const ex = eff.endX ?? eff.x;
+        const ey = eff.endY ?? eff.y;
+        const alpha = Math.max(0, 1 - p);
+
+        ctx.strokeStyle = `rgba(128, 216, 255, ${0.9 * alpha})`;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(sx + 10, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.arc(ex, ey, 11 * (0.4 + p * 0.6), -0.8, 0.9);
+        ctx.stroke();
+      } else if (eff.kind === 'karma_shield_beam') {
+        const sx = eff.startX ?? eff.x;
+        const sy = eff.startY ?? eff.y;
+        const ex = eff.endX ?? (sx + 60);
+        const ey = eff.endY ?? sy;
+        const alpha = Math.max(0, 1 - p);
+
+        ctx.strokeStyle = `rgba(29, 233, 182, ${0.9 * alpha})`;
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo((sx + ex) * 0.5, Math.min(sy, ey) - 16, ex, ey);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(105, 240, 174, ${alpha})`;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(ex, ey, 18 * (0.5 + p * 0.5), 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (eff.kind === 'karma_mantra') {
+        const alpha = Math.max(0, 1 - p * 0.85);
+        const spanW = CONFIG.CELL_WIDTH * 1.45;
+        const auraGrad = ctx.createRadialGradient(eff.x, eff.y, 12, eff.x, eff.y, spanW);
+        auraGrad.addColorStop(0, `rgba(255, 213, 79, ${0.35 * alpha})`);
+        auraGrad.addColorStop(0.55, `rgba(29, 233, 182, ${0.32 * alpha})`);
+        auraGrad.addColorStop(1, 'rgba(0, 230, 118, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y, spanW, CONFIG.CELL_HEIGHT * 1.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(105, 240, 174, ${0.9 * alpha})`;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y, spanW * (0.75 + p * 0.25), CONFIG.CELL_HEIGHT * (0.9 + p * 0.35), 0, 0, Math.PI * 2);
         ctx.stroke();
       } else if (eff.kind === 'quan_chua_strike') {
         const sx = eff.startX ?? eff.x;
@@ -13509,6 +13757,294 @@ class GameRenderer {
     ctx.arc(-2.8, -1, 3.2, 0, Math.PI * 2);
     ctx.arc(4.2, -1, 3.2, 0, Math.PI * 2);
     ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // Ahri (Hồ Ly Chín Đuôi): Hoa hồ ly trắng-hồng với 9 cánh đuôi xòe rực rỡ & quả cầu linh hồn trước mặt
+  drawAhriGraphics(ctx, plant) {
+    const t = plant.animTime || 0;
+    const sway = Math.sin(t * 2.4) * 1.4;
+    const isCasting = (plant.charmCastAnimTimer || 0) > 0;
+
+    ctx.save();
+    if (plant.flashTimer > 0) {
+      ctx.filter = 'brightness(1.45)';
+    }
+
+    // Chùm cánh đuôi chín nhánh trắng-hồng phía sau
+    for (let i = -3; i <= 3; i++) {
+      const ang = i * 0.34 - 0.15 + Math.sin(t * 2.8 + i) * 0.05;
+      ctx.save();
+      ctx.translate(-4, 8);
+      ctx.rotate(ang);
+      const tailGrad = ctx.createLinearGradient(0, 0, -18, -12);
+      tailGrad.addColorStop(0, '#f48fb1');
+      tailGrad.addColorStop(0.65, '#fce4ec');
+      tailGrad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = tailGrad;
+      ctx.strokeStyle = '#f06292';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-14, -10, -21, -2);
+      ctx.quadraticCurveTo(-13, 6, 0, 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Lá đế xanh lục-ngọc
+    ctx.fillStyle = '#2e7d32';
+    ctx.strokeStyle = '#a5d6a7';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(-8, 19, 9, 4.2, -0.25, 0, Math.PI * 2);
+    ctx.ellipse(9, 19, 9, 4.2, 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Thân hoa thanh mảnh
+    ctx.strokeStyle = '#66bb6a';
+    ctx.lineWidth = 4.0;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 20);
+    ctx.quadraticCurveTo(-3 + sway * 0.4, 6, 1 + sway * 0.6, -9);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(1 + sway * 0.6, -10);
+
+    // Đôi tai hồ ly hồng-trắng trên đỉnh đầu
+    ctx.fillStyle = '#fce4ec';
+    ctx.strokeStyle = '#e91e63';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-9, -4); ctx.lineTo(-12, -19); ctx.lineTo(-2, -10); ctx.closePath();
+    ctx.moveTo(9, -4); ctx.lineTo(12, -19); ctx.lineTo(2, -10); ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Đầu hoa hồ ly
+    const headGrad = ctx.createRadialGradient(-2, -2, 2, 0, 0, 13);
+    headGrad.addColorStop(0, '#ffffff');
+    headGrad.addColorStop(0.55, '#f8bbd0');
+    headGrad.addColorStop(1, '#ec407a');
+    ctx.fillStyle = headGrad;
+    ctx.strokeStyle = '#c2185b';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Đôi mắt vàng hổ phách sắc sảo & vệt má hồ ly
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath();
+    ctx.ellipse(-3.5, -1.5, 2.2, 1.5, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(4.5, -1.5, 2.2, 1.5, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1a0a14';
+    ctx.beginPath();
+    ctx.arc(-3.5, -1.5, 1.0, 0, Math.PI * 2);
+    ctx.arc(4.5, -1.5, 1.0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Quả cầu linh hồn bay lơ lửng trước tay Ahri
+    const orbX = 16;
+    const orbY = 3 + Math.sin(t * 4.5) * 2.5;
+    const orbGrad = ctx.createRadialGradient(orbX - 1.5, orbY - 1.5, 1, orbX, orbY, isCasting ? 8.5 : 6.5);
+    orbGrad.addColorStop(0, '#ffffff');
+    orbGrad.addColorStop(0.5, isCasting ? '#ff80ab' : '#80deea');
+    orbGrad.addColorStop(1, isCasting ? '#f50057' : '#00acc1');
+    ctx.fillStyle = orbGrad;
+    ctx.beginPath();
+    ctx.arc(orbX, orbY, isCasting ? 7.5 : 5.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // Kiếm Vũ Ire: Búp hoa diên vĩ lam-vàng cùng 4 thanh phi kiếm bay quanh lưng
+  drawIreliaGraphics(ctx, plant) {
+    const t = plant.animTime || 0;
+    const bob = Math.sin(t * 3.0) * 1.4;
+    const isSlashing = (plant.slashAnimTimer || 0) > 0;
+    const stacks = plant.ireStacks || 0;
+
+    ctx.save();
+    if (plant.flashTimer > 0) {
+      ctx.filter = 'brightness(1.45)';
+    }
+
+    // 4 thanh phi kiếm bạc-lam lơ lửng quanh thân
+    for (let i = 0; i < 4; i++) {
+      const side = i < 2 ? -1 : 1;
+      const idx = i % 2;
+      const bx = side * (15 + idx * 5) + Math.sin(t * 4.2 + i) * 1.6;
+      const by = -14 + idx * 12 + Math.cos(t * 3.6 + i) * 1.8;
+      const rot = (isSlashing ? 0.55 : 0.25) * side + Math.sin(t * 3 + i) * 0.08;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(rot);
+      ctx.fillStyle = stacks >= 3 ? '#ffd54f' : '#80d8ff';
+      ctx.strokeStyle = '#00838f';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(0, -11);
+      ctx.lineTo(3.2, 0);
+      ctx.lineTo(0, 9);
+      ctx.lineTo(-3.2, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Lá đế xanh lam
+    ctx.fillStyle = '#00695c';
+    ctx.strokeStyle = '#4dd0e1';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(-9, 19, 9.5, 4.2, -0.25, 0, Math.PI * 2);
+    ctx.ellipse(9, 19, 9.5, 4.2, 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Thân hoa giáp bạc-lam
+    ctx.strokeStyle = '#26a69a';
+    ctx.lineWidth = 4.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 20);
+    ctx.lineTo(0, -6 + bob);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(0, -10 + bob);
+
+    // Mũ vương miện kiếm vàng kim & cánh hoa diên vĩ lam
+    ctx.fillStyle = '#ffd54f';
+    ctx.strokeStyle = '#ef6c00';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-8, -7); ctx.lineTo(-11, -18); ctx.lineTo(-3, -11);
+    ctx.lineTo(0, -21); ctx.lineTo(3, -11); ctx.lineTo(11, -18); ctx.lineTo(8, -7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    const irisGrad = ctx.createRadialGradient(-2, -2, 2, 0, 0, 12);
+    irisGrad.addColorStop(0, '#e0f7fa');
+    irisGrad.addColorStop(0.5, '#00b0ff');
+    irisGrad.addColorStop(1, '#1a237e');
+    ctx.fillStyle = irisGrad;
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Đôi mắt kiên định rực sáng cyan
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-3.5, -1, 1.9, 0, Math.PI * 2);
+    ctx.arc(3.8, -1, 1.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#00e5ff';
+    ctx.beginPath();
+    ctx.arc(-3.5, -1, 1.0, 0, Math.PI * 2);
+    ctx.arc(3.8, -1, 1.0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // Karma (Khai Sáng): Hoa sen ngọc lục bảo với vòng luân xa rồng song sinh sau lưng
+  drawKarmaGraphics(ctx, plant) {
+    const t = plant.animTime || 0;
+    const sway = Math.sin(t * 2.0) * 1.1;
+    const isEmpowered = (plant.empoweredAnimTimer || 0) > 0 || (plant.mantraCount || 0) >= 3;
+
+    ctx.save();
+    if (plant.flashTimer > 0) {
+      ctx.filter = 'brightness(1.45)';
+    }
+
+    // Vòng luân xa Mantra phát sáng sau lưng Karma
+    ctx.save();
+    ctx.translate(0, -8);
+    ctx.rotate(t * (isEmpowered ? 2.4 : 0.9));
+    ctx.strokeStyle = isEmpowered ? '#ffd54f' : '#1de9b6';
+    ctx.lineWidth = isEmpowered ? 2.6 : 2.0;
+    ctx.beginPath();
+    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      ctx.fillStyle = i % 2 === 0 ? '#00e676' : '#ffd54f';
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * 18, Math.sin(a) * 18, 2.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Đài sen xanh ngọc ở gốc
+    ctx.fillStyle = '#004d40';
+    ctx.strokeStyle = '#64ffda';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.ellipse(-9, 18, 10, 4.5, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(9, 18, 10, 4.5, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Thân hoa sen
+    ctx.strokeStyle = '#00897b';
+    ctx.lineWidth = 4.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 20);
+    ctx.lineTo(sway * 0.4, -8);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(sway * 0.4, -10);
+
+    // Các cánh hoa sen ngọc-vàng
+    const lotusGrad = ctx.createRadialGradient(-2, -2, 2, 0, 0, 13);
+    lotusGrad.addColorStop(0, '#b9f6ca');
+    lotusGrad.addColorStop(0.55, '#00bfa5');
+    lotusGrad.addColorStop(1, '#004d40');
+    ctx.fillStyle = lotusGrad;
+    ctx.strokeStyle = isEmpowered ? '#ffd54f' : '#64ffda';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-12, 3);
+    ctx.quadraticCurveTo(-13, -11, 0, -14);
+    ctx.quadraticCurveTo(13, -11, 12, 3);
+    ctx.quadraticCurveTo(0, 10, -12, 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Ấn thánh vàng trên trán & đôi mắt an nhiên phát sáng ngọc
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath();
+    ctx.moveTo(0, -10); ctx.lineTo(2.4, -6); ctx.lineTo(0, -3); ctx.lineTo(-2.4, -6); ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#e0f2f1';
+    ctx.beginPath();
+    ctx.arc(-3.5, 0, 1.9, 0, Math.PI * 2);
+    ctx.arc(3.5, 0, 1.9, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
     ctx.restore();

@@ -1,6 +1,10 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,18 +50,28 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.sin
 import com.example.model.CampaignProgress
 import com.example.model.HudSnapshot
 import com.example.model.PlantCatalogItem
@@ -368,16 +382,11 @@ private fun VerticalSeedRail(
               }
             }
 
-            // Cooldown progress veil from top down
-            if (cdFraction > 0.001f) {
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .fillMaxHeight(cdFraction)
-                  .align(Alignment.TopCenter)
-                  .background(ObsidianBg.copy(alpha = 0.68f))
-              )
-            }
+            // Clockwise radial wipe cooldown overlay
+            RadialCooldownWipe(
+              cdFraction = cdFraction,
+              modifier = Modifier.fillMaxSize()
+            )
           }
         }
       }
@@ -658,6 +667,63 @@ private fun TopGutterBar(
         tint = AmberGold,
         modifier = Modifier.testTag("hud_pause_btn")
       )
+    }
+  }
+}
+
+@Composable
+private fun RadialCooldownWipe(
+  cdFraction: Float,
+  modifier: Modifier = Modifier
+) {
+  val targetFraction = cdFraction.coerceIn(0f, 1f)
+  val animatedFraction = remember { Animatable(targetFraction) }
+
+  LaunchedEffect(targetFraction) {
+    if (targetFraction > animatedFraction.value || targetFraction <= 0.001f) {
+      animatedFraction.snapTo(targetFraction)
+    } else {
+      animatedFraction.animateTo(
+        targetValue = targetFraction,
+        animationSpec = tween(durationMillis = 55, easing = LinearEasing)
+      )
+    }
+  }
+
+  val fraction = animatedFraction.value
+  if (fraction > 0.001f) {
+    Canvas(modifier = modifier.clipToBounds()) {
+      val cx = size.width / 2f
+      val cy = size.height / 2f
+      val radius = hypot(cx, cy) + 2f
+      val topLeft = Offset(cx - radius, cy - radius)
+      val arcSize = Size(radius * 2f, radius * 2f)
+      val sweepAngle = fraction * 360f
+      val startAngle = -90f + (1f - fraction) * 360f
+
+      drawArc(
+        color = ObsidianBg.copy(alpha = 0.78f),
+        startAngle = startAngle,
+        sweepAngle = sweepAngle,
+        useCenter = true,
+        topLeft = topLeft,
+        size = arcSize
+      )
+
+      if (fraction in 0.005f..0.995f) {
+        val rad = startAngle * (PI.toFloat() / 180f)
+        val edgeEnd = Offset(
+          x = cx + radius * cos(rad),
+          y = cy + radius * sin(rad)
+        )
+        drawLine(
+          color = AmberGold.copy(alpha = 0.85f),
+          start = Offset(cx, cy),
+          end = edgeEnd,
+          strokeWidth = 1.8.dp.toPx(),
+          cap = StrokeCap.Round
+        )
+      }
     }
   }
 }

@@ -235,6 +235,7 @@ class ConveyorBelt {
         cabbage_pult: '#388e3c', melon_pult: '#1b5e20',
         bonk_choy: '#558b2f', snapdragon: '#d84315', chomper: '#6a1b9a', galio: '#0288d1',
         jhinplant: '#7b1fa2', lux: '#f9a825', syndra: '#6a1b9a', kata: '#c62828', aurora: '#00acc1',
+        ahri: '#ec407a', irelia: '#0288d1', karma: '#00897b',
         lightning_reed: '#00838f', goo_peashooter: '#512da8',
         potato_mine: '#6d4c41', stunion: '#fbc02d', hypno_shroom: '#7b1fa2',
         cherry_bomb: '#c62828', magnet_shroom: '#37474f'
@@ -281,6 +282,9 @@ class ConveyorBelt {
           syndra: '🔮',
           kata: '🌹',
           aurora: '🐇',
+          ahri: '🦊',
+          irelia: '🗡️',
+          karma: '🛡️',
           lightning_reed: '⚡',
           stunion: '🧅',
           infi_nut: '🔮',

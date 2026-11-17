@@ -267,11 +267,11 @@ object PvzCatalog {
       fullName = "Dưa Hấu (Melon-pult)",
       group = "Cầu Vồng AoE",
       cost = 300,
-      damageText = "80 (+30 AoE)",
-      rateText = "2.925s (~27 DPS)",
+      damageText = "100 (+30 AoE)",
+      rateText = "2.925s (~34 DPS)",
       cooldownText = "7.5s",
       hpText = "300 HP",
-      description = "Bắn dưa hấu hạng nặng cầu vồng qua Bia Mộ. Gây 80 sát thương trực tiếp và 30 sát thương lan 3x3.",
+      description = "Bắn dưa hấu hạng nặng cầu vồng qua Bia Mộ. Gây 100 sát thương trực tiếp và 30 sát thương lan 3x3.",
       accentColor = ToxicLime
     ),
     PlantCatalogItem(
@@ -333,7 +333,7 @@ object PvzCatalog {
       group = "Giật Sét",
       cost = 125,
       damageText = "10 DMG x 3 mục tiêu",
-      rateText = "1.4s / tia",
+      rateText = "1.0s / tia",
       cooldownText = "7.5s",
       hpText = "300 HP",
       description = "Giật tia lôi điện xuyên qua tối đa 3 mục tiêu trong phạm vi lan 3 ô, khắc chế bầy Imp đông đúc.",
@@ -422,12 +422,12 @@ object PvzCatalog {
       shortName = "Jhinplant",
       fullName = "Jhinplant (Hoa Súng Tử Vong)",
       group = "Xạ Thủ Nhịp 4",
-      cost = 140,
-      damageText = "125 · Viên IV: 500 · Sen: 444",
+      cost = 250,
+      damageText = "44 · Viên IV: 440 · Sen: 444",
       rateText = "2.2s/viên (4 viên) · Nạp 4s",
       cooldownText = "4.0s",
       hpText = "440 HP",
-      description = "Hoa thược dược tím thẫm đeo mặt nạ cùng ống ngắm la-de đỏ. Bắn 4 phát nhịp 2.2s (125 DMG), viên thứ 4 gây x4 sát thương (500 DMG) rồi nạp đạn 4s. Khi viên thứ 4 hạ gục Zombie (không tính Bia Mộ/vật cản) sẽ đặt Bẫy Hoa Sen, phát nổ 444 DMG AoE 2×2 ô khi Zombie bước vào.",
+      description = "Hoa thược dược tím thẫm đeo mặt nạ cùng ống ngắm la-de đỏ. Bắn 4 phát nhịp 2.2s (44 DMG), viên thứ 4 gây x10 sát thương (440 DMG) rồi nạp đạn 4s. Khi viên thứ 4 hạ gục Zombie (không tính Bia Mộ/vật cản) sẽ đặt Bẫy Hoa Sen, phát nổ 444 DMG AoE 2×2 ô khi Zombie bước vào.",
       accentColor = Color(0xFFBA68C8)
     ),
     PlantCatalogItem(
@@ -448,12 +448,12 @@ object PvzCatalog {
       shortName = "Cỏ Gai",
       fullName = "Cỏ Gai (Spikeweed)",
       group = "Bẫy Sát Đất",
-      cost = 100,
-      damageText = "15 DMG / giây",
-      rateText = "Liên tục khi dẫm lên",
+      cost = 50,
+      damageText = "20 DMG / 0.5s",
+      rateText = "0.5s/lần khi dẫm lên",
       cooldownText = "5.0s",
       hpText = "300 HP",
-      description = "Trải gai sát mặt đất gây 15 sát thương mỗi giây cho zombie đi bộ qua (không trúng zombie đang bay). Không bị zombie thường ăn, nhưng vẫn bị khối băng đè nát và bị Gargantuar / Zomboss đập phá.",
+      description = "Trải gai sát mặt đất gây 20 sát thương mỗi 0.5s cho zombie đi bộ qua (không trúng zombie đang bay). Không bị zombie thường ăn, nhưng vẫn bị khối băng đè nát và bị Gargantuar / Zomboss đập phá.",
       accentColor = AmberGold
     ),
     PlantCatalogItem(
@@ -475,11 +475,11 @@ object PvzCatalog {
       fullName = "Phù Thủy Syndra",
       group = "Pháp Sư Bóng Tối",
       cost = 250,
-      damageText = "30/0.5s · Cầu 100 · Cường Hóa 600",
+      damageText = "15/0.5s · Cầu 100 · Cường Hóa 600",
       rateText = "0.5s / đòn · 3s / 1 Quả Cầu",
       cooldownText = "12.0s",
       hpText = "200 HP",
-      description = "Hoa dạ lan hương / lưu ly biến dị mang sắc tối với dáng đứng cao ráo, thanh thoát. Đánh thường 30 DMG / 0.5s. Mỗi 3s tích tụ năng lượng tạo 1 quả cầu quanh bản thân: nếu có zombie sẽ ném cầu gây 100 sát thương (nếu hạ gục zombie sẽ hồi lại 1 cầu); không có zombie sẽ tích tụ tối đa 3 stack, khi đủ 3 stack phóng Cầu Cường Hóa sốc 600 sát thương vào 1 mục tiêu có ATK cao nhất trên hàng.",
+      description = "Hoa dạ lan hương / lưu ly biến dị mang sắc tối với dáng đứng cao ráo, thanh thoát. Đánh thường 15 DMG / 0.5s. Mỗi 3s tích tụ năng lượng tạo 1 quả cầu quanh bản thân: nếu có zombie sẽ ném cầu gây 100 sát thương (nếu hạ gục zombie sẽ hồi lại 1 cầu); không có zombie sẽ tích tụ tối đa 3 stack, khi đủ 3 stack phóng Cầu Cường Hóa sốc 600 sát thương vào 1 mục tiêu có ATK cao nhất trên hàng.",
       accentColor = Color(0xFFE040FB)
     ),
     PlantCatalogItem(
@@ -502,11 +502,50 @@ object PvzCatalog {
       group = "Cầu Vồng & Pháp Trận",
       cost = 250,
       damageText = "40/2s (Xuyên 4) · Pháp Trận 200",
-      rateText = "2.0s / thỏ · 15s / Pháp Trận",
+      rateText = "2.0s / thỏ · 20s / Pháp Trận",
       cooldownText = "15.0s",
       hpText = "300 HP",
-      description = "Hoa chuông linh giới bắn linh hồn thỏ theo kiểu cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên chạm phải 1 ô (không đẩy lùi Mini-Boss/Boss). Mỗi 15s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (tự chuyển sang hàng khác nếu đã có Aurora dùng chiêu ở đó), gây 200 DMG lên toàn bộ zombie phạm vi 2 ô và đẩy tất cả zombie (kể cả Mini-Boss, trừ Zomboss) văng ngược về rìa phải ngoài cùng.",
+      description = "Hoa chuông linh giới bắn linh hồn thỏ theo kiểu cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên chạm phải 1 ô (không đẩy lùi Mini-Boss/Boss). Mỗi 20s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (khi có nhiều Aurora trên sân, chỉ 1 Aurora trồng sớm nhất kích hoạt kỹ năng), gây 200 DMG lên toàn bộ zombie phạm vi 2 ô và đẩy tất cả zombie (kể cả Mini-Boss, trừ Zomboss) văng ngược về rìa phải ngoài cùng.",
       accentColor = IceCyan
+    ),
+    PlantCatalogItem(
+      id = "ahri",
+      shortName = "Ahri",
+      fullName = "Ahri (Hồ Ly Chín Đuôi)",
+      group = "Boomerang & Mê Hoặc",
+      cost = 200,
+      damageText = "Đi 25 · Về 50 Chuẩn (Xuyên Khiên/Giáp)",
+      rateText = "1.75s / lần · 15s / Mê hoặc 4s",
+      cooldownText = "10.0s",
+      hpText = "200 HP",
+      description = "Tấn công mỗi 1.75s phạm vi 5 ô đường thẳng như boomerang: lượt đi gây 25 DMG, khi đi hết phạm vi quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp). Skill mỗi 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên toàn bộ HP, giáp và trạng thái) quay lại đánh zombie địch; hết 4s trở lại bình thường.",
+      accentColor = Color(0xFFF48FB1)
+    ),
+    PlantCatalogItem(
+      id = "irelia",
+      shortName = "Kiếm Vũ Ire",
+      fullName = "Kiếm Vũ Ire (Irelia)",
+      group = "Sát Thủ Kết Liễu",
+      cost = 200,
+      damageText = "35 / 0.8s · Kết Liễu <250 HP (<10%)",
+      rateText = "0.8s (+10%/stack, max 3) · Skill 3×3 (2s)",
+      cooldownText = "10.0s",
+      hpText = "400 HP",
+      description = "Tầm đánh 2 ô gây 35 DMG mỗi 0.8s. Skill phạm vi 3×3 (hồi chiêu 2s): khi có zombie dưới 250 HP (với zombie có HP cơ bản dưới 250 thì tính dưới 10%) và không có Bất Tử, lập tức di chuyển tới ô đó kết liễu mục tiêu và tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần).",
+      accentColor = Color(0xFF00B0FF)
+    ),
+    PlantCatalogItem(
+      id = "karma",
+      shortName = "Karma",
+      fullName = "Karma (Khai Sáng)",
+      group = "Hỗ Trợ Tạo Khiên",
+      cost = 75,
+      damageText = "0 DMG · Buff +200 Khiên",
+      rateText = "5.0s / lần (Lần 4 cường hóa 3×3)",
+      cooldownText = "9.0s",
+      hpText = "150 HP",
+      description = "0 sát thương. Mỗi 5s buff +200 Khiên cho cây phòng thủ trước mặt 1 ô. Sau 3 lần buff thường, lần thứ 4 sẽ cường hóa Kinh Lược Hồn buff +200 Khiên cho toàn bộ cây trong phạm vi 3×3.",
+      accentColor = Color(0xFF1DE9B6)
     )
   )
 

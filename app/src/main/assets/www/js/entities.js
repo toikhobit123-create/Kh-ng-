@@ -226,11 +226,50 @@ class Plant {
     }
 
     // Aurora Hoa Chuông Linh Giới: Bắn thỏ cầu vồng xuyên 4 mục tiêu (đẩy lùi mục tiêu đầu 1 ô),
-    // mỗi 15s gọi pháp trận toàn sân (tránh hàng có Aurora khác) gây 200 DMG & đẩy lùi về ô 1 ngoài sân
+    // mỗi 20s gọi pháp trận toàn sân (khi có nhiều Aurora, chỉ Aurora trồng sớm nhất kích hoạt) gây 200 DMG & đẩy lùi về rìa phải ngoài sân
     if (type === 'aurora') {
       this.skillTimer = 0;
-      this.skillInterval = proto.skillInterval || 15.0;
+      this.skillInterval = proto.skillInterval || 20.0;
       this.realmCastAnimTimer = 0;
+      this.isAuroraSkillOwner = false;
+    }
+
+    // Khiên năng lượng (Karma Mantra Shield) dùng chung cho mọi cây
+    this.shieldHp = 0;
+    this.maxShieldHp = 0;
+    this.karmaShieldAnimTimer = 0;
+
+    // Ahri (Hồ Ly Chín Đuôi): Boomerang 25 DMG đi / 50 True DMG về (5 ô, 1.75s),
+    // Skill 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên trạng thái)
+    if (type === 'ahri') {
+      this.skillTimer = 0;
+      this.skillInterval = proto.skillInterval || 15.0;
+      this.charmDuration = proto.charmDuration || 4.0;
+      this.orbAnimTimer = 0;
+      this.charmCastAnimTimer = 0;
+    }
+
+    // Kiếm Vũ Ire: Tầm 2 ô, 35 DMG / 0.8s;
+    // Skill 3x3 (hồi 2s) lướt tới kết liễu zombie <250 HP (<10% nếu cơ bản <250, bỏ qua bất tử) & tăng +10% tốc đánh (max 3 lần)
+    if (type === 'irelia') {
+      this.skillCooldownTimer = 0;
+      this.skillCooldown = proto.skillCooldown || 2.0;
+      this.ireStacks = 0;
+      this.maxAtkSpeedStacks = proto.maxAtkSpeedStacks || 3;
+      this.atkSpeedBonusPerStack = proto.atkSpeedBonusPerStack || 0.10;
+      this.slashAnimTimer = 0;
+      this.dashAnimTimer = 0;
+    }
+
+    // Karma: 0 DMG, mỗi 5s buff 200 khiên cho cây phòng thủ trước mặt 1 ô (3 lần), lần 4 cường hóa 3x3
+    if (type === 'karma') {
+      this.skillTimer = 0;
+      this.skillInterval = proto.skillInterval || 5.0;
+      this.mantraCount = 0;
+      this.mantraRequired = proto.mantraStacksRequired || 3;
+      this.shieldAmount = proto.shieldAmount || 200;
+      this.castAnimTimer = 0;
+      this.empoweredAnimTimer = 0;
     }
   }
 
@@ -266,6 +305,24 @@ class Plant {
     }
     if (this.realmCastAnimTimer > 0) {
       this.realmCastAnimTimer = Math.max(0, this.realmCastAnimTimer - dt);
+    }
+    if (this.karmaShieldAnimTimer > 0) {
+      this.karmaShieldAnimTimer = Math.max(0, this.karmaShieldAnimTimer - dt);
+    }
+    if (this.orbAnimTimer > 0) {
+      this.orbAnimTimer = Math.max(0, this.orbAnimTimer - dt);
+    }
+    if (this.charmCastAnimTimer > 0) {
+      this.charmCastAnimTimer = Math.max(0, this.charmCastAnimTimer - dt);
+    }
+    if (this.slashAnimTimer > 0) {
+      this.slashAnimTimer = Math.max(0, this.slashAnimTimer - dt);
+    }
+    if (this.dashAnimTimer > 0) {
+      this.dashAnimTimer = Math.max(0, this.dashAnimTimer - dt);
+    }
+    if (this.castAnimTimer > 0) {
+      this.castAnimTimer = Math.max(0, this.castAnimTimer - dt);
     }
 
     // Nếu Thresh vừa chết / bị thôi miên, nhả xích & giải choáng ngay lập tức
@@ -474,8 +531,8 @@ class Plant {
 
         if (hasTargetAhead && this.shootTimer <= 0) {
           const isFourthShot = (this.ammo === 1);
-          const baseDmg = proto.damage || 125;
-          const dmg = isFourthShot ? baseDmg * (proto.fourthShotMultiplier || 4) : baseDmg;
+          const baseDmg = proto.damage || 44;
+          const dmg = isFourthShot ? baseDmg * (proto.fourthShotMultiplier || 10) : baseDmg;
           const speed = proto.projectileSpeed || 11.0;
 
           const proj = gameState.spawnProjectile(
@@ -582,10 +639,10 @@ class Plant {
       const targetsAhead = rowTargets.filter(z => z.x > this.x - 10);
       const combatZombies = rowTargets.filter(z => !z.isObstacle);
 
-      // Đòn đánh thường: 30 DMG mỗi 0.5s lên kẻ địch phía trước trên hàng
+      // Đòn đánh thường: 15 DMG mỗi 0.5s lên kẻ địch phía trước trên hàng
       if (targetsAhead.length > 0 && this.shootTimer <= 0) {
         this.shootTimer = proto.atkSpeed || this.atkSpeed || 0.5;
-        const dmg = proto.damage || 30;
+        const dmg = proto.damage || 15;
         const speed = proto.projectileSpeed || 9.5;
         const bolt = gameState.spawnProjectile(
           'syndra_bolt',
@@ -762,8 +819,8 @@ class Plant {
     }
 
     // ----------------------------------------------------
-    // AURORA HOA CHUÔNG LINH GIỚI - Bắn thỏ cầu vồng 40 DMG/s xuyên 4 mục tiêu (đẩy lùi mục tiêu 1)
-    // Mỗi 15s triệu hồi pháp trận toàn sân tại zombie gần sân nhất (tránh hàng Aurora khác)
+    // AURORA HOA CHUÔNG LINH GIỚI - Bắn thỏ cầu vồng 40 DMG/2s xuyên 4 mục tiêu (đẩy lùi mục tiêu 1)
+    // Mỗi 20s triệu hồi pháp trận toàn sân (khi có nhiều Aurora trên sân, chỉ Aurora trồng sớm nhất kích hoạt)
     // ----------------------------------------------------
     if (this.type === 'aurora') {
       const proto = PLANT_CONFIG.aurora || {};
@@ -801,14 +858,410 @@ class Plant {
         }
       }
 
+      const skillInterval = proto.skillInterval || 20.0;
+      this.skillInterval = skillInterval;
+      const isEarliest = this.isEarliestAurora(gameState);
+      this.isAuroraSkillOwner = isEarliest;
+      if (isEarliest) {
+        this.skillTimer += atkDt;
+        if (this.skillTimer >= skillInterval) {
+          const triggered = this.triggerAuroraRealmSkill(gameState, proto.realmDamage || 200);
+          if (triggered) {
+            this.skillTimer = 0;
+          } else {
+            // Chưa có zombie trên sân -> giữ sẵn chiêu để tung ngay khi zombie xuất hiện
+            this.skillTimer = skillInterval;
+          }
+        }
+      } else {
+        this.skillTimer = 0;
+      }
+    }
+
+    // ----------------------------------------------------
+    // AHRI HỒ LY CHÍN ĐUÔI - Tấn công Boomerang 5 ô mỗi 1.75s (lượt đi 25 DMG, về 50 Sát Thương Chuẩn),
+    // Skill mỗi 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên toàn bộ HP/giáp/trạng thái)
+    // ----------------------------------------------------
+    if (this.type === 'ahri') {
+      const proto = PLANT_CONFIG.ahri || {};
+      if (this.shootTimer > 0) {
+        this.shootTimer -= atkDt;
+      }
+
+      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 5.0);
+      const maxReachX = Math.min(CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH + 10, this.x + rangePx);
+
+      const targetsInRange = (gameState.zombies || []).filter(z => {
+        if (!isZombieOnLawn(z) || z.isHypnotized) return false;
+        return isBossRowMatch(z, this.row) && z.x >= this.x - 10 && z.x <= maxReachX + 20;
+      });
+
+      if (targetsInRange.length > 0 && this.shootTimer <= 0) {
+        this.shootTimer = proto.atkSpeed || 1.75;
+        const orb = gameState.spawnProjectile(
+          'ahri_orb',
+          this.row,
+          this.x + 14,
+          this.y - 16,
+          proto.damage || 25,
+          proto.projectileSpeed || 8.5
+        );
+        orb.isAhriOrb = true;
+        orb.ownerPlant = this;
+        orb.startX = this.x + 14;
+        orb.maxReachX = maxReachX;
+        orb.returnDamage = proto.returnDamage || 50;
+        orb.isReturning = false;
+        orb.outHitIds = new Set();
+        orb.retHitIds = new Set();
+
+        this.orbAnimTimer = 0.28;
+        this.state = 'shooting';
+        this.shootStateTimer = 0.25;
+        gameState.spawnParticles(this.x + 14, this.y - 16, '#80deea', 4);
+        if (gameState.audio && gameState.audio.playShoot) {
+          gameState.audio.playShoot('laser');
+        }
+      }
+
+      const skillInterval = proto.skillInterval || 15.0;
+      this.skillInterval = skillInterval;
       this.skillTimer += atkDt;
-      if (this.skillTimer >= (proto.skillInterval || 15.0)) {
-        const triggered = this.triggerAuroraRealmSkill(gameState, proto.realmDamage || 200);
-        if (triggered) {
-          this.skillTimer = 0;
+      if (this.skillTimer >= skillInterval) {
+        let nearestTarget = null;
+        let minDist = Infinity;
+        for (const z of (gameState.zombies || [])) {
+          if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle || z.hypnoImmune || isTwoRowBoss(z)) continue;
+          if (z.type === 'anivia' && z.aniviaPhase === 'egg') continue;
+          if (z.row !== this.row) continue;
+          const d = Math.abs(z.x - this.x);
+          if (d < minDist) {
+            minDist = d;
+            nearestTarget = z;
+          }
+        }
+
+        if (nearestTarget && typeof nearestTarget.applyTemporaryHypnosis === 'function') {
+          const charmDur = proto.charmDuration || this.charmDuration || 4.0;
+          const applied = nearestTarget.applyTemporaryHypnosis(charmDur, gameState);
+          if (applied) {
+            this.skillTimer = 0;
+            this.charmCastAnimTimer = 0.5;
+            this.state = 'shooting';
+            this.shootStateTimer = 0.35;
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'ahri_charm',
+                x: this.x,
+                y: this.y - 14,
+                startX: this.x + 12,
+                startY: this.y - 16,
+                endX: nearestTarget.x,
+                endY: nearestTarget.y - 12,
+                row: this.row,
+                duration: 0.42
+              });
+            }
+            if (gameState.audio && gameState.audio.playHypno) {
+              gameState.audio.playHypno();
+            }
+          }
         } else {
-          // Chưa có zombie trên sân -> giữ sẵn chiêu để tung ngay khi zombie xuất hiện
-          this.skillTimer = proto.skillInterval || 15.0;
+          this.skillTimer = skillInterval;
+        }
+      }
+    }
+
+    // ----------------------------------------------------
+    // KIẾM VŨ IRE - Tầm 2 ô, 35 DMG / 0.8s;
+    // Skill 3x3 (hồi 2s): kết liễu zombie <250 HP (<10% nếu cơ bản <250, bỏ qua nếu bất tử),
+    // lập tức di chuyển tới ô đó & tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần)
+    // ----------------------------------------------------
+    if (this.type === 'irelia') {
+      const proto = PLANT_CONFIG.irelia || {};
+      if (this.shootTimer > 0) {
+        this.shootTimer -= atkDt;
+      }
+      if (this.skillCooldownTimer > 0) {
+        this.skillCooldownTimer = Math.max(0, this.skillCooldownTimer - atkDt);
+      }
+
+      // 1. Skill Kết Liễu & Lướt Kiếm (phạm vi 3x3 quanh Ire, hồi chiêu 2s)
+      if (this.skillCooldownTimer <= 0) {
+        const rangeX3x3 = CONFIG.CELL_WIDTH * 1.55;
+        let execTarget = null;
+        let minTargetDist = Infinity;
+
+        for (const z of (gameState.zombies || [])) {
+          if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle) continue;
+          const rowMatch = isTwoRowBoss(z)
+            ? (Math.abs(z.bossRow - this.row) <= 1 || Math.abs((z.bossRow + 1) - this.row) <= 1)
+            : (Math.abs(z.row - this.row) <= 1);
+          if (!rowMatch || Math.abs(z.x - this.x) > rangeX3x3) continue;
+
+          // Không kích hoạt nếu zombie đang có bất tử
+          const isInvuln = (z.invulnerableTimer > 0) || !!z.isInvulnerable || (z.type === 'ancient_dragon_boss' && z.bossAllShieldHp > 0);
+          if (isInvuln) continue;
+
+          const baseRefHp = z.maxHp || z.baseHp || 190;
+          const flatThreshold = proto.executeFlatHp || 250;
+          const lowRatio = proto.executeLowRatio || 0.10;
+          const qualifies = (baseRefHp < flatThreshold)
+            ? (z.hp > 0 && z.hp < baseRefHp * lowRatio)
+            : (z.hp > 0 && z.hp < flatThreshold);
+
+          if (!qualifies) continue;
+
+          const d = Math.hypot(z.x - this.x, z.y - this.y);
+          if (d < minTargetDist) {
+            minTargetDist = d;
+            execTarget = z;
+          }
+        }
+
+        if (execTarget) {
+          const oldX = this.x;
+          const oldY = this.y;
+          const rawTargetRow = isTwoRowBoss(execTarget)
+            ? Math.max(0, Math.min(CONFIG.ROWS - 1, this.row))
+            : Math.max(0, Math.min(CONFIG.ROWS - 1, execTarget.row));
+          const rawTargetCol = Math.max(
+            0,
+            Math.min(CONFIG.COLS - 1, Math.floor((execTarget.x - CONFIG.GRID_OFFSET_X) / CONFIG.CELL_WIDTH))
+          );
+
+          const isCellFreeForDash = (r, c) => {
+            if (r < 0 || r >= CONFIG.ROWS || c < 0 || c >= CONFIG.COLS) return false;
+            const hasOtherPlant = (gameState.plants || []).some(p => p && p !== this && p.alive && p.row === r && p.col === c);
+            if (hasOtherPlant) return false;
+            if (gameState.scorchedTiles && gameState.scorchedTiles.some(t => t.row === r && t.col === c && t.timer > 0)) return false;
+            if (gameState.chemPotions && gameState.chemPotions.some(p => p.alive && p.row === r && p.col === c)) return false;
+            const cx = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+            const hasObs = (gameState.zombies || []).some(oz => oz.alive && oz.isObstacle && oz.row === r && Math.abs(oz.x - cx) < 30);
+            return !hasObs;
+          };
+
+          let destRow = this.row;
+          let destCol = this.col;
+          if (isCellFreeForDash(rawTargetRow, rawTargetCol)) {
+            destRow = rawTargetRow;
+            destCol = rawTargetCol;
+          } else {
+            // Nếu ô mục tiêu có cây khác đang đứng, chọn ô trống gần mục tiêu nhất trong 3x3
+            let bestFreeDist = Infinity;
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                const nr = rawTargetRow + dr;
+                const nc = rawTargetCol + dc;
+                if (Math.abs(nr - this.row) <= 1 && Math.abs(nc - this.col) <= 1 && isCellFreeForDash(nr, nc)) {
+                  const cd = Math.abs(dr) + Math.abs(dc);
+                  if (cd < bestFreeDist) {
+                    bestFreeDist = cd;
+                    destRow = nr;
+                    destCol = nc;
+                  }
+                }
+              }
+            }
+          }
+
+          if (destRow !== this.row || destCol !== this.col) {
+            if (this.hookedByThresh && typeof this.hookedByThresh.releaseThreshHook === 'function') {
+              this.hookedByThresh.releaseThreshHook();
+            }
+            this.row = destRow;
+            this.col = destCol;
+            this.x = CONFIG.GRID_OFFSET_X + destCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+            this.y = CONFIG.GRID_OFFSET_Y + destRow * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          }
+
+          const targetX = execTarget.x;
+          const targetY = execTarget.y;
+          execTarget.takeDamage(999999, true);
+
+          const maxStacks = this.maxAtkSpeedStacks || proto.maxAtkSpeedStacks || 3;
+          this.ireStacks = Math.min(maxStacks, (this.ireStacks || 0) + 1);
+          this.skillCooldownTimer = proto.skillCooldown || this.skillCooldown || 2.0;
+          this.dashAnimTimer = 0.35;
+          this.slashAnimTimer = 0.32;
+          this.state = 'shooting';
+          this.shootStateTimer = 0.3;
+
+          gameState.spawnParticles(oldX, oldY - 8, '#40c4ff', 8);
+          gameState.spawnParticles(targetX, targetY - 10, '#00e5ff', 14);
+          gameState.spawnParticles(this.x, this.y - 10, '#ffd54f', 8);
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'irelia_dash',
+              x: this.x,
+              y: this.y,
+              startX: oldX,
+              startY: oldY - 8,
+              endX: targetX,
+              endY: targetY - 8,
+              row: this.row,
+              duration: 0.36
+            });
+          }
+          if (gameState.spawnFloatingText) {
+            const pct = this.ireStacks * 10;
+            gameState.spawnFloatingText(this.x, this.y - 34, `KẾT LIỄU! +${pct}% TỐC ĐÁNH 🗡️⚡`, '#00e5ff', 15);
+          }
+          if (gameState.audio && gameState.audio.playMelee) {
+            gameState.audio.playMelee();
+          }
+        }
+      }
+
+      // 2. Đòn đánh thường tầm 2 ô: 35 DMG / 0.8s (được cường hóa +10% tốc đánh mỗi stack, tối đa 3 lần)
+      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 2.0) + 12;
+      const meleeTargets = (gameState.zombies || []).filter(z => {
+        if (!isZombieOnLawn(z) || z.isHypnotized) return false;
+        return isBossRowMatch(z, this.row) && Math.abs(z.x - this.x) <= rangePx;
+      });
+
+      if (meleeTargets.length > 0 && this.shootTimer <= 0) {
+        const stacks = Math.min(this.maxAtkSpeedStacks || 3, this.ireStacks || 0);
+        const speedMult = 1 + stacks * (this.atkSpeedBonusPerStack || proto.atkSpeedBonusPerStack || 0.10);
+        this.shootTimer = (proto.atkSpeed || 0.8) / speedMult;
+
+        // Ưu tiên mục tiêu gần nhất ở phía trước (hoặc gần nhất trong tầm 2 ô)
+        let primary = meleeTargets[0];
+        let bestScore = Infinity;
+        for (const z of meleeTargets) {
+          const score = (z.x >= this.x - 10 ? 0 : 1000) + Math.abs(z.x - this.x);
+          if (score < bestScore) {
+            bestScore = score;
+            primary = z;
+          }
+        }
+
+        primary.takeDamage(proto.damage || 35, false);
+        this.slashAnimTimer = 0.24;
+        this.state = 'shooting';
+        this.shootStateTimer = 0.22;
+        gameState.spawnParticles(primary.x, primary.y - 10, '#80d8ff', 5);
+        if (gameState.spawnAttackEffect) {
+          gameState.spawnAttackEffect({
+            kind: 'irelia_slash',
+            x: primary.x,
+            y: primary.y - 10,
+            startX: this.x,
+            startY: this.y - 10,
+            endX: primary.x,
+            endY: primary.y - 10,
+            row: this.row,
+            duration: 0.22
+          });
+        }
+        if (gameState.audio && gameState.audio.playMelee) {
+          gameState.audio.playMelee();
+        }
+      }
+    }
+
+    // ----------------------------------------------------
+    // KARMA KHAI SÁNG - 0 DMG, mỗi 5s buff 200 khiên cho cây phòng thủ trước mặt 1 ô (3 lần),
+    // lần thứ 4 cường hóa buff 200 khiên cho toàn bộ cây phạm vi 3x3
+    // ----------------------------------------------------
+    if (this.type === 'karma') {
+      const proto = PLANT_CONFIG.karma || {};
+      const skillInterval = proto.skillInterval || 5.0;
+      const shieldAmount = proto.shieldAmount || this.shieldAmount || 200;
+      const requiredStacks = proto.mantraStacksRequired || this.mantraRequired || 3;
+      this.skillInterval = skillInterval;
+
+      this.skillTimer += atkDt;
+      if (this.skillTimer >= skillInterval) {
+        if ((this.mantraCount || 0) >= requiredStacks) {
+          // Lần thứ 4 (Cường hóa): Buff 200 khiên cho toàn bộ cây trong phạm vi 3x3
+          const aoeAllies = (gameState.plants || []).filter(p => {
+            return p && p.alive && !p.isRecharging &&
+              Math.abs(p.row - this.row) <= 1 && Math.abs(p.col - this.col) <= 1;
+          });
+          if (aoeAllies.length > 0) {
+            for (const ally of aoeAllies) {
+              if (typeof ally.grantShield === 'function') {
+                ally.grantShield(shieldAmount);
+              }
+              gameState.spawnParticles(ally.x, ally.y - 10, '#00e676', 7);
+              gameState.spawnParticles(ally.x, ally.y - 10, '#80deea', 4);
+            }
+            this.mantraCount = 0;
+            this.skillTimer = 0;
+            this.castAnimTimer = 0.45;
+            this.empoweredAnimTimer = 0.65;
+            this.state = 'shooting';
+            this.shootStateTimer = 0.38;
+
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'karma_mantra',
+                x: this.x,
+                y: this.y,
+                row: this.row,
+                minRow: Math.max(0, this.row - 1),
+                maxRow: Math.min(CONFIG.ROWS - 1, this.row + 1),
+                startX: this.x - CONFIG.CELL_WIDTH * 1.4,
+                endX: this.x + CONFIG.CELL_WIDTH * 1.4,
+                duration: 0.72
+              });
+            }
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(this.x, this.y - 34, `CƯỜNG HÓA 3×3! +${shieldAmount} KHIÊN ✨🛡️`, '#69f0ae', 16);
+            }
+            if (gameState.audio && gameState.audio.playPlant) {
+              gameState.audio.playPlant('karma');
+            }
+          } else {
+            this.skillTimer = skillInterval;
+          }
+        } else {
+          // Lần 1–3: Buff 200 khiên cho cây phòng thủ trước mặt 1 ô (ưu tiên cây phòng thủ, hoặc cây tuyến đầu ô trước mặt)
+          const frontCol = this.col + 1;
+          const frontCandidates = (gameState.plants || []).filter(p => {
+            if (!p || !p.alive || p.isRecharging || p.isGroundPlant) return false;
+            const pCfg = PLANT_CONFIG[p.type];
+            if (pCfg && pCfg.isInstant) return false;
+            return p.row === this.row && p.col === frontCol;
+          });
+          const frontTarget = frontCandidates.find(p => {
+            const pCfg = PLANT_CONFIG[p.type];
+            return !!(pCfg && pCfg.isDefensive);
+          }) || frontCandidates[0] || null;
+
+          if (frontTarget && typeof frontTarget.grantShield === 'function') {
+            frontTarget.grantShield(shieldAmount);
+            this.mantraCount = (this.mantraCount || 0) + 1;
+            this.skillTimer = 0;
+            this.castAnimTimer = 0.35;
+            this.state = 'shooting';
+            this.shootStateTimer = 0.3;
+
+            gameState.spawnParticles(frontTarget.x, frontTarget.y - 10, '#1de9b6', 10);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'karma_shield_beam',
+                x: this.x,
+                y: this.y,
+                startX: this.x + 12,
+                startY: this.y - 12,
+                endX: frontTarget.x,
+                endY: frontTarget.y - 8,
+                row: this.row,
+                duration: 0.36
+              });
+            }
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(frontTarget.x, frontTarget.y - 30, `+${shieldAmount} KHIÊN (${this.mantraCount}/${requiredStacks}) 🛡️`, '#1de9b6', 14);
+            }
+            if (gameState.audio && gameState.audio.playPlant) {
+              gameState.audio.playPlant('karma');
+            }
+          } else {
+            // Giữ sẵn sàng để buff ngay khi có cây đứng trước mặt 1 ô
+            this.skillTimer = skillInterval;
+          }
         }
       }
     }
@@ -1325,7 +1778,7 @@ class Plant {
       return;
     }
 
-    // Cỏ Gai (Spikeweed): Gây 15 sát thương mỗi giây cho zombie đi qua ô
+    // Cỏ Gai (Spikeweed): Gây 20 sát thương mỗi 0.5s cho zombie đi qua ô
     if (this.type === 'spikeweed') {
       if (this.shootTimer > 0) {
         this.shootTimer -= atkDt;
@@ -1339,8 +1792,8 @@ class Plant {
 
         if (targetsOnTile.length > 0) {
           const proto = PLANT_CONFIG.spikeweed || {};
-          this.shootTimer = this.shootInterval || proto.attackInterval || 1.0;
-          const dmg = this.damage || proto.damage || 15;
+          this.shootTimer = this.shootInterval || proto.attackInterval || 0.5;
+          const dmg = this.damage || proto.damage || 20;
           this.state = 'shooting';
           this.shootStateTimer = 0.25;
           for (const target of targetsOnTile) {
@@ -2134,11 +2587,119 @@ class Plant {
       return true;
     }
 
+    if (this.type === 'ahri') {
+      this.hp = this.maxHp;
+      const proto = PLANT_CONFIG.ahri || {};
+      const charmDur = proto.charmDuration || 4.0;
+      const rangePx = CONFIG.CELL_WIDTH * 8.5;
+      let charmed = 0;
+      for (const z of (gameState.zombies || [])) {
+        if (isZombieOnLawn(z) && !z.isHypnotized && !z.isObstacle && !z.hypnoImmune && !isTwoRowBoss(z) && z.row === this.row) {
+          if (typeof z.applyTemporaryHypnosis === 'function' && z.applyTemporaryHypnosis(charmDur, gameState)) {
+            charmed++;
+          }
+        }
+      }
+      for (let i = 0; i < 3; i++) {
+        const orb = gameState.spawnProjectile(
+          'ahri_orb',
+          this.row,
+          this.x + 14 + i * 16,
+          this.y - 16,
+          40,
+          10.5
+        );
+        orb.isAhriOrb = true;
+        orb.ownerPlant = this;
+        orb.startX = this.x + 14;
+        orb.maxReachX = Math.min(CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH + 10, this.x + rangePx);
+        orb.returnDamage = 80;
+        orb.isReturning = false;
+        orb.outHitIds = new Set();
+        orb.retHitIds = new Set();
+      }
+      this.charmCastAnimTimer = 0.6;
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 34, `PHI HỒ MÊ HOẶC (${charmed})! 🦊💖`, '#f48fb1', 17);
+      }
+      return true;
+    }
+
+    if (this.type === 'irelia') {
+      this.hp = this.maxHp;
+      this.skillCooldownTimer = 0;
+      this.ireStacks = this.maxAtkSpeedStacks || 3;
+      this.slashAnimTimer = 0.55;
+      const rangeX = CONFIG.CELL_WIDTH * 1.65;
+      for (const z of (gameState.zombies || [])) {
+        if (!isZombieOnLawn(z) || z.isHypnotized) continue;
+        const rowMatch = isTwoRowBoss(z)
+          ? (Math.abs(z.bossRow - this.row) <= 1 || Math.abs((z.bossRow + 1) - this.row) <= 1)
+          : (Math.abs(z.row - this.row) <= 1);
+        if (rowMatch && Math.abs(z.x - this.x) <= rangeX) {
+          z.takeDamage(600, false);
+          gameState.spawnParticles(z.x, z.y - 10, '#00e5ff', 10);
+        }
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 34, 'THANH KIẾM TIÊN PHONG! 🗡️⚡', '#00e5ff', 17);
+      }
+      return true;
+    }
+
+    if (this.type === 'karma') {
+      this.hp = this.maxHp;
+      this.mantraCount = 0;
+      this.skillTimer = 0;
+      this.empoweredAnimTimer = 0.7;
+      for (const ally of (gameState.plants || [])) {
+        if (ally && ally.alive && !ally.isRecharging &&
+          Math.abs(ally.row - this.row) <= 1 && Math.abs(ally.col - this.col) <= 1) {
+          if (typeof ally.grantShield === 'function') {
+            ally.grantShield(500);
+          }
+          ally.hp = Math.min(ally.maxHp, ally.hp + Math.round(ally.maxHp * 0.5));
+          gameState.spawnParticles(ally.x, ally.y - 10, '#00e676', 10);
+        }
+      }
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'karma_mantra',
+          x: this.x,
+          y: this.y,
+          row: this.row,
+          minRow: Math.max(0, this.row - 1),
+          maxRow: Math.min(CONFIG.ROWS - 1, this.row + 1),
+          startX: this.x - CONFIG.CELL_WIDTH * 1.4,
+          endX: this.x + CONFIG.CELL_WIDTH * 1.4,
+          duration: 0.8
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 34, 'KINH LƯỢC HỒN +500 KHIÊN! ✨🛡️', '#69f0ae', 17);
+      }
+      return true;
+    }
+
     return true;
+  }
+
+  isEarliestAurora(gameState) {
+    if (this.type !== 'aurora' || !this.alive) return false;
+    const plants = (gameState && Array.isArray(gameState.plants)) ? gameState.plants : null;
+    if (!plants) return true;
+    let minId = Infinity;
+    for (const p of plants) {
+      if (p && p.alive && p.type === 'aurora' && p.id < minId) {
+        minId = p.id;
+      }
+    }
+    return minId === Infinity || this.id <= minId;
   }
 
   triggerAuroraRealmSkill(gameState, realmDamage = 200, isPlantFood = false) {
     if (!gameState) return false;
+    if (!isPlantFood && !this.isEarliestAurora(gameState)) return false;
     const candidates = (gameState.zombies || []).filter(z => isZombieOnLawn(z) && !z.isHypnotized && !z.isObstacle);
     if (candidates.length === 0) return false;
 
@@ -2411,8 +2972,29 @@ class Plant {
     }
   }
 
+  grantShield(amount) {
+    if (!this.alive || this.isRecharging || amount <= 0) return;
+    this.shieldHp = (this.shieldHp || 0) + amount;
+    this.maxShieldHp = Math.max(this.maxShieldHp || 0, this.shieldHp, amount);
+    this.karmaShieldAnimTimer = 0.45;
+  }
+
   takeDamage(amount, isPermanentKill = false) {
     if (this.isRecharging) return; // Máy chiếu đang sạc không nhận sát thương
+
+    // Khiên Karma Mantra (hấp thụ sát thương thường trước giáp & máu)
+    if (this.shieldHp > 0 && amount > 0) {
+      this.flashTimer = 0.1;
+      if (amount >= 99999) {
+        this.shieldHp = 0;
+      } else if (this.shieldHp >= amount) {
+        this.shieldHp -= amount;
+        return;
+      } else {
+        amount -= this.shieldHp;
+        this.shieldHp = 0;
+      }
+    }
 
     // Giáp sắt hiệp sĩ của Wall-Nut (8000 HP, chặn đòn đập Gargantuar không vỡ ngay)
     if (this.hasArmor && this.armorHp > 0) {
@@ -2610,8 +3192,10 @@ class Zombie {
     this.flashTimer = 0;
     this.animTime = Math.random() * Math.PI * 2;
     this.walkCycle = 0; // Khởi tạo chu kỳ bước đi, chống lỗi undefined -> NaN
-    // Trạng thái thôi miên (Hypnotized)
+    // Trạng thái thôi miên (Hypnotized) & thôi miên tạm thời (Ahri)
     this.isHypnotized = false;
+    this.isTempHypnotized = false;
+    this.tempHypnoTimer = 0;
 
     // Vật cản Tombstone: đứng yên trên sân
     if (this.isObstacle) {
@@ -2929,6 +3513,37 @@ class Zombie {
         gameState.spawnFloatingText(this.x, this.y - 35, 'THÔI MIÊN! 🌀', '#e040fb', 18);
       }
     }
+  }
+
+  // Thôi miên tạm thời (Ahri): Giữ nguyên toàn bộ HP/giáp/trạng thái, hết thời gian tự trở lại bình thường
+  applyTemporaryHypnosis(duration = 4.0, gameState = null) {
+    if (this.hypnoImmune || this.isObstacle || !this.alive || this.isHypnotized) return false;
+    this.isHypnotized = true;
+    this.isTempHypnotized = true;
+    this.tempHypnoTimer = duration;
+    this.isEating = false;
+    this.isAttacking = false;
+    this.isSmashing = false;
+    this.isChargingLaser = false;
+    this.laserTimer = 0;
+    this.eatingPlant = null;
+    this.attackTimer = 0;
+    if (this.type === 'thresh' && typeof this.releaseThreshHook === 'function') {
+      this.releaseThreshHook();
+    }
+    if (this.type === 'quan_chua') {
+      this.isChanneling = false;
+      this.channelTimer = 0;
+    }
+
+    if (gameState) {
+      gameState.spawnParticles(this.x, this.y - 8, '#f48fb1', 14);
+      gameState.spawnParticles(this.x, this.y - 8, '#e040fb', 8);
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 36, `HÔN GIÓ (${duration}s)! 💖🦊`, '#f48fb1', 16);
+      }
+    }
+    return true;
   }
 
   applyKnockback(distance) {
@@ -3694,38 +4309,60 @@ class Zombie {
     // Tấn công cả Zombie địch lẫn Bia Mộ (Tombstone) cản đường
     // ----------------------------------------------------
     if (this.isHypnotized) {
-      // Tìm Zombie quân địch hoặc Mộ phía trước trên cùng hàng (hướng di chuyển sang phải)
-      const enemyTargetAhead = gameState.zombies.find(z => {
-        return z.alive && !z.isHypnotized && z.row === this.row &&
-               z.x >= this.x - 15 && z.x <= this.x + 40;
-      });
-
-      if (enemyTargetAhead) {
-        this.isEating = true;
-        this.attackTimer += dt;
-        if (this.attackTimer >= this.attackInterval) {
+      if (this.isTempHypnotized) {
+        this.tempHypnoTimer = Math.max(0, (this.tempHypnoTimer || 0) - dt);
+        if (this.tempHypnoTimer <= 0) {
+          this.isTempHypnotized = false;
+          this.isHypnotized = false;
+          this.tempHypnoTimer = 0;
+          this.isEating = false;
+          this.isAttacking = false;
+          this.eatingPlant = null;
           this.attackTimer = 0;
-          enemyTargetAhead.takeDamage(this.damage || 50);
-          gameState.spawnParticles(enemyTargetAhead.x, enemyTargetAhead.y, '#e040fb', 5);
-          // Nếu đối phương là zombie địch (không phải bia mộ bất động), zombie địch cắn trả
-          if (!enemyTargetAhead.isObstacle) {
-            this.takeDamage(enemyTargetAhead.damage || 50);
+          this.x = Math.min(CONFIG.CANVAS_WIDTH + 20, this.x);
+          if (gameState) {
+            gameState.spawnParticles(this.x, this.y - 8, '#f48fb1', 8);
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(this.x, this.y - 34, 'HẾT MÊ HOẶC!', '#ffab91', 13);
+            }
           }
         }
-      } else {
-        this.isEating = false;
-        this.attackTimer = 0;
-        // Đi lùi về phía bên phải
-        const currentSpeedPxPerSec = (CONFIG.CELL_WIDTH / (this.speedPerCell || 6.0)) * currentSpeedFactor;
-        this.x += currentSpeedPxPerSec * dt;
-        this.walkCycle = (Number.isFinite(this.walkCycle) ? this.walkCycle : 0) + dt * 4.5 * currentSpeedFactor;
-
-        // Rời trận khi ra khỏi mép phải
-        if (this.x > CONFIG.CANVAS_WIDTH + 60) {
-          this.alive = false;
-        }
       }
-      return;
+
+      if (this.isHypnotized) {
+        // Tìm Zombie quân địch hoặc Mộ phía trước trên cùng hàng (hướng di chuyển sang phải)
+        const enemyTargetAhead = gameState.zombies.find(z => {
+          return z.alive && !z.isHypnotized && z.row === this.row &&
+                 z.x >= this.x - 15 && z.x <= this.x + 40;
+        });
+
+        if (enemyTargetAhead) {
+          this.isEating = true;
+          this.attackTimer += dt;
+          if (this.attackTimer >= this.attackInterval) {
+            this.attackTimer = 0;
+            enemyTargetAhead.takeDamage(this.damage || 50);
+            gameState.spawnParticles(enemyTargetAhead.x, enemyTargetAhead.y, '#e040fb', 5);
+            // Nếu đối phương là zombie địch (không phải bia mộ bất động), zombie địch cắn trả
+            if (!enemyTargetAhead.isObstacle) {
+              this.takeDamage(enemyTargetAhead.damage || 50);
+            }
+          }
+        } else {
+          this.isEating = false;
+          this.attackTimer = 0;
+          // Đi lùi về phía bên phải
+          const currentSpeedPxPerSec = (CONFIG.CELL_WIDTH / (this.speedPerCell || 6.0)) * currentSpeedFactor;
+          this.x += currentSpeedPxPerSec * dt;
+          this.walkCycle = (Number.isFinite(this.walkCycle) ? this.walkCycle : 0) + dt * 4.5 * currentSpeedFactor;
+
+          // Rời trận khi ra khỏi mép phải
+          if (this.x > CONFIG.CANVAS_WIDTH + 60) {
+            this.alive = false;
+          }
+        }
+        return;
+      }
     }
 
     // ----------------------------------------------------
@@ -6570,6 +7207,67 @@ class Projectile {
 
       if (this.x > CONFIG.CANVAS_WIDTH + 30) {
         this.alive = false;
+      }
+      return;
+    }
+
+    // Quả cầu Boomerang của Ahri:
+    // Lượt đi gây 25 DMG thường; hết phạm vi 5 ô hóa quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp)
+    if (this.isAhriOrb || this.type === 'ahri_orb') {
+      this.outHitIds = this.outHitIds || new Set();
+      this.retHitIds = this.retHitIds || new Set();
+      this.spinAngle = (this.spinAngle || 0) + dt * 10;
+
+      const stepPx = (this.speed || 8.5) * 60 * dt;
+      if (!this.isReturning) {
+        // Lượt đi đã được Projectile.update() dịch sang phải `stepPx` ở đầu hàm!
+        for (const z of gameState.zombies) {
+          if (!isZombieOnLawn(z) || z.isHypnotized) continue;
+          if (this.outHitIds.has(z.id)) continue;
+          if (!isBossRowMatch(z, this.row)) continue;
+
+          const hitHalfW = isTwoRowBoss(z) ? 55 : 28;
+          if (Math.abs(z.x - this.x) < hitHalfW) {
+            this.outHitIds.add(z.id);
+            z.takeDamage(this.damage || 25, false);
+            gameState.spawnParticles(z.x, z.y - 10, '#80deea', 5);
+            if (gameState.audio && gameState.audio.playHit) {
+              gameState.audio.playHit();
+            }
+          }
+        }
+
+        const reachX = this.maxReachX || (this.startX + CONFIG.CELL_WIDTH * 5.0);
+        if (this.x >= reachX) {
+          this.x = reachX;
+          this.isReturning = true;
+          gameState.spawnParticles(this.x, this.y, '#ffffff', 8);
+        }
+      } else {
+        // Lượt về: Projectile.update() đã cộng +stepPx ở đầu hàm, nên trừ 2 * stepPx để bay ngược lại sang trái
+        this.x -= stepPx * 2;
+        const returnX = (this.ownerPlant && this.ownerPlant.alive) ? this.ownerPlant.x : (this.startX || this.x);
+
+        for (const z of gameState.zombies) {
+          if (!isZombieOnLawn(z) || z.isHypnotized) continue;
+          if (this.retHitIds.has(z.id)) continue;
+          if (!isBossRowMatch(z, this.row)) continue;
+
+          const hitHalfW = isTwoRowBoss(z) ? 55 : 28;
+          if (Math.abs(z.x - this.x) < hitHalfW) {
+            this.retHitIds.add(z.id);
+            // Sát thương chuẩn (50 DMG, xuyên mọi khiên & giáp thường)
+            z.takeDamage(this.returnDamage || 50, true);
+            gameState.spawnParticles(z.x, z.y - 10, '#ffffff', 7);
+            if (gameState.audio && gameState.audio.playHit) {
+              gameState.audio.playHit();
+            }
+          }
+        }
+
+        if (this.x <= returnX) {
+          this.alive = false;
+        }
       }
       return;
     }

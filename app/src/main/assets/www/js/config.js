@@ -85,9 +85,9 @@ const PLANT_CONFIG = {
     group: 'lobbed',
     cost: 300,
     hp: 300,
-    atkSpeed: 2.925, // Chuẩn PvZ gốc: 80 trực tiếp + 30 lan, bắn mỗi 2.925s (~27 DPS)
+    atkSpeed: 2.925, // 100 trực tiếp + 30 lan, bắn mỗi 2.925s (~34 DPS)
     shootInterval: 2.925,
-    damage: 80,
+    damage: 100,
     projectileType: 'melon',
     splashDamage: 30, // Chuẩn PvZ gốc: 30 sát thương lan AoE 3x3
     splashRadiusCells: 1.5,
@@ -151,11 +151,11 @@ const PLANT_CONFIG = {
     name: 'Jhinplant',
     nameVi: 'Hoa Súng Tử Vong',
     group: 'straight',
-    cost: 140,
+    cost: 250,
     hp: 440,
-    atkSpeed: 2.2, // Bắn từng viên cách nhau 2.2s (đã cân bằng từ 1.75s)
-    damage: 125, // Viên 1, 2, 3: 125 DMG
-    fourthShotMultiplier: 4, // Viên thứ 4 gấp 4 dam = 500 DMG
+    atkSpeed: 2.2, // Bắn từng viên cách nhau 2.2s
+    damage: 44, // Viên 1, 2, 3: 44 DMG
+    fourthShotMultiplier: 10, // Viên thứ 4 = 440 DMG
     magSize: 4,
     reloadDuration: 4.0, // Nạp đạn 4s sau viên thứ 4
     lotusTrapDamage: 444, // Bẫy hoa sen nổ 444 DMG AoE 2x2 ô
@@ -230,8 +230,8 @@ const PLANT_CONFIG = {
     hp: 300,
     cooldown: 7.5,
     canAttack: true,
-    attackInterval: 1.4,
-    atkSpeed: 1.4,
+    attackInterval: 1.0,
+    atkSpeed: 1.0,
     directDamage: 10,
     chainDamage: 10,
     damage: 10,
@@ -366,19 +366,19 @@ const PLANT_CONFIG = {
     produceSun: false
   },
 
-  // Cỏ Gai (Spikeweed): 100 Sun, hồi 5s, 300 HP, 15 DMG/giây, ở dưới chân nên không bị zom ăn nhưng vẫn bị đè & Gargantuar/Zomboss đập
+  // Cỏ Gai (Spikeweed): 50 Sun, hồi 5s, 300 HP, 20 DMG mỗi 0.5s, ở dưới chân nên không bị zom ăn nhưng vẫn bị đè & Gargantuar/Zomboss đập
   spikeweed: {
     id: 'spikeweed',
     name: 'Cỏ Gai',
     nameEn: 'Spikeweed',
     group: 'ground',
-    cost: 100,
+    cost: 50,
     hp: 300,
     cooldown: 5.0,
-    damage: 15,
-    damagePerSec: 15,
-    attackInterval: 1.0,
-    atkSpeed: 1.0,
+    damage: 20,
+    damagePerSec: 40,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
     isGroundPlant: true,
     canAttack: true,
     produceSun: false
@@ -405,7 +405,7 @@ const PLANT_CONFIG = {
   },
 
   // Phù Thủy Syndra: Hoa dạ lan hương / lưu ly biến dị hắc ám
-  // 250 Sun, hồi 12s, 200 HP, đánh thường 30 DMG / 0.5s.
+  // 250 Sun, hồi 12s, 200 HP, đánh thường 15 DMG / 0.5s.
   // Skill: Mỗi 3s tích 1 quả cầu; có zombie ném cầu 100 DMG (kill -> hồi 1 cầu);
   // không có zombie tích tối đa 3 stack, đủ 3 stack phóng cầu cường hóa 600 DMG vào mục tiêu ATK cao nhất hàng.
   syndra: {
@@ -418,7 +418,7 @@ const PLANT_CONFIG = {
     cooldown: 12.0,
     atkSpeed: 0.5,
     attackInterval: 0.5,
-    damage: 30,
+    damage: 15,
     orbInterval: 3.0,
     orbDamage: 100,
     maxOrbStacks: 3,
@@ -452,9 +452,9 @@ const PLANT_CONFIG = {
     produceSun: false
   },
 
-  // Aurora (Hoa Chuông Linh Giới): 250 Sun, hồi 15s, 300 HP, 40 DMG/s kiểu cầu vồng xuyên 4 mục tiêu,
-  // mục tiêu đầu tiên bị đẩy lùi 1 ô. Mỗi 15s gọi pháp trận toàn sân tại zombie gần nhà nhất (tránh trùng hàng Aurora khác),
-  // gây 200 DMG phạm vi 2 ô và đẩy lùi về ô 1 ngoài sân.
+  // Aurora (Hoa Chuông Linh Giới): 250 Sun, hồi 15s, 300 HP, 40 DMG/2s kiểu cầu vồng xuyên 4 mục tiêu,
+  // mục tiêu đầu tiên bị đẩy lùi 1 ô. Mỗi 20s gọi pháp trận toàn sân tại zombie gần nhà nhất (chỉ Aurora trồng sớm nhất trên sân kích hoạt),
+  // gây 200 DMG phạm vi 2 ô và đẩy lùi về rìa phải ngoài sân.
   aurora: {
     id: 'aurora',
     name: 'Aurora',
@@ -468,11 +468,77 @@ const PLANT_CONFIG = {
     damage: 40,
     pierceCount: 4,
     firstKnockbackCells: 1.0,
-    skillInterval: 15.0,
+    skillInterval: 20.0,
     realmDamage: 200,
     realmRangeCells: 2.0,
     projectileSpeed: 8.5,
     canAttack: true,
+    produceSun: false
+  },
+
+  // Ahri (Hồ Ly Chín Đuôi): 200 Sun, 200 HP, hồi 10s, tấn công 1.75s tầm 5 ô boomerang
+  // (lượt đi 25 DMG, hết tầm biến thành quả cầu trắng bay về gây 50 sát thương chuẩn xuyên khiên/giáp).
+  // Skill mỗi 15s: thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP/giáp/trạng thái) quay lại đánh zom địch.
+  ahri: {
+    id: 'ahri',
+    name: 'Ahri',
+    nameVi: 'Ahri Hồ Ly Chín Đuôi',
+    group: 'spirit_fox',
+    cost: 200,
+    hp: 200,
+    cooldown: 10.0,
+    atkSpeed: 1.75,
+    attackInterval: 1.75,
+    damage: 25,
+    returnDamage: 50,
+    rangeCols: 5.0,
+    skillInterval: 15.0,
+    charmDuration: 4.0,
+    projectileType: 'ahri_orb',
+    projectileSpeed: 8.5,
+    canAttack: true,
+    produceSun: false
+  },
+
+  // Kiếm Vũ Ire (Irelia): 200 Sun, 400 HP, hồi 10s, tầm đánh 2 ô, 35 DMG / 0.8s.
+  // Skill 3x3 (hồi chiêu 2s): kết liễu zombie < 250 HP (<10% nếu HP cơ bản < 250), bỏ qua nếu có bất tử,
+  // lập tức di chuyển tới ô đó & kết liễu, tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần).
+  irelia: {
+    id: 'irelia',
+    name: 'Kiếm Vũ Ire',
+    nameVi: 'Kiếm Vũ Ire',
+    group: 'blade_dancer_ire',
+    cost: 200,
+    hp: 400,
+    cooldown: 10.0,
+    atkSpeed: 0.8,
+    attackInterval: 0.8,
+    damage: 35,
+    rangeCols: 2.0,
+    skillCooldown: 2.0,
+    executeFlatHp: 250,
+    executeLowRatio: 0.10,
+    maxAtkSpeedStacks: 3,
+    atkSpeedBonusPerStack: 0.10,
+    canAttack: true,
+    produceSun: false
+  },
+
+  // Karma (Khai Sáng): 75 Sun, 150 HP, hồi 9s, 0 DMG.
+  // Skill mỗi 5s: buff 200 khiên cho cây phòng thủ trước mặt 1 ô (3 lần); lần thứ 4 cường hóa buff 200 khiên phạm vi 3x3.
+  karma: {
+    id: 'karma',
+    name: 'Karma',
+    nameVi: 'Karma Khai Sáng',
+    group: 'enlightened_support',
+    cost: 75,
+    hp: 150,
+    cooldown: 9.0,
+    damage: 0,
+    skillInterval: 5.0,
+    shieldAmount: 200,
+    mantraStacksRequired: 3,
+    canAttack: false,
     produceSun: false
   }
 
@@ -1537,7 +1603,10 @@ const CONFIG = {
       { plantId: "lux", weight: 12 },
       { plantId: "syndra", weight: 12 },
       { plantId: "kata", weight: 14 },
-      { plantId: "aurora", weight: 12 }
+      { plantId: "aurora", weight: 12 },
+      { plantId: "ahri", weight: 12 },
+      { plantId: "irelia", weight: 13 },
+      { plantId: "karma", weight: 14 }
     ]
   }
 };
@@ -1734,7 +1803,7 @@ const LEVEL_CONFIG = {
     level: 16,
     title: 'Level 16: Đại Tướng Darius Nosus',
     subtitle: 'Chiến Trường Nosus · Màn 3/3 (Toàn Quân)',
-    description: 'Trận quyết chiến pháo đài Nosus! Đối đầu toàn bộ 5 binh chủng Nosus cùng Darius 3200 HP miễn làm chậm/thôi miên/đẩy lùi, Máy Chém Xoay 3×3 và Huyết Nộ bất tử 2s!',
+    description: 'Trận quyết chiến pháo đài Nosus! Đối đầu toàn bộ 5 binh chủng Nosus cùng Darius 3200 HP miễn làm chậm/thôi miên/đẩy lùi, Máy Chém Xoay 3×3 và Huyết Nộ bất tử 4s!',
     theme: 'nosus',
     worldName: 'Chiến Trường Nosus',
     zombiePool: ['nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_warlord'],

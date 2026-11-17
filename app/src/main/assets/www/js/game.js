@@ -83,11 +83,11 @@ const PLANT_SHOWCASE_DATA = {
     name: 'Dưa Hấu (Melon-pult)',
     group: 'Cầu Vồng AoE',
     cost: 300,
-    dmg: '80 (+30 Lan AoE)',
-    rate: '2.925s (~27 DPS)',
+    dmg: '100 (+30 Lan AoE)',
+    rate: '2.925s (~34 DPS)',
     cooldown: '7.5s',
     hp: '300 HP',
-    desc: 'Bắn dưa hấu hạng nặng cầu vồng qua Bia Mộ. Gây 80 sát thương trực tiếp và 30 sát thương lan AoE 3x3 ô.',
+    desc: 'Bắn dưa hấu hạng nặng cầu vồng qua Bia Mộ. Gây 100 sát thương trực tiếp và 30 sát thương lan AoE 3x3 ô.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><ellipse cx="19" cy="27" rx="11" ry="8" fill="#1b5e20" stroke="#0d280d" stroke-width="1.2"/><line x1="19" y1="27" x2="28" y2="12" stroke="#795548" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="29" cy="11" rx="8" ry="6" fill="#2e7d32" stroke="#1b5e20" stroke-width="1.2"/><line x1="25" y1="8" x2="27" y2="14" stroke="#81c784" stroke-width="1.2"/><line x1="29" y1="7" x2="30" y2="15" stroke="#81c784" stroke-width="1.2"/><line x1="33" y1="8" x2="32" y2="14" stroke="#81c784" stroke-width="1.2"/></svg>`
   },
   chomper: {
@@ -144,7 +144,7 @@ const PLANT_SHOWCASE_DATA = {
     group: 'Giật Sét Dây Chuyền',
     cost: 125,
     dmg: '10 DMG x tối đa 3 mục tiêu',
-    rate: '1.4s / tia',
+    rate: '1.0s / tia',
     cooldown: '7.5s',
     hp: '300 HP',
     desc: 'Chỉ giật tia lôi điện xuyên qua tối đa 3 mục tiêu. Khoảng cách từ mục tiêu chính tới mục tiêu lan không quá 3 ô.',
@@ -250,12 +250,12 @@ const PLANT_SHOWCASE_DATA = {
     id: 'jhinplant',
     name: 'Jhinplant (Hoa Súng Tử Vong)',
     group: 'Xạ Thủ Nhịp 4',
-    cost: 140,
-    dmg: '125 (2.2s) · Viên IV: 500 · Sen: 444 AoE 2×2',
+    cost: 250,
+    dmg: '44 (2.2s) · Viên IV: 440 · Sen: 444 AoE 2×2',
     rate: '4 viên (2.2s/viên) · Nạp 4s',
     cooldown: '4.0s',
     hp: '440 HP',
-    desc: 'Bắn lần lượt 4 viên đạn mỗi 2.2s gây 125 DMG, viên thứ 4 gây x4 sát thương (500 DMG) rồi nạp đạn 4s. Khi viên thứ 4 hạ gục Zombie (không tính Bia Mộ/vật cản) sẽ đặt Bẫy Hoa Sen tại ô đó, phát nổ 444 DMG AoE 2×2 ô khi Zombie bước vào.',
+    desc: 'Bắn lần lượt 4 viên đạn mỗi 2.2s gây 44 DMG, viên thứ 4 gây x10 sát thương (440 DMG) rồi nạp đạn 4s. Khi viên thứ 4 hạ gục Zombie (không tính Bia Mộ/vật cản) sẽ đặt Bẫy Hoa Sen tại ô đó, phát nổ 444 DMG AoE 2×2 ô khi Zombie bước vào.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><polygon points="22,6 30,15 37,22 29,29 22,37 15,29 7,22 14,15" fill="#6a1b9a" stroke="#ce93d8" stroke-width="1.4"/><ellipse cx="22" cy="22" rx="7" ry="9" fill="#f3e5f5" stroke="#311b92" stroke-width="1.2"/><circle cx="25" cy="20" r="2" fill="#ff1744"/><line x1="22" y1="11" x2="39" y2="11" stroke="#ff1744" stroke-width="2"/></svg>`
   },
   blover: {
@@ -274,12 +274,12 @@ const PLANT_SHOWCASE_DATA = {
     id: 'spikeweed',
     name: 'Cỏ Gai (Spikeweed)',
     group: 'Bẫy Sát Đất',
-    cost: 100,
-    dmg: '15 DMG / giây',
-    rate: 'Liên tục khi dẫm lên',
+    cost: 50,
+    dmg: '20 DMG / 0.5s',
+    rate: 'Liên tục 0.5s/lần khi dẫm',
     cooldown: '5.0s',
     hp: '300 HP',
-    desc: 'Nằm sát mặt đất gây 15 sát thương mỗi giây cho zombie đi qua. Không bị zombie thường ăn, nhưng vẫn bị khối băng đè nát và bị Gargantuar / Zomboss đập phá.',
+    desc: 'Nằm sát mặt đất gây 20 sát thương mỗi 0.5s cho zombie đi qua. Không bị zombie thường ăn, nhưng vẫn bị khối băng đè nát và bị Gargantuar / Zomboss đập phá.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><ellipse cx="22" cy="34" rx="16" ry="5" fill="#1b5e20"/><polygon points="10,34 14,16 18,34" fill="#455a64" stroke="#263238" stroke-width="1.2"/><polygon points="18,34 22,12 26,34" fill="#455a64" stroke="#263238" stroke-width="1.2"/><polygon points="26,34 30,16 34,34" fill="#455a64" stroke="#263238" stroke-width="1.2"/></svg>`
   },
   lux: {
@@ -299,11 +299,11 @@ const PLANT_SHOWCASE_DATA = {
     name: 'Phù Thủy Syndra',
     group: 'Pháp Sư Bóng Tối',
     cost: 250,
-    dmg: '30/0.5s · Cầu 100 · Cường Hóa 600',
+    dmg: '15/0.5s · Cầu 100 · Cường Hóa 600',
     rate: '0.5s / đòn · 3s / 1 Quả Cầu',
     cooldown: '12.0s',
     hp: '200 HP',
-    desc: 'Hoa dạ lan hương / lưu ly biến dị sắc tối dáng cao thanh thoát. Đánh thường 30 DMG / 0.5s. Mỗi 3s tích tụ 1 quả cầu: có zombie sẽ ném cầu 100 DMG (nếu hạ gục zombie sẽ hồi lại 1 cầu); không có zombie sẽ tích tối đa 3 stack, đủ 3 stack phóng Cầu Cường Hóa sốc 600 DMG vào 1 mục tiêu có ATK cao nhất trên hàng.',
+    desc: 'Hoa dạ lan hương / lưu ly biến dị sắc tối dáng cao thanh thoát. Đánh thường 15 DMG / 0.5s. Mỗi 3s tích tụ 1 quả cầu: có zombie sẽ ném cầu 100 DMG (nếu hạ gục zombie sẽ hồi lại 1 cầu); không có zombie sẽ tích tối đa 3 stack, đủ 3 stack phóng Cầu Cường Hóa sốc 600 DMG vào 1 mục tiêu có ATK cao nhất trên hàng.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><circle cx="22" cy="20" r="10" fill="#4a148c" stroke="#e040fb" stroke-width="1.5"/><circle cx="10" cy="14" r="4.5" fill="#d500f9" stroke="#f3e5f5" stroke-width="1"/><circle cx="34" cy="14" r="4.5" fill="#d500f9" stroke="#f3e5f5" stroke-width="1"/><circle cx="22" cy="34" r="4.5" fill="#d500f9" stroke="#f3e5f5" stroke-width="1"/></svg>`
   },
   kata: {
@@ -324,11 +324,47 @@ const PLANT_SHOWCASE_DATA = {
     group: 'Cầu Vồng & Pháp Trận',
     cost: 250,
     dmg: '40/2s (Xuyên 4) · Pháp Trận 200',
-    rate: '2.0s / thỏ · 15s / Pháp Trận',
+    rate: '2.0s / thỏ · 20s / Pháp Trận',
     cooldown: '15.0s',
     hp: '300 HP',
-    desc: 'Bắn linh hồn thỏ theo quỹ đạo cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên 1 ô (không đẩy lùi Mini-Boss/Boss). Mỗi 15s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (tránh hàng đã có Aurora khác bật chiêu), gây 200 DMG phạm vi 2 ô và đẩy tất cả zombie (kể cả Mini-Boss, trừ Zomboss) văng về rìa phải ngoài cùng.',
+    desc: 'Bắn linh hồn thỏ theo quỹ đạo cầu vồng gây 40 DMG mỗi 2s xuyên thấu 4 mục tiêu và đẩy lùi zombie đầu tiên 1 ô (không đẩy lùi Mini-Boss/Boss). Mỗi 20s triệu hồi Pháp Trận toàn sân tại zombie gần nhà nhất (khi có nhiều Aurora trên sân, chỉ 1 Aurora trồng sớm nhất kích hoạt kỹ năng), gây 200 DMG phạm vi 2 ô và đẩy tất cả zombie (kể cả Mini-Boss, trừ Zomboss) văng về rìa phải ngoài cùng.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><ellipse cx="16" cy="12" rx="4" ry="9" fill="#e0f7fa" stroke="#f48fb1" stroke-width="1.2"/><ellipse cx="28" cy="12" rx="4" ry="9" fill="#e0f7fa" stroke="#f48fb1" stroke-width="1.2"/><circle cx="22" cy="26" r="11" fill="#80deea" stroke="#f06292" stroke-width="1.5"/></svg>`
+  },
+  ahri: {
+    id: 'ahri',
+    name: 'Ahri (Hồ Ly Chín Đuôi)',
+    group: 'Boomerang & Mê Hoặc',
+    cost: 200,
+    dmg: 'Đi 25 · Về 50 Chuẩn (Xuyên Khiên/Giáp)',
+    rate: '1.75s / lần · Tầm 5 ô · Mê hoặc 4s / 15s',
+    cooldown: '10.0s',
+    hp: '200 HP',
+    desc: 'Tấn công mỗi 1.75s theo đường thẳng tầm 5 ô như boomerang: lượt đi gây 25 DMG, khi hết tầm quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp). Mỗi 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP, giáp và mọi trạng thái) quay lại đánh zom địch, hết 4s trở lại bình thường.',
+    svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><polygon points="10,16 14,6 20,14" fill="#fce4ec" stroke="#e91e63" stroke-width="1.2"/><polygon points="34,16 30,6 24,14" fill="#fce4ec" stroke="#e91e63" stroke-width="1.2"/><circle cx="22" cy="24" r="10" fill="#f48fb1" stroke="#c2185b" stroke-width="1.4"/><circle cx="34" cy="26" r="5" fill="#ffffff" stroke="#80deea" stroke-width="1.4"/></svg>`
+  },
+  irelia: {
+    id: 'irelia',
+    name: 'Kiếm Vũ Ire',
+    group: 'Sát Thủ Kết Liễu',
+    cost: 200,
+    dmg: '35 / 0.8s · Kết Liễu <250 HP (<10%)',
+    rate: '0.8s (+10%/stack, max 3) · Skill 3×3 (2s)',
+    cooldown: '10.0s',
+    hp: '400 HP',
+    desc: 'Tầm đánh 2 ô gây 35 DMG mỗi 0.8s. Kỹ năng phạm vi 3×3 (hồi chiêu 2s): khi có zombie dưới 250 HP (với zombie có HP cơ bản dưới 250 thì tính dưới 10% HP) và không có Bất Tử, lập tức di chuyển tới ô đó kết liễu mục tiêu và tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần).',
+    svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><polygon points="22,4 27,18 22,36 17,18" fill="#80d8ff" stroke="#00838f" stroke-width="1.4"/><polygon points="10,12 15,22 10,32 7,22" fill="#ffd54f" stroke="#ef6c00" stroke-width="1.1"/><polygon points="34,12 37,22 34,32 29,22" fill="#ffd54f" stroke="#ef6c00" stroke-width="1.1"/><circle cx="22" cy="22" r="6" fill="#00b0ff" stroke="#ffd54f" stroke-width="1.3"/></svg>`
+  },
+  karma: {
+    id: 'karma',
+    name: 'Karma (Khai Sáng)',
+    group: 'Hỗ Trợ Tạo Khiên',
+    cost: 75,
+    dmg: '0 DMG · Buff +200 Khiên',
+    rate: '5.0s / lần (Lần 4 cường hóa 3×3)',
+    cooldown: '9.0s',
+    hp: '150 HP',
+    desc: '0 sát thương. Mỗi 5s buff +200 Khiên cho cây phòng thủ đứng ngay trước mặt 1 ô. Sau 3 lần buff thường, lần thứ 4 sẽ cường hóa Kinh Lược Hồn buff +200 Khiên cho toàn bộ cây trong phạm vi 3×3!',
+    svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><circle cx="22" cy="22" r="16" fill="none" stroke="#1de9b6" stroke-width="2.2"/><circle cx="22" cy="22" r="9" fill="#00bfa5" stroke="#ffd54f" stroke-width="1.5"/><polygon points="22,15 25,20 22,25 19,20" fill="#ffd54f"/></svg>`
   }
 };
 
@@ -620,7 +656,10 @@ class Game {
       'lux',
       'syndra',
       'kata',
-      'aurora'
+      'aurora',
+      'ahri',
+      'irelia',
+      'karma'
     ];
   }
 
@@ -1246,8 +1285,25 @@ class Game {
 
     // Hồi chiêu tất cả các cây = 0
     this.cooldowns = {};
+    this._lastCdDeg = {};
+    this._lastCdActive = {};
+    if (this._readyTimers) {
+      for (const t of Object.values(this._readyTimers)) {
+        if (t) clearTimeout(t);
+      }
+    }
+    this._readyTimers = {};
     for (const key of this.plantKeys) {
       this.cooldowns[key] = 0;
+      const cdEl = this.cooldownElements ? this.cooldownElements[key] : null;
+      if (cdEl) {
+        cdEl.classList.remove('active', 'sweeping');
+        cdEl.style.setProperty('--cd-deg', '360deg');
+      }
+      const cardEl = this.cardElements ? this.cardElements[key] : null;
+      if (cardEl) {
+        cardEl.classList.remove('cooldown-ready');
+      }
     }
 
     this.naturalSunTimer = 3.0;
@@ -2546,8 +2602,10 @@ class Game {
       if (this.plantFoodBtn) this.plantFoodBtn.classList.toggle('selected', isPFActive);
     }
 
-    // 3. Cập nhật Cooldown & Thẻ Cây
-    if (!this._lastCdHeight) this._lastCdHeight = {};
+    // 3. Cập nhật Cooldown & Thẻ Cây (Radial Wipe)
+    if (!this._lastCdDeg) this._lastCdDeg = {};
+    if (!this._lastCdActive) this._lastCdActive = {};
+    if (!this._readyTimers) this._readyTimers = {};
     if (!this._lastCardDisabled) this._lastCardDisabled = {};
     const isFreeSun = this.isFreePlantSunLevel();
     for (const key of this.plantKeys) {
@@ -2555,13 +2613,45 @@ class Game {
       const cardEl = this.cardElements[key];
       const cdEl = this.cooldownElements[key];
       if (proto && cardEl) {
-        const cdRatio = (this.cooldowns[key] || 0) / proto.cooldown;
-        const cdPercent = Math.round(cdRatio * 100);
-        if (cdEl && this._lastCdHeight[key] !== cdPercent) {
-          this._lastCdHeight[key] = cdPercent;
-          cdEl.style.height = `${cdPercent}%`;
+        const cdRemaining = this.cooldowns[key] || 0;
+        const cdRatio = proto.cooldown > 0 ? Math.max(0, Math.min(1, cdRemaining / proto.cooldown)) : 0;
+        const isCooling = cdRemaining > 0.001 && cdRatio > 0.001;
+        const revealedDeg = isCooling ? Number(((1 - cdRatio) * 360).toFixed(1)) : 360;
+        if (cdEl) {
+          const prevActive = !!this._lastCdActive[key];
+          const prevDeg = this._lastCdDeg[key] !== undefined ? this._lastCdDeg[key] : 360;
+          if (isCooling) {
+            if (!prevActive || revealedDeg < prevDeg) {
+              cdEl.classList.remove('sweeping');
+              cdEl.classList.add('active');
+              cdEl.style.setProperty('--cd-deg', `${revealedDeg}deg`);
+              if (this._readyTimers[key]) {
+                clearTimeout(this._readyTimers[key]);
+                this._readyTimers[key] = null;
+              }
+              cardEl.classList.remove('cooldown-ready');
+            } else if (prevDeg !== revealedDeg) {
+              cdEl.classList.add('sweeping', 'active');
+              cdEl.style.setProperty('--cd-deg', `${revealedDeg}deg`);
+            }
+          } else if (prevActive) {
+            cdEl.classList.add('sweeping');
+            cdEl.style.setProperty('--cd-deg', '360deg');
+            cdEl.classList.remove('active');
+            if (isFreeSun || this.sun >= proto.cost) {
+              cardEl.classList.remove('cooldown-ready');
+              cardEl.classList.add('cooldown-ready');
+              if (this._readyTimers[key]) clearTimeout(this._readyTimers[key]);
+              this._readyTimers[key] = setTimeout(() => {
+                cardEl.classList.remove('cooldown-ready');
+                this._readyTimers[key] = null;
+              }, 450);
+            }
+          }
+          this._lastCdActive[key] = isCooling;
+          this._lastCdDeg[key] = revealedDeg;
         }
-        const canAfford = (isFreeSun || this.sun >= proto.cost) && ((this.cooldowns[key] || 0) <= 0);
+        const canAfford = (isFreeSun || this.sun >= proto.cost) && (cdRemaining <= 0);
         const isDisabled = !canAfford;
         if (this._lastCardDisabled[key] !== isDisabled) {
           this._lastCardDisabled[key] = isDisabled;
