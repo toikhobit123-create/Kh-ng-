@@ -79,7 +79,12 @@ data class PvZColorPalette(
   val nosusCrimsonTop: Color = NosusCrimsonTop,
   val nosusCardTop: Color = NosusCardTop,
   val nosusCardBottom: Color = NosusCardBottom,
-  val nosusBorderCrimson: Color = NosusBorderCrimson
+  val nosusBorderCrimson: Color = NosusBorderCrimson,
+  val ioniaTealTop: Color = IoniaTealTop,
+  val ioniaCardTop: Color = IoniaCardTop,
+  val ioniaCardBottom: Color = IoniaCardBottom,
+  val ioniaBorderSakura: Color = IoniaBorderSakura,
+  val ioniaJadeAccent: Color = IoniaJadeAccent
 ) {
   val worldMapBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(midnightPlum, obsidianBg))
@@ -96,6 +101,9 @@ data class PvZColorPalette(
   val nosusSelectionBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(nosusCrimsonTop, obsidianBg))
 
+  val ioniaSelectionBackdropBrush: Brush
+    get() = Brush.verticalGradient(listOf(ioniaTealTop, obsidianBg))
+
   val gothicCardBrush: Brush
     get() = Brush.verticalGradient(listOf(plumSurfaceCard, plumSurfaceElevated))
 
@@ -110,6 +118,9 @@ data class PvZColorPalette(
 
   val nosusCardBrush: Brush
     get() = Brush.verticalGradient(listOf(nosusCardTop, nosusCardBottom))
+
+  val ioniaCardBrush: Brush
+    get() = Brush.verticalGradient(listOf(ioniaCardTop, ioniaCardBottom))
 
   val rusticWoodBrush: Brush
     get() = Brush.verticalGradient(listOf(rusticWoodTop, rusticWoodBottom))

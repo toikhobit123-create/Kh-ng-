@@ -19,6 +19,20 @@ function isTwoRowBoss(z) {
   return !!(z && (z.type === 'zombot_dark_dragon' || z.type === 'ancient_dragon_boss' || z.type === 'azir_desert_emperor'));
 }
 
+function isBossOrMiniBoss(z) {
+  if (!z) return false;
+  return !!(
+    z.isBoss ||
+    z.isMiniBoss ||
+    isTwoRowBoss(z) ||
+    z.type === 'gargantuar' ||
+    z.type === 'renekton_croc' ||
+    z.type === 'nasus_hound' ||
+    z.type === 'nosus_warlord' ||
+    z.type === 'ionia_sett'
+  );
+}
+
 function isBossRowMatch(z, row) {
   if (!z) return false;
   if (isTwoRowBoss(z)) {
@@ -234,10 +248,15 @@ class Plant {
       this.isAuroraSkillOwner = false;
     }
 
-    // Khiên năng lượng (Karma Mantra Shield) dùng chung cho mọi cây
+    // Khiên năng lượng (Karma Mantra Shield) & hiệu ứng hất tung / Dấu Ấn Tử Thần dùng chung cho mọi cây
     this.shieldHp = 0;
     this.maxShieldHp = 0;
     this.karmaShieldAnimTimer = 0;
+    this.airborneTimer = 0;
+    this.airborneDuration = 0;
+    this.zedDeathMarkTimer = 0;
+    this.zedDeathMarkDuration = 5.0;
+    this.zedDeathMarkDmg = 300;
 
     // Ahri (Hồ Ly Chín Đuôi): Boomerang 25 DMG đi / 50 True DMG về (5 ô, 1.75s),
     // Skill 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên trạng thái)
@@ -246,14 +265,23 @@ class Plant {
       this.skillInterval = proto.skillInterval || 15.0;
       this.charmDuration = proto.charmDuration || 4.0;
       this.orbAnimTimer = 0;
+      this.orbCatchTimer = 0;
       this.charmCastAnimTimer = 0;
+      this.activeOrb = null;
     }
 
-    // Kiếm Vũ Ire: Tầm 2 ô, 35 DMG / 0.8s;
-    // Skill 3x3 (hồi 2s) lướt tới kết liễu zombie <250 HP (<10% nếu cơ bản <250, bỏ qua bất tử) & tăng +10% tốc đánh (max 3 lần)
+    // Kiếm Vũ Ire: Tầm 2 ô, phi kiếm 35 DMG / 0.8s;
+    // Skill 3x3 (hồi 2s) lướt tới kết liễu zombie <250 HP (<10% nếu cơ bản <250, bỏ qua bất tử),
+    // tăng +10% tốc đánh (max 3 lần) và sau 1.5s trở về vị trí cũ
     if (type === 'irelia') {
       this.skillCooldownTimer = 0;
       this.skillCooldown = proto.skillCooldown || 2.0;
+      this.returnDelay = proto.returnDelay || 1.5;
+      this.homeRow = row;
+      this.homeCol = col;
+      this.homeX = this.x;
+      this.homeY = this.y;
+      this.pendingReturn = null;
       this.ireStacks = 0;
       this.maxAtkSpeedStacks = proto.maxAtkSpeedStacks || 3;
       this.atkSpeedBonusPerStack = proto.atkSpeedBonusPerStack || 0.10;
@@ -312,6 +340,9 @@ class Plant {
     if (this.orbAnimTimer > 0) {
       this.orbAnimTimer = Math.max(0, this.orbAnimTimer - dt);
     }
+    if (this.orbCatchTimer > 0) {
+      this.orbCatchTimer = Math.max(0, this.orbCatchTimer - dt);
+    }
     if (this.charmCastAnimTimer > 0) {
       this.charmCastAnimTimer = Math.max(0, this.charmCastAnimTimer - dt);
     }
@@ -323,6 +354,40 @@ class Plant {
     }
     if (this.castAnimTimer > 0) {
       this.castAnimTimer = Math.max(0, this.castAnimTimer - dt);
+    }
+    if (this.airborneTimer > 0) {
+      this.airborneTimer = Math.max(0, this.airborneTimer - dt);
+    }
+
+    // Dấu Ấn Tử Thần của Zed: sau 5s tự phát nổ gây 300 DMG (kể cả khi Zed đã chết hoặc cây bị choáng)
+    if (this.zedDeathMarkTimer > 0) {
+      this.zedDeathMarkTimer = Math.max(0, this.zedDeathMarkTimer - dt);
+      if (this.zedDeathMarkTimer <= 0) {
+        const markDmg = this.zedDeathMarkDmg || 300;
+        this.zedDeathMarkDmg = 0;
+        const markX = this.x;
+        const markY = this.y;
+        this.takeDamage(markDmg, false);
+        if (gameState) {
+          gameState.spawnParticles(markX, markY - 8, '#ff1744', 18);
+          gameState.spawnParticles(markX, markY - 8, '#1a0a18', 12);
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'zed_death_mark_boom',
+              x: markX,
+              y: markY,
+              duration: 0.48
+            });
+          }
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(markX, markY - 30, `-${markDmg} DẤU ẤN TỬ THẦN! 🥷💥`, '#ff1744', 17);
+          }
+          if (gameState.audio && gameState.audio.playExplosion) {
+            gameState.audio.playExplosion('normal');
+          }
+        }
+        if (!this.alive) return;
+      }
     }
 
     // Nếu Thresh vừa chết / bị thôi miên, nhả xích & giải choáng ngay lập tức
@@ -914,11 +979,13 @@ class Plant {
         orb.isReturning = false;
         orb.outHitIds = new Set();
         orb.retHitIds = new Set();
+        orb.trail = [];
+        this.activeOrb = orb;
 
         this.orbAnimTimer = 0.28;
         this.state = 'shooting';
         this.shootStateTimer = 0.25;
-        gameState.spawnParticles(this.x + 14, this.y - 16, '#80deea', 4);
+        gameState.spawnParticles(this.x + 14, this.y - 16, '#80deea', 5);
         if (gameState.audio && gameState.audio.playShoot) {
           gameState.audio.playShoot('laser');
         }
@@ -931,7 +998,7 @@ class Plant {
         let nearestTarget = null;
         let minDist = Infinity;
         for (const z of (gameState.zombies || [])) {
-          if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle || z.hypnoImmune || isTwoRowBoss(z)) continue;
+          if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle || z.hypnoImmune || isBossOrMiniBoss(z)) continue;
           if (z.type === 'anivia' && z.aniviaPhase === 'egg') continue;
           if (z.row !== this.row) continue;
           const d = Math.abs(z.x - this.x);
@@ -973,9 +1040,9 @@ class Plant {
     }
 
     // ----------------------------------------------------
-    // KIẾM VŨ IRE - Tầm 2 ô, 35 DMG / 0.8s;
+    // KIẾM VŨ IRE - Tầm 2 ô, phi kiếm 35 DMG / 0.8s;
     // Skill 3x3 (hồi 2s): kết liễu zombie <250 HP (<10% nếu cơ bản <250, bỏ qua nếu bất tử),
-    // lập tức di chuyển tới ô đó & tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần)
+    // lập tức dịch chuyển tới ô đó, tăng vĩnh viễn +10% tốc độ đánh (tối đa 3 lần), sau 1.5s trở về vị trí cũ
     // ----------------------------------------------------
     if (this.type === 'irelia') {
       const proto = PLANT_CONFIG.irelia || {};
@@ -984,6 +1051,73 @@ class Plant {
       }
       if (this.skillCooldownTimer > 0) {
         this.skillCooldownTimer = Math.max(0, this.skillCooldownTimer - atkDt);
+      }
+
+      const isCellFreeForIrelia = (r, c) => {
+        if (r < 0 || r >= CONFIG.ROWS || c < 0 || c >= CONFIG.COLS) return false;
+        const hasOtherPlant = (gameState.plants || []).some(p => p && p !== this && p.alive && p.row === r && p.col === c);
+        if (hasOtherPlant) return false;
+        if (gameState.scorchedTiles && gameState.scorchedTiles.some(t => t.row === r && t.col === c && t.timer > 0)) return false;
+        if (gameState.chemPotions && gameState.chemPotions.some(p => p.alive && p.row === r && p.col === c)) return false;
+        const cx = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+        const hasObs = (gameState.zombies || []).some(oz => oz.alive && oz.isObstacle && oz.row === r && Math.abs(oz.x - cx) < 30);
+        return !hasObs;
+      };
+
+      // 0. Hẹn giờ quay về vị trí cũ sau 1.5s kể từ khi lướt skill kết liễu
+      if (this.pendingReturn) {
+        this.pendingReturn.timer -= dt;
+        if (this.pendingReturn.timer <= 0) {
+          const retInfo = this.pendingReturn;
+          this.pendingReturn = null;
+          let targetRow = retInfo.row;
+          let targetCol = retInfo.col;
+          if (!isCellFreeForIrelia(targetRow, targetCol)) {
+            let bestDist = Infinity;
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                const nr = retInfo.row + dr;
+                const nc = retInfo.col + dc;
+                if (isCellFreeForIrelia(nr, nc)) {
+                  const cd = Math.abs(dr) + Math.abs(dc);
+                  if (cd < bestDist) {
+                    bestDist = cd;
+                    targetRow = nr;
+                    targetCol = nc;
+                  }
+                }
+              }
+            }
+          }
+          if (isCellFreeForIrelia(targetRow, targetCol) && (targetRow !== this.row || targetCol !== this.col)) {
+            const fromX = this.x;
+            const fromY = this.y;
+            if (this.hookedByThresh && typeof this.hookedByThresh.releaseThreshHook === 'function') {
+              this.hookedByThresh.releaseThreshHook();
+            }
+            this.row = targetRow;
+            this.col = targetCol;
+            this.x = CONFIG.GRID_OFFSET_X + targetCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+            this.y = CONFIG.GRID_OFFSET_Y + targetRow * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+            this.dashAnimTimer = 0.28;
+            gameState.spawnParticles(fromX, fromY - 8, '#80d8ff', 8);
+            gameState.spawnParticles(this.x, this.y - 10, '#ffd54f', 10);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'irelia_dash',
+                x: this.x,
+                y: this.y,
+                startX: fromX,
+                startY: fromY - 8,
+                endX: this.x,
+                endY: this.y - 8,
+                isReturn: true,
+                row: this.row,
+                duration: 0.34
+              });
+            }
+          }
+        }
       }
 
       // 1. Skill Kết Liễu & Lướt Kiếm (phạm vi 3x3 quanh Ire, hồi chiêu 2s)
@@ -1020,8 +1154,13 @@ class Plant {
         }
 
         if (execTarget) {
+          const originRow = this.pendingReturn ? this.pendingReturn.row : this.row;
+          const originCol = this.pendingReturn ? this.pendingReturn.col : this.col;
+          const originX = this.pendingReturn ? this.pendingReturn.x : this.x;
+          const originY = this.pendingReturn ? this.pendingReturn.y : this.y;
           const oldX = this.x;
           const oldY = this.y;
+
           const rawTargetRow = isTwoRowBoss(execTarget)
             ? Math.max(0, Math.min(CONFIG.ROWS - 1, this.row))
             : Math.max(0, Math.min(CONFIG.ROWS - 1, execTarget.row));
@@ -1030,30 +1169,18 @@ class Plant {
             Math.min(CONFIG.COLS - 1, Math.floor((execTarget.x - CONFIG.GRID_OFFSET_X) / CONFIG.CELL_WIDTH))
           );
 
-          const isCellFreeForDash = (r, c) => {
-            if (r < 0 || r >= CONFIG.ROWS || c < 0 || c >= CONFIG.COLS) return false;
-            const hasOtherPlant = (gameState.plants || []).some(p => p && p !== this && p.alive && p.row === r && p.col === c);
-            if (hasOtherPlant) return false;
-            if (gameState.scorchedTiles && gameState.scorchedTiles.some(t => t.row === r && t.col === c && t.timer > 0)) return false;
-            if (gameState.chemPotions && gameState.chemPotions.some(p => p.alive && p.row === r && p.col === c)) return false;
-            const cx = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
-            const hasObs = (gameState.zombies || []).some(oz => oz.alive && oz.isObstacle && oz.row === r && Math.abs(oz.x - cx) < 30);
-            return !hasObs;
-          };
-
           let destRow = this.row;
           let destCol = this.col;
-          if (isCellFreeForDash(rawTargetRow, rawTargetCol)) {
+          if (isCellFreeForIrelia(rawTargetRow, rawTargetCol)) {
             destRow = rawTargetRow;
             destCol = rawTargetCol;
           } else {
-            // Nếu ô mục tiêu có cây khác đang đứng, chọn ô trống gần mục tiêu nhất trong 3x3
             let bestFreeDist = Infinity;
             for (let dr = -1; dr <= 1; dr++) {
               for (let dc = -1; dc <= 1; dc++) {
                 const nr = rawTargetRow + dr;
                 const nc = rawTargetCol + dc;
-                if (Math.abs(nr - this.row) <= 1 && Math.abs(nc - this.col) <= 1 && isCellFreeForDash(nr, nc)) {
+                if (Math.abs(nr - this.row) <= 1 && Math.abs(nc - this.col) <= 1 && isCellFreeForIrelia(nr, nc)) {
                   const cd = Math.abs(dr) + Math.abs(dc);
                   if (cd < bestFreeDist) {
                     bestFreeDist = cd;
@@ -1073,6 +1200,26 @@ class Plant {
             this.col = destCol;
             this.x = CONFIG.GRID_OFFSET_X + destCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
             this.y = CONFIG.GRID_OFFSET_Y + destRow * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          }
+
+          const returnWait = proto.returnDelay || this.returnDelay || 1.5;
+          if (this.row !== originRow || this.col !== originCol) {
+            this.pendingReturn = {
+              row: originRow,
+              col: originCol,
+              x: originX,
+              y: originY,
+              timer: returnWait
+            };
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'irelia_home_marker',
+                x: originX,
+                y: originY,
+                row: originRow,
+                duration: returnWait
+              });
+            }
           }
 
           const targetX = execTarget.x;
@@ -1113,7 +1260,7 @@ class Plant {
         }
       }
 
-      // 2. Đòn đánh thường tầm 2 ô: 35 DMG / 0.8s (được cường hóa +10% tốc đánh mỗi stack, tối đa 3 lần)
+      // 2. Đòn đánh thường tầm 2 ô: Phi ra thanh kiếm bay tới mục tiêu gây 35 DMG / 0.8s (cường hóa +10% tốc đánh mỗi stack, tối đa 3 lần)
       const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 2.0) + 12;
       const meleeTargets = (gameState.zombies || []).filter(z => {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
@@ -1125,7 +1272,6 @@ class Plant {
         const speedMult = 1 + stacks * (this.atkSpeedBonusPerStack || proto.atkSpeedBonusPerStack || 0.10);
         this.shootTimer = (proto.atkSpeed || 0.8) / speedMult;
 
-        // Ưu tiên mục tiêu gần nhất ở phía trước (hoặc gần nhất trong tầm 2 ô)
         let primary = meleeTargets[0];
         let bestScore = Infinity;
         for (const z of meleeTargets) {
@@ -1136,26 +1282,34 @@ class Plant {
           }
         }
 
-        primary.takeDamage(proto.damage || 35, false);
-        this.slashAnimTimer = 0.24;
+        const dirSign = primary.x >= this.x ? 1 : -1;
+        const launchX = this.x + dirSign * 14;
+        const launchY = this.y - 12;
+        const blade = gameState.spawnProjectile(
+          'irelia_blade',
+          this.row,
+          launchX,
+          launchY,
+          proto.damage || 35,
+          proto.projectileSpeed || 10.5
+        );
+        blade.isIreliaBlade = true;
+        blade.ownerPlant = this;
+        blade.lockedTarget = primary;
+        blade.targetX = primary.x;
+        blade.targetY = primary.y - 12;
+        blade.startX = launchX;
+        blade.startY = launchY;
+        blade.ireStacks = stacks;
+        blade.flightAngle = Math.atan2(blade.targetY - launchY, blade.targetX - launchX);
+        blade.trail = [];
+
+        this.slashAnimTimer = 0.28;
         this.state = 'shooting';
-        this.shootStateTimer = 0.22;
-        gameState.spawnParticles(primary.x, primary.y - 10, '#80d8ff', 5);
-        if (gameState.spawnAttackEffect) {
-          gameState.spawnAttackEffect({
-            kind: 'irelia_slash',
-            x: primary.x,
-            y: primary.y - 10,
-            startX: this.x,
-            startY: this.y - 10,
-            endX: primary.x,
-            endY: primary.y - 10,
-            row: this.row,
-            duration: 0.22
-          });
-        }
-        if (gameState.audio && gameState.audio.playMelee) {
-          gameState.audio.playMelee();
+        this.shootStateTimer = 0.24;
+        gameState.spawnParticles(launchX, launchY, stacks >= 2 ? '#ffd54f' : '#80d8ff', 4);
+        if (gameState.audio && gameState.audio.playShoot) {
+          gameState.audio.playShoot('laser');
         }
       }
     }
@@ -2594,7 +2748,7 @@ class Plant {
       const rangePx = CONFIG.CELL_WIDTH * 8.5;
       let charmed = 0;
       for (const z of (gameState.zombies || [])) {
-        if (isZombieOnLawn(z) && !z.isHypnotized && !z.isObstacle && !z.hypnoImmune && !isTwoRowBoss(z) && z.row === this.row) {
+        if (isZombieOnLawn(z) && !z.isHypnotized && !z.isObstacle && !z.hypnoImmune && !isBossOrMiniBoss(z) && z.row === this.row) {
           if (typeof z.applyTemporaryHypnosis === 'function' && z.applyTemporaryHypnosis(charmDur, gameState)) {
             charmed++;
           }
@@ -3477,6 +3631,84 @@ class Zombie {
       this.dariusInvulnAttackInterval = proto.invulnAttackInterval || 1.0;
       this.dariusFrenzySpeedMult = proto.frenzySpeedMult || 2.0;
     }
+
+    // Vùng Đất Ionia: Zed, Yone, Thể Xác Yone, Mini-Boss Sett
+    this.ccImmune = !!proto.ccImmune;
+    this.isInvulnerable = false;
+    if (this.type === 'ionia_zed') {
+      this.hasTriggeredShadowDash = false;
+      this.isShadowDashing = false;
+      this.shadowDashTimer = 0;
+      this.shadowDashDuration = 0.36;
+      this.shadowDashStartX = 0;
+      this.shadowDashTargetX = 0;
+      this.shadowDashTargetPlant = null;
+      this.deathMarkDelay = proto.deathMarkDelay || 5.0;
+      this.deathMarkDamage = proto.deathMarkDamage || 300;
+    } else if (this.type === 'ionia_yone') {
+      this.yoneAttackPhase = 0; // 0: đánh thường 70 DMG, 1: cường hóa 12% HP
+      this.empoweredHpRatio = proto.empoweredHpRatio || 0.12;
+      this.baseSpeedPerCell = proto.speedPerCell || 5.0;
+      this.spiritSpeedPerCell = proto.spiritSpeedPerCell || 3.2;
+      this.spiritTriggerCol = proto.spiritTriggerCol || 6;
+      this.spiritDuration = proto.spiritDuration || 4.5;
+      this.spiritShieldMaxHp = proto.spiritShieldHp || 200;
+      this.spiritShieldHp = 0;
+      this.hasUsedE = false;
+      this.isSpiritForm = false;
+      this.spiritFormTimer = 0;
+      this.spiritBody = null;
+      this.yoneRCd = proto.ultCooldown || 12.0;
+      this.yoneRTimer = this.yoneRCd;
+      this.isChargingR = false;
+      this.rChargeTimer = 0;
+      this.rChargeDuration = proto.ultChannelDuration || 1.2;
+      this.ultDashCells = proto.ultDashCells || 3;
+      this.ultDamage = proto.ultDamage || 120;
+      this.ultStunDuration = proto.ultStunDuration || 2.0;
+      this.isDashingR = false;
+      this.rDashTimer = 0;
+      this.rDashDuration = 0.24;
+      this.rDashStartX = 0;
+      this.rDashTargetX = 0;
+      this.rDashHitIds = null;
+    } else if (this.type === 'yone_body') {
+      this.isYoneBody = true;
+      this.ownerYone = null;
+      this.speed = 0;
+      this.speedPerCell = 999999;
+      this.ccImmune = true;
+      this.stunImmune = true;
+      this.slowImmune = true;
+      this.freezeImmune = true;
+      this.knockbackImmune = true;
+      this.hypnoImmune = true;
+    } else if (this.type === 'ionia_sett') {
+      this.grit = 0;
+      this.maxGrit = proto.maxGrit || 800;
+      this.hpLostSinceW = 0;
+      this.wHpLostThreshold = proto.wHpLostThreshold || 700;
+      this.settShieldHp = 0;
+      this.settMaxShieldHp = proto.wShieldHp || 500;
+      this.settShieldTimer = 0;
+      this.settShieldDuration = proto.wShieldDuration || 3.0;
+      this.wCenterDamage = proto.wCenterDamage || 550;
+      this.wSideDamage = proto.wSideDamage || 200;
+      this.wForwardCells = proto.wForwardCells || 3;
+      this.wSideRows = proto.wSideRows || 2;
+      this.wCastAnimTimer = 0;
+      this.settRCd = 0;
+      this.settRCooldown = proto.rCooldown || 15.0;
+      this.rThrowCells = proto.rThrowCells || 2;
+      this.rCrushMaxHp = proto.rCrushMaxHp || 300;
+      this.rSlamDamage = proto.rSlamDamage || 250;
+      this.rSlamAnimTimer = 0;
+      this.comboHitsPending = 0;
+      this.comboHitDelay = 0;
+      this.comboTargetRef = null;
+      this.punchAnimTimer = 0;
+      this.punchHand = 0;
+    }
   }
 
   registerLuxAssist(luxPlant) {
@@ -3488,12 +3720,17 @@ class Zombie {
   }
 
   hypnotize(gameState) {
-    if (this.hypnoImmune || this.isObstacle || !this.alive || this.isHypnotized) return;
+    if (this.hypnoImmune || this.ccImmune || this.type === 'yone_body' || this.isObstacle || !this.alive || this.isHypnotized) return;
+    if (this.type === 'ionia_yone' && this.isSpiritForm && typeof this.endYoneSpiritForm === 'function') {
+      this.endYoneSpiritForm(gameState, false);
+    }
     this.isHypnotized = true;
     this.isEating = false;
     this.isAttacking = false;
     this.isSmashing = false;
     this.isChargingLaser = false;
+    this.isChargingR = false;
+    this.isDashingR = false;
     this.laserTimer = 0;
     this.eatingPlant = null;
     this.attackTimer = 0;
@@ -3515,9 +3752,12 @@ class Zombie {
     }
   }
 
-  // Thôi miên tạm thời (Ahri): Giữ nguyên toàn bộ HP/giáp/trạng thái, hết thời gian tự trở lại bình thường
+  // Thôi miên tạm thời (Ahri): Giữ nguyên toàn bộ HP/giáp/trạng thái, hết thời gian tự trở lại bình thường (không áp dụng lên Boss / Mini-Boss)
   applyTemporaryHypnosis(duration = 4.0, gameState = null) {
-    if (this.hypnoImmune || this.isObstacle || !this.alive || this.isHypnotized) return false;
+    if (this.hypnoImmune || this.ccImmune || this.type === 'yone_body' || this.isObstacle || isBossOrMiniBoss(this) || !this.alive || this.isHypnotized) return false;
+    if (this.type === 'ionia_yone' && this.isSpiritForm && typeof this.endYoneSpiritForm === 'function') {
+      this.endYoneSpiritForm(gameState, false);
+    }
     this.isHypnotized = true;
     this.isTempHypnotized = true;
     this.tempHypnoTimer = duration;
@@ -3525,6 +3765,8 @@ class Zombie {
     this.isAttacking = false;
     this.isSmashing = false;
     this.isChargingLaser = false;
+    this.isChargingR = false;
+    this.isDashingR = false;
     this.laserTimer = 0;
     this.eatingPlant = null;
     this.attackTimer = 0;
@@ -3547,13 +3789,13 @@ class Zombie {
   }
 
   applyKnockback(distance) {
-    if (this.knockbackImmune || !this.alive) return;
+    if (this.knockbackImmune || this.ccImmune || this.type === 'yone_body' || !this.alive) return;
     if (this.isObstacle) return;
     this.x = Math.min(CONFIG.CANVAS_WIDTH + 50, this.x + distance);
   }
 
   applyStun(duration, isFreeze = false) {
-    if (this.isObstacle || !this.alive) return;
+    if (this.isObstacle || this.ccImmune || this.type === 'yone_body' || !this.alive) return;
     if (this.stunImmune || isTwoRowBoss(this)) {
       // Zomboss miễn nhiễm choáng -> chuyển hóa thành hiệu ứng làm chậm (và kích hoạt delay hành động 1.5s)
       const slowDur = Math.max(duration || 3.0, this.slowActionDelayDuration || 1.5);
@@ -3580,7 +3822,7 @@ class Zombie {
   }
 
   applySlow(factor, duration) {
-    if (this.isObstacle || !this.alive) return;
+    if (this.isObstacle || this.ccImmune || this.type === 'yone_body' || !this.alive) return;
     if (this.slowImmune || this.freezeImmune) {
       if (this.gameState && this.gameState.spawnFloatingText && this.iceImmunePopupCooldown <= 0) {
         if (this.type === 'anivia') {
@@ -3644,6 +3886,32 @@ class Zombie {
     }
     if (this.hemoCastAnimTimer > 0) {
       this.hemoCastAnimTimer = Math.max(0, this.hemoCastAnimTimer - dt);
+    }
+    if (this.wCastAnimTimer > 0) {
+      this.wCastAnimTimer = Math.max(0, this.wCastAnimTimer - dt);
+    }
+    if (this.rSlamAnimTimer > 0) {
+      this.rSlamAnimTimer = Math.max(0, this.rSlamAnimTimer - dt);
+    }
+    if (this.punchAnimTimer > 0) {
+      this.punchAnimTimer = Math.max(0, this.punchAnimTimer - dt);
+    }
+    if (this.settRCd > 0) {
+      this.settRCd = Math.max(0, this.settRCd - dt);
+    }
+    if (this.settShieldTimer > 0) {
+      this.settShieldTimer = Math.max(0, this.settShieldTimer - dt);
+      if (this.settShieldTimer <= 0) {
+        this.settShieldHp = 0;
+      }
+    }
+
+    // Thể Xác Yone: bất động & miễn nhiễm khống chế; tự biến mất nếu chủ thể chết hoặc hết Linh Hồn
+    if (this.type === 'yone_body') {
+      if (!this.ownerYone || !this.ownerYone.alive || !this.ownerYone.isSpiritForm) {
+        this.alive = false;
+      }
+      return;
     }
     if (this.spinAnimTimer > 0) {
       this.spinAnimTimer = Math.max(0, this.spinAnimTimer - dt);
@@ -4189,11 +4457,72 @@ class Zombie {
       }
     }
 
+    // Zed: Lao bóng bất tử tới plant gần nhất cùng hàng và gắn Dấu Ấn Tử Thần (không bị ngắt bởi stun)
+    if (this.type === 'ionia_zed' && this.isShadowDashing) {
+      this.shadowDashTimer += dt;
+      const t = Math.min(1.0, this.shadowDashTimer / (this.shadowDashDuration || 0.36));
+      const easeT = 1 - Math.pow(1 - t, 2);
+      this.x = this.shadowDashStartX + (this.shadowDashTargetX - this.shadowDashStartX) * easeT;
+
+      if (t >= 1.0) {
+        this.isShadowDashing = false;
+        this.isInvulnerable = false;
+        this.isEating = false;
+        this.eatingPlant = null;
+
+        let markTarget = this.shadowDashTargetPlant;
+        if ((!markTarget || !markTarget.alive || markTarget.isRecharging) && gameState && Array.isArray(gameState.plants)) {
+          const candidates = gameState.plants.filter(p => p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row);
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => Math.abs(a.x - this.x) - Math.abs(b.x - this.x));
+            markTarget = candidates[0];
+          } else {
+            markTarget = null;
+          }
+        }
+        this.shadowDashTargetPlant = null;
+
+        if (markTarget && markTarget.alive && !markTarget.isRecharging) {
+          const delay = this.deathMarkDelay || 5.0;
+          const dmg = this.deathMarkDamage || 300;
+          markTarget.zedDeathMarkTimer = delay;
+          markTarget.zedDeathMarkDuration = delay;
+          markTarget.zedDeathMarkDmg = dmg;
+          if (gameState) {
+            gameState.spawnParticles(markTarget.x, markTarget.y - 12, '#ff1744', 14);
+            gameState.spawnParticles(markTarget.x, markTarget.y - 12, '#212121', 8);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'zed_death_mark',
+                x: markTarget.x,
+                y: markTarget.y - 12,
+                duration: 0.55
+              });
+            }
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(markTarget.x, markTarget.y - 34, `DẤU ẤN TỬ THẦN (5s · ${dmg})! ❌🥷`, '#ff1744', 16);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    // Yone: Đếm thời gian Xuất Hồn (E) 4.5s — tự kéo giật về Thể Xác khi hết giờ hoặc Thể Xác bị phá
+    if (this.type === 'ionia_yone' && this.isSpiritForm) {
+      this.spiritFormTimer = Math.max(0, this.spiritFormTimer - dt);
+      if (this.spiritFormTimer <= 0 || !this.spiritBody || !this.spiritBody.alive) {
+        const broken = !this.spiritBody || !this.spiritBody.alive;
+        this.endYoneSpiritForm(gameState, broken);
+      }
+    }
+
     // Choáng: đứng yên
     if (this.stunTimer > 0) {
       this.stunTimer -= dt;
       this.isEating = false;
       this.isSmashing = false;
+      this.isChargingR = false;
       this.eatingPlant = null;
       return;
     }
@@ -5159,6 +5488,162 @@ class Zombie {
       }
     }
 
+    // ----------------------------------------------------
+    // XỬ LÝ YONE SONG KIẾM ĐẤU SĨ (Skill 1 E: Xuất Hồn 4.5s ở cột 6, Skill 2 R: Đoạt Mệnh mỗi 12s)
+    // ----------------------------------------------------
+    if (this.type === 'ionia_yone' && !this.isHypnotized && this.alive) {
+      // Skill 1 E: Khi tiến tới cột 6 -> Để lại Thể Xác & hóa Linh Hồn lao nhanh 4.5s
+      if (!this.hasUsedE && !this.isSpiritForm) {
+        const col6ThresholdX = CONFIG.GRID_OFFSET_X + (this.spiritTriggerCol || 6) * CONFIG.CELL_WIDTH + 8;
+        if (this.x <= col6ThresholdX) {
+          this.triggerYoneSpiritForm(gameState);
+        }
+      }
+
+      // Skill 2 R: Đang lướt xuyên 3 ô
+      if (this.isDashingR) {
+        const prevX = this.x;
+        this.rDashTimer += dt;
+        const t = Math.min(1.0, this.rDashTimer / (this.rDashDuration || 0.24));
+        const easeT = 1 - Math.pow(1 - t, 2);
+        this.x = this.rDashStartX + (this.rDashTargetX - this.rDashStartX) * easeT;
+
+        const sweepMinX = Math.min(prevX, this.x) - 24;
+        const sweepMaxX = Math.max(prevX, this.x) + 24;
+        const hitIds = this.rDashHitIds || (this.rDashHitIds = new Set());
+        const rDmg = this.ultDamage || 120;
+        const rStun = this.ultStunDuration || 2.0;
+
+        if (gameState && gameState.plants) {
+          for (const p of gameState.plants) {
+            if (!p.alive || p.isRecharging || p.isGroundPlant || p.row !== this.row) continue;
+            if (hitIds.has(p)) continue;
+            if (p.x >= sweepMinX && p.x <= sweepMaxX) {
+              hitIds.add(p);
+              p.takeDamage(rDmg, false);
+              if (p.alive && !p.isRecharging) {
+                p.airborneTimer = 0.7;
+                p.airborneDuration = 0.7;
+                p.stunTimer = Math.max(p.stunTimer || 0, rStun);
+              }
+              gameState.spawnParticles(p.x, p.y - 12, '#ff1744', 10);
+              gameState.spawnParticles(p.x, p.y - 16, '#80deea', 6);
+              if (gameState.spawnFloatingText) {
+                gameState.spawnFloatingText(p.x, p.y - 32, `HẤT TUNG ${rStun}s (-${rDmg})! ⚔️🌪️`, '#ff5252', 14);
+              }
+            }
+          }
+        }
+        if (gameState && gameState.barriers) {
+          for (const b of gameState.barriers) {
+            if (b.alive && !hitIds.has(b) && b.x >= sweepMinX && b.x <= sweepMaxX) {
+              hitIds.add(b);
+              b.takeDamage(rDmg);
+            }
+          }
+        }
+        if (gameState && gameState.zombies) {
+          for (const z of gameState.zombies) {
+            if (z.alive && z.isHypnotized && z.row === this.row && !hitIds.has(z) && z.x >= sweepMinX && z.x <= sweepMaxX) {
+              hitIds.add(z);
+              z.takeDamage(rDmg, false);
+              z.applyStun(rStun, false);
+            }
+          }
+        }
+
+        if (t >= 1.0) {
+          this.isDashingR = false;
+          this.rDashHitIds = null;
+          this.slashAnimTimer = 0.35;
+        }
+        return;
+      }
+
+      // Skill 2 R: Đang tụ lực 1.2s
+      if (this.isChargingR) {
+        this.isEating = false;
+        this.eatingPlant = null;
+        this.rChargeTimer = Math.max(0, this.rChargeTimer - dt);
+        if (this.rChargeTimer <= 0) {
+          this.triggerYoneUltDash(gameState);
+        }
+        return;
+      }
+
+      // Đếm hồi chiêu Skill 2 R (12s)
+      if (this.yoneRTimer > 0) {
+        this.yoneRTimer = Math.max(0, this.yoneRTimer - dt);
+      }
+      if (this.yoneRTimer <= 0 && this.x <= CONFIG.CANVAS_WIDTH - 10 && gameState) {
+        const checkRange = CONFIG.CELL_WIDTH * 3.4;
+        const hasTargetInUlt = (gameState.plants || []).some(p =>
+          p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row &&
+          p.x <= this.x + 20 && (this.x - p.x) <= checkRange
+        ) || (gameState.barriers || []).some(b =>
+          b.alive && b.x <= this.x + 20 && (this.x - b.x) <= checkRange
+        );
+        if (hasTargetInUlt) {
+          this.isChargingR = true;
+          this.rChargeTimer = this.rChargeDuration || 1.2;
+          this.yoneRTimer = this.yoneRCd || 12.0;
+          this.isEating = false;
+          this.eatingPlant = null;
+          if (gameState.spawnParticles) {
+            gameState.spawnParticles(this.x, this.y - 12, '#ff1744', 12);
+          }
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(this.x, this.y - 44, 'ĐOẠT MỆNH TỤ LỰC (1.2s)! ⚔️💢', '#ff5252', 16);
+          }
+          return;
+        }
+      }
+    }
+
+    // ----------------------------------------------------
+    // XỬ LÝ SETT MINI-BOSS (Đấm liên hoàn 2 đòn + Skill 2 R Ném cây phòng thủ lùi 2 ô)
+    // ----------------------------------------------------
+    if (this.type === 'ionia_sett' && this.alive) {
+      if (this.comboHitsPending > 0) {
+        this.comboHitDelay -= atkDt;
+        if (this.comboHitDelay <= 0) {
+          this.comboHitsPending = 0;
+          let secondTarget = this.comboTargetRef;
+          if (!secondTarget || !secondTarget.alive || secondTarget.isRecharging) {
+            secondTarget = gameState.plants.find(p =>
+              p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row &&
+              this.x >= p.x - CONFIG.CELL_WIDTH * 0.45 && this.x <= p.x + CONFIG.CELL_WIDTH * 0.85
+            ) || gameState.barriers.find(b => b.alive && Math.abs(this.x - b.x) < 30) || null;
+          }
+          this.comboTargetRef = null;
+          if (secondTarget && secondTarget.alive && !secondTarget.isRecharging) {
+            const dmg = this.damage || 300;
+            secondTarget.takeDamage(dmg, false);
+            this.punchAnimTimer = 0.28;
+            this.punchHand = 1;
+            if (gameState) {
+              gameState.spawnParticles(secondTarget.x + 8, secondTarget.y - 8, '#ffab00', 12);
+              gameState.spawnParticles(secondTarget.x + 8, secondTarget.y - 8, '#ff5252', 8);
+              if (gameState.spawnAttackEffect) {
+                gameState.spawnAttackEffect({
+                  kind: 'sett_punch',
+                  x: secondTarget.x,
+                  y: secondTarget.y - 8,
+                  startX: this.x - 16,
+                  startY: this.y - 12,
+                  hand: 1,
+                  duration: 0.24
+                });
+              }
+              if (gameState.audio && gameState.audio.playMelee) {
+                gameState.audio.playMelee();
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Kiểm tra va chạm với Cây, Hàng rào toàn ảnh hoặc Zombie đồng minh thôi miên
     // Khi cây đặt ra sau khi zombie đã bước vào ô, zombie lập tức tương tác/tấn công và nhận tác dụng của cây
     const plantInFront = gameState.plants.find(p => {
@@ -5194,6 +5679,23 @@ class Zombie {
         this.vaultStartX = this.x;
         this.vaultTargetX = Math.max(CONFIG.GRID_OFFSET_X, plantInFront.x - CONFIG.CELL_WIDTH * 0.9);
         gameState.spawnParticles(this.x, this.y, '#ffd54f', 6);
+        return;
+      }
+    }
+
+    // Sett Skill 2 (R): Khi gặp cây phòng thủ -> lập tức nhấc bổng ném lùi 2 ô + 250 DMG lan 3×3 (hồi 15s)
+    if (this.type === 'ionia_sett' && !this.isHypnotized && this.settRCd <= 0 && plantInFront) {
+      const pProto = (plantInFront.type && typeof PLANT_CONFIG !== 'undefined') ? PLANT_CONFIG[plantInFront.type] : null;
+      const isDefPlant = plantInFront.type === 'wall_nut' ||
+        plantInFront.type === 'tall_nut' ||
+        plantInFront.type === 'infi_nut' ||
+        plantInFront.type === 'galio' ||
+        !!(pProto && pProto.isDefensive);
+      if (isDefPlant) {
+        this.castSettUltThrow(plantInFront, gameState);
+        this.attackTimer = 0;
+        this.isEating = false;
+        this.eatingPlant = null;
         return;
       }
     }
@@ -5325,6 +5827,7 @@ class Zombie {
             targetToAttack.type === 'wall_nut' ||
             targetToAttack.type === 'tall_nut' ||
             targetToAttack.type === 'infi_nut' ||
+            targetToAttack.type === 'galio' ||
             !!(targetProto && targetProto.isDefensive)
           );
 
@@ -5394,6 +5897,70 @@ class Zombie {
                 duration: 0.34
               });
             }
+          } else if (this.type === 'ionia_sett') {
+            // Sett: Mỗi 2s tung 2 cú đấm liên tiếp, mỗi cú gây 300 DMG
+            const punchDmg = this.damage || 300;
+            this.punchAnimTimer = 0.28;
+            this.punchHand = 0;
+            targetToAttack.takeDamage(punchDmg, false);
+            this.comboHitsPending = 1;
+            this.comboHitDelay = 0.22;
+            this.comboTargetRef = targetToAttack;
+            gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 8, '#ffab00', 10);
+            gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 8, '#ff5252', 6);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'sett_punch',
+                x: targetToAttack.x,
+                y: targetToAttack.y - 8,
+                startX: this.x - 16,
+                startY: this.y - 12,
+                hand: 0,
+                duration: 0.24
+              });
+            }
+          } else if (this.type === 'ionia_yone') {
+            // Yone: 70 DMG mỗi 0.5s, luân phiên đánh thường (70) và đánh cường hóa (12% HP mục tiêu)
+            const isEmpowered = this.yoneAttackPhase === 1;
+            const targetMaxHp = targetToAttack.maxHp || targetToAttack.hp || 300;
+            const dealDmg = isEmpowered
+              ? Math.max(1, Math.round(targetMaxHp * (this.empoweredHpRatio || 0.12)))
+              : (this.damage || 70);
+            this.slashAnimTimer = 0.26;
+            targetToAttack.takeDamage(dealDmg, false);
+            this.yoneAttackPhase = isEmpowered ? 0 : 1;
+            gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 8, isEmpowered ? '#ff1744' : '#80deea', 8);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'yone_slash',
+                x: targetToAttack.x,
+                y: targetToAttack.y - 8,
+                startX: this.x - 14,
+                startY: this.y - 12,
+                isEmpowered,
+                duration: 0.24
+              });
+            }
+            if (isEmpowered && gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(targetToAttack.x, targetToAttack.y - 26, `-${dealDmg} (12% HP)! ⚔️🩸`, '#ff5252', 14);
+            }
+          } else if (this.type === 'ionia_zed') {
+            // Zed: 50 DMG/s + nhát chém bóng tối rõ ràng
+            const zedDmg = this.damage || 50;
+            this.slashAnimTimer = 0.26;
+            targetToAttack.takeDamage(zedDmg, false);
+            gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 8, '#ff1744', 6);
+            gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 8, '#212121', 4);
+            if (gameState.spawnAttackEffect) {
+              gameState.spawnAttackEffect({
+                kind: 'zed_slash',
+                x: targetToAttack.x,
+                y: targetToAttack.y - 8,
+                startX: this.x - 14,
+                startY: this.y - 12,
+                duration: 0.24
+              });
+            }
           } else {
             let dealDmg = this.damage;
             let isDarkFirstStrike = false;
@@ -5442,6 +6009,15 @@ class Zombie {
               gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 6, '#e1f5fe', 4);
             } else {
               gameState.spawnParticles(targetToAttack.x + 10, targetToAttack.y, '#81c784', 3);
+            }
+            if (gameState.spawnAttackEffect && this.type !== 'dragon_hatchling' && this.type !== 'dragon_adult') {
+              gameState.spawnAttackEffect({
+                kind: 'melee_bite',
+                x: targetToAttack.x,
+                y: targetToAttack.y - 8,
+                color: this.type === 'nosus_assassin' || this.type === 'nosus_thrall' ? '#ff5252' : '#aed581',
+                duration: 0.20
+              });
             }
           }
           if (gameState && gameState.audio) {
@@ -5497,8 +6073,10 @@ class Zombie {
   takeDamage(amount, bypassArmor = false) {
     if (!this.alive) return;
 
-    // Miễn nhiễm sát thương trong thời gian bất tử (Lãng Khách 3s / Darius Skill 2 2s)
-    if ((this.type === 'lang_khach' || this.type === 'nosus_warlord') && this.invulnerableTimer > 0 && amount < 99999) {
+    // Miễn nhiễm sát thương trong thời gian bất tử (Lãng Khách 3s / Darius Skill 2 4s / Zed Lao Bóng)
+    if ((((this.type === 'lang_khach' || this.type === 'nosus_warlord') && this.invulnerableTimer > 0) ||
+        (this.type === 'ionia_zed' && this.isShadowDashing) ||
+        this.isInvulnerable) && amount < 99999) {
       this.flashTimer = 0.08;
       return;
     }
@@ -5518,6 +6096,22 @@ class Zombie {
       }
     }
 
+    // Sett W: Giáp ảo 500 HP trong 3s hấp thụ sát thương
+    if (this.type === 'ionia_sett' && this.settShieldTimer > 0 && this.settShieldHp > 0 && amount > 0 && amount < 99999) {
+      this.flashTimer = 0.12;
+      if (this.settShieldHp >= amount) {
+        this.settShieldHp -= amount;
+        if (this.gameState) {
+          this.gameState.spawnParticles(this.x, this.y - 10, '#ffd54f', 5);
+        }
+        return;
+      } else {
+        amount -= this.settShieldHp;
+        this.settShieldHp = 0;
+        this.settShieldTimer = 0;
+      }
+    }
+
     this.flashTimer = 0.12;
     const prevHp = this.hp;
 
@@ -5526,7 +6120,7 @@ class Zombie {
       this.hp -= amount;
     } else {
       let effectiveAmount = amount;
-      // Giáp Kiếm Linh Hồn của Shen hấp thụ sát thương thường trước máu & giáp thường (vẫn bị Độc xuyên qua)
+      // Giáp Kiếm Linh Hồn của Shen / HP Linh Hồn (200) của Yone hấp thụ sát thương thường trước máu
       if (this.spiritShieldHp > 0 && effectiveAmount > 0) {
         if (this.spiritShieldHp >= effectiveAmount) {
           this.spiritShieldHp -= effectiveAmount;
@@ -5579,10 +6173,27 @@ class Zombie {
       }
     }
 
-    // Darius (Đại Tướng Nosus) - Skill 2: Sau khi xuống dưới 100 máu -> Bất tử 2s, đòn thường one-hit plant, ×2 tốc độ chạy tới khi chết
+    // Darius (Đại Tướng Nosus) - Skill 2: Sau khi xuống dưới 100 máu -> Bất tử 4s, đòn thường one-hit plant, ×2 tốc độ chạy tới khi chết
     if (this.type === 'nosus_warlord' && !this.hasDariusLastStand && !this.isHypnotized && amount < 99999 && this.hp < (this.dariusLastStandThreshold || 100)) {
       this.triggerDariusLastStand(prevHp, this.gameState);
       return;
+    }
+
+    // Zed: Khi vào máu tử -> miễn nhiễm sát thương và bay vào plant gần nhất cùng hàng gắn Dấu Ấn Tử Thần
+    if (this.type === 'ionia_zed' && !this.hasTriggeredShadowDash && !this.isHypnotized && amount < 99999 && (this.hp <= 0 || this.hp <= 45)) {
+      this.hp = Math.max(1, Math.min(45, prevHp > 0 ? prevHp : 45));
+      this.triggerZedShadowDash(this.gameState);
+      return;
+    }
+
+    // Sett Mini-Boss - Skill 1 (W): Tích 100% sát thương nhận vào thành Gan Lì (max 800) hoặc mất mỗi 700 HP -> Giáp ảo 500 (3s) + Sóng xung kích
+    if (this.type === 'ionia_sett' && !this.isHypnotized && this.hp > 0 && amount > 0 && amount < 99999) {
+      const hpLost = Math.max(0, prevHp - Math.max(0, this.hp));
+      this.grit = Math.min(this.maxGrit || 800, (this.grit || 0) + hpLost);
+      this.hpLostSinceW = (this.hpLostSinceW || 0) + hpLost;
+      if (this.grit >= (this.maxGrit || 800) || this.hpLostSinceW >= (this.wHpLostThreshold || 700)) {
+        this.castSettHaymakerW(this.gameState);
+      }
     }
 
     // Skill 2 của Lãng Khách Zombie: Khi HP tụt xuống dưới 50% -> Bất tử 3s (1 lần/mạng)
@@ -5640,10 +6251,20 @@ class Zombie {
       this.isAttacking = false;
       this.isSmashing = false;
       this.isChargingLaser = false;
+      this.isChargingR = false;
+      this.isDashingR = false;
       this.laserTimer = 0;
       this.eatingPlant = null;
       if (this.type === 'thresh' && typeof this.releaseThreshHook === 'function') {
         this.releaseThreshHook();
+      }
+      if (this.type === 'ionia_yone' && this.spiritBody) {
+        this.spiritBody.alive = false;
+        this.spiritBody = null;
+        this.isSpiritForm = false;
+      }
+      if (this.type === 'yone_body' && this.ownerYone && this.ownerYone.alive && this.ownerYone.isSpiritForm) {
+        this.ownerYone.endYoneSpiritForm(this.gameState, true);
       }
 
       // Nếu khối băng bị phá hủy, giải phóng Yeti Imp
@@ -6089,6 +6710,308 @@ class Zombie {
     }
     if (gameState.audio && gameState.audio.playRoar) {
       gameState.audio.playRoar();
+    }
+  }
+
+  // Zed: Vào máu tử -> miễn nhiễm sát thương & bay tới plant gần nhất cùng hàng gắn Dấu Ấn Tử Thần (nổ 300 DMG sau 5s)
+  triggerZedShadowDash(gameState) {
+    if (this.hasTriggeredShadowDash) return;
+    this.hasTriggeredShadowDash = true;
+    this.isShadowDashing = true;
+    this.isInvulnerable = true;
+    this.stunTimer = 0;
+    this.isEating = false;
+    this.eatingPlant = null;
+    this.shadowDashTimer = 0;
+    this.shadowDashStartX = this.x;
+
+    let nearestPlant = null;
+    if (gameState && Array.isArray(gameState.plants)) {
+      const sameRowPlants = gameState.plants.filter(p => p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row);
+      if (sameRowPlants.length > 0) {
+        sameRowPlants.sort((a, b) => Math.abs(a.x - this.x) - Math.abs(b.x - this.x));
+        nearestPlant = sameRowPlants[0];
+      }
+    }
+
+    this.shadowDashTargetPlant = nearestPlant;
+    const minSafeX = CONFIG.GRID_OFFSET_X + 18;
+    const maxSafeX = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH - 14;
+    const destX = nearestPlant
+      ? Math.max(minSafeX, Math.min(maxSafeX, nearestPlant.x + 18))
+      : Math.max(minSafeX, this.x - CONFIG.CELL_WIDTH * 2);
+    this.shadowDashTargetX = destX;
+
+    if (gameState) {
+      gameState.spawnParticles(this.x, this.y - 12, '#ff1744', 16);
+      gameState.spawnParticles(this.x, this.y - 12, '#212121', 12);
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'zed_shadow_dash',
+          x: this.x,
+          y: this.y - 10,
+          startX: this.x,
+          endX: destX,
+          row: this.row,
+          duration: this.shadowDashDuration || 0.36
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 40, 'TỬ THẦN PHÂN THÂN · MIỄN NHIỄM! 🥷❌', '#ff1744', 16);
+      }
+    }
+  }
+
+  // Yone Skill 1 (E): Xuất Hồn tại cột 6 — để lại Thể Xác (miễn nhiễm CC) & hóa Linh Hồn (+200 HP linh hồn, 3.2s/ô trong 4.5s)
+  triggerYoneSpiritForm(gameState) {
+    if (this.hasUsedE || this.isSpiritForm) return;
+    this.hasUsedE = true;
+    this.isSpiritForm = true;
+    this.spiritFormTimer = this.spiritDuration || 4.5;
+    this.spiritShieldHp = this.spiritShieldMaxHp || 200;
+    this.speedPerCell = this.spiritSpeedPerCell || 3.2;
+    this.speed = (CONFIG.CELL_WIDTH / this.speedPerCell) / 60;
+
+    if (gameState && Array.isArray(gameState.zombies)) {
+      const body = new Zombie('yone_body', this.row, gameState);
+      body.x = this.x;
+      body.ownerYone = this;
+      this.spiritBody = body;
+      gameState.zombies.push(body);
+
+      gameState.spawnParticles(this.x, this.y - 14, '#80deea', 18);
+      gameState.spawnParticles(this.x, this.y - 14, '#ff1744', 10);
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 44, 'XUẤT HỒN (E · 4.5s · +200 GIÁP)! 👻⚔️', '#80deea', 16);
+      }
+    }
+  }
+
+  // Kết thúc Xuất Hồn (hết 4.5s hoặc Thể Xác bị phá): kéo giật Yone về vị trí Thể Xác
+  endYoneSpiritForm(gameState, bodyBroken = false) {
+    if (!this.isSpiritForm) return;
+    const fromX = this.x;
+    const snapX = (this.spiritBody && Number.isFinite(this.spiritBody.x)) ? this.spiritBody.x : this.x;
+    this.isSpiritForm = false;
+    this.spiritFormTimer = 0;
+    this.spiritShieldHp = 0;
+    this.speedPerCell = this.baseSpeedPerCell || 5.0;
+    this.speed = (CONFIG.CELL_WIDTH / this.speedPerCell) / 60;
+    this.isEating = false;
+    this.eatingPlant = null;
+    this.x = snapX;
+
+    if (this.spiritBody) {
+      this.spiritBody.alive = false;
+      this.spiritBody = null;
+    }
+
+    if (gameState) {
+      gameState.spawnParticles(fromX, this.y - 12, '#80deea', 10);
+      gameState.spawnParticles(snapX, this.y - 12, '#ff5252', 14);
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'yone_spirit_snap',
+          x: snapX,
+          y: this.y - 12,
+          startX: fromX,
+          endX: snapX,
+          duration: 0.34
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        const msg = bodyBroken ? 'THỂ XÁC VỠ · KÉO VỀ! 💥👻' : 'NHẬP HỒN · KÉO VỀ! ⚡👻';
+        gameState.spawnFloatingText(snapX, this.y - 40, msg, '#80deea', 15);
+      }
+    }
+  }
+
+  // Yone Skill 2 (R): Sau 1.2s tụ lực -> Lướt xuyên 3 ô trên hàng, hất tung & choáng 2s, gây 120 DMG/cây
+  triggerYoneUltDash(gameState) {
+    this.isChargingR = false;
+    this.isDashingR = true;
+    this.rDashTimer = 0;
+    this.rDashStartX = this.x;
+    const minSafeX = CONFIG.GRID_OFFSET_X + 18;
+    this.rDashTargetX = Math.max(minSafeX, this.x - CONFIG.CELL_WIDTH * (this.ultDashCells || 3));
+    this.rDashHitIds = new Set();
+
+    if (gameState && gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'yone_r_dash',
+        x: this.x,
+        y: this.y - 10,
+        startX: this.rDashStartX,
+        endX: this.rDashTargetX,
+        row: this.row,
+        duration: 0.36
+      });
+    }
+    if (gameState && gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(this.x, this.y - 42, 'ĐOẠT MỆNH! ⚔️💢', '#ff1744', 17);
+    }
+  }
+
+  // Sett Skill 1 (W) – Cuồng Thú Quyền: Giáp ảo 500 HP (3s) + Sóng xung kích 3 ô trước, 2 ô trên dưới (giữa 550 / rìa 200)
+  castSettHaymakerW(gameState) {
+    this.grit = 0;
+    this.hpLostSinceW = 0;
+    this.settShieldHp = this.settMaxShieldHp || 500;
+    this.settShieldTimer = this.settShieldDuration || 3.0;
+    this.wCastAnimTimer = 0.65;
+
+    if (!gameState) return;
+    const forwardCells = this.wForwardCells || 3;
+    const sideRows = this.wSideRows || 2;
+    const centerDmg = this.wCenterDamage || 550;
+    const sideDmg = this.wSideDamage || 200;
+
+    const minX = Math.max(CONFIG.GRID_OFFSET_X, this.x - forwardCells * CONFIG.CELL_WIDTH - 16);
+    const maxX = this.x + 24;
+    const minRow = Math.max(0, this.row - sideRows);
+    const maxRow = Math.min(CONFIG.ROWS - 1, this.row + sideRows);
+
+    (gameState.plants || []).forEach(p => {
+      if (!p.alive || p.isRecharging || p.isGroundPlant) return;
+      if (p.row < minRow || p.row > maxRow) return;
+      if (p.x >= minX && p.x <= maxX) {
+        const isCenter = p.row === this.row;
+        const dmg = isCenter ? centerDmg : sideDmg;
+        p.takeDamage(dmg, false);
+        gameState.spawnParticles(p.x, p.y - 10, isCenter ? '#ffd54f' : '#ff6d00', isCenter ? 14 : 8);
+      }
+    });
+    (gameState.barriers || []).forEach(b => {
+      if (b.alive && b.x >= minX && b.x <= maxX) {
+        b.takeDamage(centerDmg);
+      }
+    });
+    (gameState.zombies || []).forEach(z => {
+      if (z.alive && z.isHypnotized && z.row >= minRow && z.row <= maxRow && z.x >= minX && z.x <= maxX) {
+        z.takeDamage(z.row === this.row ? centerDmg : sideDmg, false);
+      }
+    });
+
+    gameState.spawnParticles(this.x, this.y - 14, '#ffd54f', 24);
+    gameState.spawnParticles(this.x - 40, this.y - 10, '#ff6d00', 18);
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'sett_w_blast',
+        x: this.x,
+        y: this.y,
+        row: this.row,
+        minRow,
+        maxRow,
+        startX: minX,
+        endX: maxX,
+        duration: 0.60
+      });
+    }
+    if (gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(this.x, this.y - 52, `CUỒNG THÚ QUYỀN · +500 GIÁP (550/200)! 💥🥊`, '#ffd54f', 17);
+    }
+    if (gameState.audio && gameState.audio.playRoar) {
+      gameState.audio.playRoar();
+    }
+  }
+
+  // Sett Skill 2 (R) – Hủy Diệt Đấu Trường: Nhấc cây phòng thủ ném lùi 2 ô (đè nát ô đích <=300 HP) + 250 DMG lan 3×3 (hồi 15s)
+  castSettUltThrow(defensivePlant, gameState) {
+    if (!defensivePlant || !defensivePlant.alive) return;
+    this.settRCd = this.settRCooldown || 15.0;
+    this.rSlamAnimTimer = 0.65;
+
+    const origCol = Number.isInteger(defensivePlant.col)
+      ? defensivePlant.col
+      : Math.max(0, Math.min(CONFIG.COLS - 1, Math.floor((defensivePlant.x - CONFIG.GRID_OFFSET_X) / CONFIG.CELL_WIDTH)));
+    const origX = CONFIG.GRID_OFFSET_X + origCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+    const destCol = Math.max(0, origCol - (this.rThrowCells || 2));
+    const destX = CONFIG.GRID_OFFSET_X + destCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+    const destY = CONFIG.GRID_OFFSET_Y + this.row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+
+    if (gameState && destCol !== origCol) {
+      const occupant = (gameState.plants || []).find(p =>
+        p !== defensivePlant && p.alive && !p.isRecharging && p.row === this.row && p.col === destCol
+      );
+      if (occupant) {
+        const occHp = (occupant.hp || 0) + (occupant.armorHp || 0);
+        if (occHp <= (this.rCrushMaxHp || 300)) {
+          if (occupant.hasArmor) {
+            occupant.hasArmor = false;
+            occupant.armorHp = 0;
+          }
+          occupant.takeDamage(99999, true);
+          gameState.spawnParticles(destX, destY - 8, '#ff1744', 18);
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(destX, destY - 34, 'ĐÈ NÁT (≤300 HP)! 💀🥊', '#ff5252', 16);
+          }
+        } else {
+          occupant.col = origCol;
+          occupant.x = origX;
+        }
+      }
+      defensivePlant.col = destCol;
+      defensivePlant.x = destX;
+      defensivePlant.airborneTimer = 0.45;
+      defensivePlant.airborneDuration = 0.45;
+    }
+
+    const slamDmg = this.rSlamDamage || 250;
+    if (gameState) {
+      const minRow = Math.max(0, this.row - 1);
+      const maxRow = Math.min(CONFIG.ROWS - 1, this.row + 1);
+      (gameState.plants || []).forEach(p => {
+        if (!p.alive || p.isRecharging || p.isGroundPlant) return;
+        const pCol = Number.isInteger(p.col)
+          ? p.col
+          : Math.floor((p.x - CONFIG.GRID_OFFSET_X) / CONFIG.CELL_WIDTH);
+        if (p.row >= minRow && p.row <= maxRow && Math.abs(pCol - destCol) <= 1) {
+          p.takeDamage(slamDmg, false);
+          gameState.spawnParticles(p.x, p.y - 8, '#ffab00', 10);
+        }
+      });
+      (gameState.barriers || []).forEach(b => {
+        if (b.alive && Math.abs(b.x - destX) <= CONFIG.CELL_WIDTH * 1.45) {
+          b.takeDamage(slamDmg);
+        }
+      });
+      (gameState.zombies || []).forEach(z => {
+        if (z.alive && z.isHypnotized && z.row >= minRow && z.row <= maxRow && Math.abs(z.x - destX) <= CONFIG.CELL_WIDTH * 1.45) {
+          z.takeDamage(slamDmg, false);
+        }
+      });
+
+      gameState.spawnParticles(destX, destY - 10, '#ff6d00', 22);
+      gameState.spawnParticles(destX, destY - 10, '#ffd54f', 14);
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'sett_r_throw',
+          x: destX,
+          y: destY,
+          startX: origX,
+          startY: destY,
+          endX: destX,
+          endY: destY,
+          duration: 0.42
+        });
+        gameState.spawnAttackEffect({
+          kind: 'sett_r_slam',
+          x: destX,
+          y: destY,
+          row: this.row,
+          minRow,
+          maxRow,
+          startX: Math.max(CONFIG.GRID_OFFSET_X, destX - CONFIG.CELL_WIDTH * 1.45),
+          endX: Math.min(CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH, destX + CONFIG.CELL_WIDTH * 1.45),
+          duration: 0.58
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(destX, destY - 46, `HỦY DIỆT ĐẤU TRƯỜNG (-${slamDmg} 3×3)! 🤼‍♂️💥`, '#ffab00', 17);
+      }
+      if (gameState.audio && gameState.audio.playGargantuarSmash) {
+        gameState.audio.playGargantuarSmash();
+      }
     }
   }
 
@@ -7211,23 +8134,115 @@ class Projectile {
       return;
     }
 
+    // Phi kiếm bay của Kiếm Vũ Ire (35 DMG, bay thẳng/bám mục tiêu trong tầm 2 ô rồi chém xé)
+    if (this.isIreliaBlade || this.type === 'irelia_blade') {
+      this.trail = this.trail || [];
+      const prevX = this.x - moveStep;
+      this.x = prevX;
+      this.trail.push({ x: this.x, y: this.y });
+      if (this.trail.length > 6) this.trail.shift();
+
+      let target = this.lockedTarget;
+      if ((!target || !target.alive || target.isHypnotized) && this.ownerPlant && this.ownerPlant.alive) {
+        const rangePx = CONFIG.CELL_WIDTH * 2.15;
+        let bestDist = Infinity;
+        for (const z of (gameState.zombies || [])) {
+          if (!isZombieOnLawn(z) || z.isHypnotized) continue;
+          if (!isBossRowMatch(z, this.row)) continue;
+          const d = Math.abs(z.x - this.ownerPlant.x);
+          if (d <= rangePx && d < bestDist) {
+            bestDist = d;
+            target = z;
+          }
+        }
+        this.lockedTarget = target;
+      }
+
+      const destX = (target && target.alive) ? target.x : (this.targetX !== undefined ? this.targetX : this.x);
+      const destY = (target && target.alive) ? (target.y - 12) : (this.targetY !== undefined ? this.targetY : this.y);
+      const dx = destX - this.x;
+      const dy = destY - this.y;
+      const dist = Math.hypot(dx, dy);
+      const step = Math.max(1, (this.speed || 10.5) * 60 * dt);
+      const hitDist = (target && isTwoRowBoss(target)) ? 46 : 22;
+
+      if (dist > 0.001) {
+        this.flightAngle = Math.atan2(dy, dx);
+      }
+
+      if (dist <= Math.max(hitDist, step)) {
+        this.x = destX;
+        this.y = destY;
+        this.alive = false;
+
+        let hitTarget = (target && target.alive && !target.isHypnotized) ? target : null;
+        if (!hitTarget) {
+          for (const z of (gameState.zombies || [])) {
+            if (!isZombieOnLawn(z) || z.isHypnotized) continue;
+            if (!isBossRowMatch(z, this.row)) continue;
+            if (Math.abs(z.x - this.x) <= 28) {
+              hitTarget = z;
+              break;
+            }
+          }
+        }
+
+        if (hitTarget) {
+          hitTarget.takeDamage(this.damage || 35, false);
+          gameState.spawnParticles(hitTarget.x, hitTarget.y - 10, (this.ireStacks || 0) >= 2 ? '#ffd54f' : '#80d8ff', 6);
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'irelia_slash',
+              x: hitTarget.x,
+              y: hitTarget.y - 10,
+              startX: this.startX !== undefined ? this.startX : this.x,
+              startY: this.startY !== undefined ? this.startY : this.y,
+              endX: hitTarget.x,
+              endY: hitTarget.y - 10,
+              row: this.row,
+              duration: 0.22
+            });
+          }
+          if (gameState.audio && gameState.audio.playMelee) {
+            gameState.audio.playMelee();
+          }
+        }
+      } else {
+        this.x += (dx / dist) * step;
+        this.y += (dy / dist) * step;
+      }
+      return;
+    }
+
     // Quả cầu Boomerang của Ahri:
-    // Lượt đi gây 25 DMG thường; hết phạm vi 5 ô hóa quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp)
+    // Lượt đi gây 25 DMG thường; hết phạm vi 5 ô hóa quả cầu trắng bay về chỗ Ahri gây 50 Sát Thương Chuẩn (xuyên khiên & giáp)
     if (this.isAhriOrb || this.type === 'ahri_orb') {
       this.outHitIds = this.outHitIds || new Set();
       this.retHitIds = this.retHitIds || new Set();
-      this.spinAngle = (this.spinAngle || 0) + dt * 10;
+      this.trail = this.trail || [];
+      this.spinAngle = (this.spinAngle || 0) + dt * 12;
 
       const stepPx = (this.speed || 8.5) * 60 * dt;
+      // Undo generic moveStep so we control outward vs return sweep cleanly
+      const prevX = this.x - moveStep;
+      this.x = prevX;
+
+      this.trail.push({ x: this.x, y: this.y, isReturning: !!this.isReturning });
+      if (this.trail.length > 9) this.trail.shift();
+
       if (!this.isReturning) {
-        // Lượt đi đã được Projectile.update() dịch sang phải `stepPx` ở đầu hàm!
+        const reachX = this.maxReachX || (this.startX + CONFIG.CELL_WIDTH * 5.0);
+        const nextX = Math.min(reachX, prevX + stepPx);
+        const minSweepX = Math.min(prevX, nextX);
+        const maxSweepX = Math.max(prevX, nextX);
+
         for (const z of gameState.zombies) {
           if (!isZombieOnLawn(z) || z.isHypnotized) continue;
           if (this.outHitIds.has(z.id)) continue;
           if (!isBossRowMatch(z, this.row)) continue;
 
           const hitHalfW = isTwoRowBoss(z) ? 55 : 28;
-          if (Math.abs(z.x - this.x) < hitHalfW) {
+          if (z.x >= minSweepX - hitHalfW && z.x <= maxSweepX + hitHalfW) {
             this.outHitIds.add(z.id);
             z.takeDamage(this.damage || 25, false);
             gameState.spawnParticles(z.x, z.y - 10, '#80deea', 5);
@@ -7237,16 +8252,28 @@ class Projectile {
           }
         }
 
-        const reachX = this.maxReachX || (this.startX + CONFIG.CELL_WIDTH * 5.0);
-        if (this.x >= reachX) {
+        this.x = nextX;
+        if (this.x >= reachX - 0.5) {
           this.x = reachX;
           this.isReturning = true;
-          gameState.spawnParticles(this.x, this.y, '#ffffff', 8);
+          this.trail = [{ x: this.x, y: this.y, isReturning: true }];
+          gameState.spawnParticles(this.x, this.y, '#ffffff', 1, {
+            shape: 'ring',
+            vx: 0,
+            vy: 0,
+            radius: 6,
+            maxRadius: 34,
+            gravity: 0,
+            decay: 3.6
+          });
+          gameState.spawnParticles(this.x, this.y, '#ffffff', 10);
         }
       } else {
-        // Lượt về: Projectile.update() đã cộng +stepPx ở đầu hàm, nên trừ 2 * stepPx để bay ngược lại sang trái
-        this.x -= stepPx * 2;
-        const returnX = (this.ownerPlant && this.ownerPlant.alive) ? this.ownerPlant.x : (this.startX || this.x);
+        const returnX = (this.ownerPlant && this.ownerPlant.alive) ? this.ownerPlant.x : (this.startX || 0);
+        const returnY = (this.ownerPlant && this.ownerPlant.alive) ? (this.ownerPlant.y - 16) : this.y;
+        const nextX = Math.max(returnX, prevX - stepPx);
+        const minSweepX = Math.min(prevX, nextX);
+        const maxSweepX = Math.max(prevX, nextX);
 
         for (const z of gameState.zombies) {
           if (!isZombieOnLawn(z) || z.isHypnotized) continue;
@@ -7254,19 +8281,31 @@ class Projectile {
           if (!isBossRowMatch(z, this.row)) continue;
 
           const hitHalfW = isTwoRowBoss(z) ? 55 : 28;
-          if (Math.abs(z.x - this.x) < hitHalfW) {
+          if (z.x >= minSweepX - hitHalfW && z.x <= maxSweepX + hitHalfW) {
             this.retHitIds.add(z.id);
             // Sát thương chuẩn (50 DMG, xuyên mọi khiên & giáp thường)
             z.takeDamage(this.returnDamage || 50, true);
-            gameState.spawnParticles(z.x, z.y - 10, '#ffffff', 7);
+            gameState.spawnParticles(z.x, z.y - 10, '#ffffff', 8);
             if (gameState.audio && gameState.audio.playHit) {
               gameState.audio.playHit();
             }
           }
         }
 
-        if (this.x <= returnX) {
+        this.x = nextX;
+        this.y += (returnY - this.y) * Math.min(1, dt * 12);
+
+        if (this.x <= returnX + 0.5) {
+          this.x = returnX;
           this.alive = false;
+          if (this.ownerPlant && this.ownerPlant.alive) {
+            this.ownerPlant.orbCatchTimer = 0.22;
+            if (this.ownerPlant.activeOrb === this) {
+              this.ownerPlant.activeOrb = null;
+            }
+          }
+          gameState.spawnParticles(returnX + 10, this.y, '#ffffff', 5);
+          gameState.spawnParticles(returnX + 10, this.y, '#80deea', 4);
         }
       }
       return;

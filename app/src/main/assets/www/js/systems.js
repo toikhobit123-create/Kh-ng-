@@ -6,7 +6,18 @@
 class CollisionSystem {
   static handleProjectileZombieCollisions(projectiles, zombies, gameState) {
     for (const p of projectiles) {
-      if (!p.alive || p.isLobbed || p.isRollingPoisonBoulder || p.isEnergyWave || p.isJhinBullet) continue;
+      if (
+        !p.alive ||
+        p.isLobbed ||
+        p.isRollingPoisonBoulder ||
+        p.isEnergyWave ||
+        p.isJhinBullet ||
+        p.isAhriOrb || p.type === 'ahri_orb' ||
+        p.isIreliaBlade || p.type === 'irelia_blade' ||
+        p.isAuroraRabbit || p.type === 'aurora_rabbit' ||
+        p.isSyndraEmpoweredOrb || p.type === 'syndra_empowered_orb' ||
+        p.isKataDagger || p.type === 'kata_dagger'
+      ) continue;
 
       let targetZombie = null;
       let minX = Infinity;
@@ -48,28 +59,47 @@ class CollisionSystem {
 }
 
 /**
- * QUẢN LÝ ĐỢT TẤN CÔNG (WaveManager - 5 Wave / Màn)
- * - Đầu game delay 20s trước khi zombie xuất hiện.
- * - Zombie yếu ra trước, zombie mạnh dần về sau trong mỗi wave và xuyên suốt các wave.
- * - Phải diệt sạch 100% wave hiện tại mới sang wave tiếp theo, nghỉ 15s giữa các wave.
- * - Wave 1-4 tăng dần. Wave 5 là wave cuối (có Flag Zombie + Boss). Thắng khi diệt xong Wave 5.
+ * QUẢN LÝ ĐỢT TẤN CÔNG (WaveManager - JSON-Driven Interval & Duration Scheduler)
+ * - Đọc lịch trình Wave từ JSON (WaveScheduleRegistry / customSchedule) theo từng level & wave.
+ * - Mỗi wave gồm nhiều segment quy định loại zombie, startOffset, interval, duration, count.
+ * - Hỗ trợ lọc độ trễ Mini-Boss đi sau wave zombie thường đúng khoảng cách quy định (mặc định 2 ô).
+ * - Phải diệt sạch 100% wave hiện tại mới sang wave tiếp theo.
  */
 class WaveManager {
-  constructor(level = 1) {
+  constructor(level = 1, customSchedule = null) {
     this.level = level;
-    this.levelConfig = LEVEL_CONFIG[level] || LEVEL_CONFIG[1];
+    this.levelConfig = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[level]) ? LEVEL_CONFIG[level] : { waves: 5, zombiePool: ['basic'] };
+    this.customSchedule = WaveManager._normalizeScheduleInput(customSchedule);
+
+    const registry = WaveManager._getRegistry();
+    const levelSched = registry ? registry.getLevelSchedule(level, this.customSchedule) : null;
 
     this.currentWave = 1;
-    this.totalWaves = (level === 6 || level === 12 || level === 13) ? 1 : (this.levelConfig.waves || 5);
+    this.totalWaves = levelSched && Array.isArray(levelSched.waves)
+      ? levelSched.waves.length
+      : ((level === 6 || level === 12 || level === 13) ? 1 : (this.levelConfig.waves || 5));
+
+    const defaultInitialDelay = level === 13
+      ? 18.0
+      : ((level === 6 || level === 12) ? 8.0 : ((typeof WAVE_CONFIG !== 'undefined' && WAVE_CONFIG.INITIAL_DELAY) ? WAVE_CONFIG.INITIAL_DELAY : 20.0));
 
     // Trạng thái: 'initial_delay' | 'spawning' | 'waiting_clear' | 'wave_rest' | 'all_cleared'
     this.state = 'initial_delay';
-    this.delayTimer = level === 13
-      ? 18.0
-      : ((level === 6 || level === 12) ? 8.0 : WAVE_CONFIG.INITIAL_DELAY); // Map 13 zombie ra chậm lại 10s (18s)
+    this.delayTimer = (levelSched && levelSched.initialDelay !== undefined)
+      ? Number(levelSched.initialDelay)
+      : defaultInitialDelay;
+    this.restDelay = (levelSched && levelSched.restDelay !== undefined)
+      ? Number(levelSched.restDelay)
+      : ((typeof WAVE_CONFIG !== 'undefined' && WAVE_CONFIG.REST_DELAY) ? WAVE_CONFIG.REST_DELAY : 15.0);
     this.restTimer = 0;
     this.spawnTimer = 0;
+    this.waveDuration = 0;
+    this.waveName = 'Wave 1';
+    this.isFinalWave = false;
+    this.waveBgm = null;
+    this.activeSegments = [];
     this.waveSpawnQueue = [];
+    this.miniBossFallbackTimeout = 18.0;
 
     this.totalZombiesInWave = 0;
     this.spawnedZombiesInWave = 0;
@@ -80,335 +110,129 @@ class WaveManager {
     this.prepareWave(1);
   }
 
+  static _getRegistry() {
+    if (typeof WaveScheduleRegistry !== 'undefined') return WaveScheduleRegistry;
+    if (typeof require === 'function') {
+      try {
+        return require('./waveScheduler.js').WaveScheduleRegistry;
+      } catch (_e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static _normalizeScheduleInput(scheduleOrJson) {
+    if (!scheduleOrJson) return null;
+    if (typeof scheduleOrJson === 'string') {
+      return JSON.parse(scheduleOrJson);
+    }
+    return scheduleOrJson;
+  }
+
+  static loadSchedule(scheduleOrJson) {
+    const registry = WaveManager._getRegistry();
+    if (!registry) {
+      throw new Error('WaveScheduleRegistry is not loaded.');
+    }
+    if (typeof scheduleOrJson === 'string') {
+      return registry.loadFromJson(scheduleOrJson);
+    }
+    return registry.loadFromObject(scheduleOrJson);
+  }
+
+  static validateSchedule(scheduleOrJson) {
+    const registry = WaveManager._getRegistry();
+    const obj = WaveManager._normalizeScheduleInput(scheduleOrJson);
+    return registry ? registry.validateSchedule(obj) : { valid: false, errors: ['Registry unavailable'] };
+  }
+
   static isWaveMiniBossType(type) {
     if (type === 'gargantuar') return true;
     return !!(typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG[type] && ZOMBIE_CONFIG[type].isMiniBoss);
   }
 
+  applySchedule(scheduleOrJson) {
+    this.customSchedule = WaveManager._normalizeScheduleInput(scheduleOrJson);
+    const registry = WaveManager._getRegistry();
+    const levelSched = registry ? registry.getLevelSchedule(this.level, this.customSchedule) : null;
+    if (levelSched && Array.isArray(levelSched.waves)) {
+      this.totalWaves = levelSched.waves.length;
+      if (this.state === 'initial_delay' && levelSched.initialDelay !== undefined) {
+        this.delayTimer = Number(levelSched.initialDelay);
+      }
+    }
+    this.prepareWave(this.currentWave);
+  }
+
   prepareWave(waveNumber) {
     this.currentWave = waveNumber;
-    const level = this.level || 1;
-    const pool = this.levelConfig.zombiePool || ['basic'];
-    const isBossLevel = !!this.levelConfig.isBossLevel;
+    const registry = WaveManager._getRegistry();
+    const plan = registry ? registry.buildWavePlan(this.level, waveNumber, this.customSchedule) : null;
 
-    // 1. Phân loại độ mạnh/nguy hiểm của Zombie (Thứ hạng càng nhỏ càng yếu, yếu ra trước)
-    const ZOMBIE_TIER = {
-      imp: 1,
-      imp_dragon: 1,
-      yeti_imp: 1,
-      basic: 2,
-      regular: 2,
-      conehead: 3,
-      pole_vaulting: 4,
-      balloon: 4,
-      buckethead: 5,
-      jetpack: 5,
-      turquoise_skull: 6,
-      thresh: 6,
-      lang_khach: 6,
-      jurassic_bully: 7,
-      troglobite: 7,
-      ice_block: 8,
-      anivia_ice_block: 8,
-      shen: 8,
-      anivia: 8,
-      quan_chua: 8,
-      dragon_hatchling: 3,
-      dragon_wind: 5,
-      dragon_adult: 6,
-      dragon_water: 7,
-      dragon_dark: 8,
-      dragon_chemtech: 9,
-      gargantuar: 10,
-      sand_soldier: 4,
-      sand_coffin: 6,
-      nosus_thrall: 2,
-      nosus_assassin: 4,
-      nosus_shieldbearer: 6,
-      nosus_hemomancer: 8,
-      nosus_warlord: 11,
-      renekton_croc: 12,
-      nasus_hound: 12,
-      zombot_dark_dragon: 20,
-      ancient_dragon_boss: 25,
-      azir_desert_emperor: 30
-    };
-
-    const chosenList = [];
-
-    // CẤU HÌNH CHI TIẾT THEO YÊU CẦU:
-    // - Phân bổ tất cả zombie để tất cả đều có trong 6 map của chiến dịch
-    // - Zombie mới đầu game ít, không ra dồn dập, tăng dần thử thách
-    // - Trong mỗi wave: Zombie yếu ra trước, zombie mạnh ra sau
-    if (level === 1) {
-      // MAP 1 (Sân cỏ cơ bản): Khởi đầu với Basic Zombie & Quỷ lùn Imp
-      // Wave 1: Đúng 1 zombie cơ bản duy nhất để người chơi làm quen & trồng Hướng Dương
-      // Wave 2: 2 basic
-      // Wave 3: 2 basic + 1 imp
-      // Wave 4: 3 basic + 1 imp
-      // Wave 5: 4 basic + 2 imp
-      if (waveNumber === 1) {
-        chosenList.push('basic');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'basic');
-      } else if (waveNumber === 3) {
-        chosenList.push('basic', 'basic', 'imp');
-      } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'imp', 'imp', 'imp');
-      } else {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'basic', 'basic', 'imp', 'imp', 'imp', 'imp');
-      }
-    } else if (level === 2) {
-      // MAP 2: BẮT ĐẦU XUẤT HIỆN THÊM CONEHEAD ZOMBIE & POLE VAULTING ZOMBIE (Nhảy sào)
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'basic');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'basic', 'conehead');
-      } else if (waveNumber === 3) {
-        chosenList.push('basic', 'basic', 'conehead', 'pole_vaulting');
-      } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'conehead', 'pole_vaulting', 'pole_vaulting');
-      } else {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'conehead', 'conehead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting');
-      }
-    } else if (level === 3) {
-      // MAP 3: BẮT ĐẦU XUẤT HIỆN BUCKETHEAD, TURQUOISE SKULL, BÓNG BAY, JETPACK & THRESH
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon', 'buckethead');
-      } else if (waveNumber === 3) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon', 'jetpack', 'buckethead', 'thresh');
-      } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'turquoise_skull');
-      } else {
-        chosenList.push('basic', 'basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull');
-      }
-    } else if (level === 4) {
-      // MAP 4: KỶ BĂNG HÀ & JURASSIC BULLY + TROGLOBITE + LÃNG KHÁCH + THRESH + ANIVIA + QUẬN CHÚA
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon', 'buckethead');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'basic', 'conehead', 'jetpack', 'thresh', 'jurassic_bully');
-      } else if (waveNumber === 3) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon', 'buckethead', 'thresh', 'lang_khach', 'troglobite', 'quan_chua');
-      } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'anivia', 'quan_chua');
-      } else {
-        chosenList.push('basic', 'basic', 'basic', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'anivia', 'anivia', 'quan_chua', 'quan_chua');
-      }
-    } else if (level === 5) {
-      // MAP 5: ĐẠI CHIẾN TẤT CẢ BINH CHỦNG + BOSS GARGANTUAR Ở WAVE 5
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'basic', 'imp', 'conehead', 'balloon');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'basic', 'conehead', 'pole_vaulting', 'jetpack', 'buckethead');
-      } else if (waveNumber === 3) {
-        chosenList.push('basic', 'basic', 'balloon', 'thresh', 'lang_khach', 'turquoise_skull', 'jurassic_bully', 'troglobite', 'quan_chua');
-      } else if (waveNumber === 4) {
-        chosenList.push('basic', 'basic', 'imp', 'imp', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'shen', 'anivia', 'quan_chua');
-      } else {
-        chosenList.push('basic', 'basic', 'basic', 'imp', 'imp', 'imp', 'conehead', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'thresh', 'thresh', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'turquoise_skull', 'troglobite', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar', 'gargantuar');
-      }
-    } else if (level === 6) {
-      // MAP 6: ĐẠI CHIẾN ZOMBOT DARK DRAGON (27.000 HP)
-      // Xuất hiện ngay Boss Zombot Dark Dragon ở vị trí 2 ô đầu mép phải map
-      chosenList.push('zombot_dark_dragon');
-    } else if (level === 7) {
-      // MAP 7: BẦU TRỜI HỖN LOẠN (Không Zomboss - Tập trung không quân & Thresh kéo xích)
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'basic', 'conehead', 'balloon', 'balloon', 'jetpack', 'buckethead');
-      } else if (waveNumber === 2) {
-        chosenList.push('basic', 'conehead', 'balloon', 'balloon', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'turquoise_skull', 'anivia');
-      } else if (waveNumber === 3) {
-        chosenList.push('imp', 'conehead', 'conehead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'thresh', 'thresh', 'turquoise_skull', 'quan_chua', 'anivia');
-      } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'conehead', 'conehead', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'quan_chua', 'quan_chua', 'anivia', 'anivia');
-      } else {
-        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'balloon', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'buckethead', 'buckethead', 'buckethead', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'shen', 'quan_chua', 'quan_chua', 'anivia', 'anivia', 'gargantuar', 'gargantuar');
-      }
-    } else if (level === 8) {
-      // MAP 8: KỶ BĂNG HÀ & KIẾM HỒN (Không Zomboss - Giáp trâu, băng giá & sát thủ)
-      if (waveNumber === 1) {
-        chosenList.push('basic', 'conehead', 'conehead', 'buckethead', 'jetpack', 'troglobite', 'yeti_imp', 'lang_khach');
-      } else if (waveNumber === 2) {
-        chosenList.push('conehead', 'conehead', 'buckethead', 'buckethead', 'balloon', 'thresh', 'troglobite', 'troglobite', 'lang_khach', 'jurassic_bully', 'anivia', 'quan_chua');
-      } else if (waveNumber === 3) {
-        chosenList.push('imp', 'conehead', 'buckethead', 'buckethead', 'jetpack', 'jetpack', 'thresh', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'jurassic_bully', 'shen', 'anivia', 'quan_chua', 'turquoise_skull');
-      } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'troglobite', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
-      } else {
-        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'troglobite', 'troglobite', 'troglobite', 'troglobite', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
-      }
-    } else if (level === 9) {
-      // MAP 9: BINH ĐOÀN TINH NHUỆ (Không Zomboss - Phối hợp đa binh chủng dồn dập)
-      if (waveNumber === 1) {
-        chosenList.push('imp', 'conehead', 'buckethead', 'buckethead', 'balloon', 'jetpack', 'thresh', 'lang_khach', 'turquoise_skull');
-      } else if (waveNumber === 2) {
-        chosenList.push('conehead', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'lang_khach', 'jurassic_bully', 'troglobite', 'shen', 'quan_chua');
-      } else if (waveNumber === 3) {
-        chosenList.push('imp', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar');
-      } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar');
-      } else {
-        chosenList.push('imp', 'imp', 'imp', 'conehead', 'conehead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar', 'gargantuar');
-      }
-    } else if (level === 10) {
-      // MAP 10: ĐÊM TẬN THẾ HẮC ÁM (Cấp cuối chiến dịch - Thử thách cực đại không Zomboss)
-      if (waveNumber === 1) {
-        chosenList.push('imp', 'conehead', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'jetpack', 'thresh', 'turquoise_skull', 'lang_khach', 'quan_chua');
-      } else if (waveNumber === 2) {
-        chosenList.push('imp', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'lang_khach', 'jurassic_bully', 'troglobite', 'shen', 'anivia');
-      } else if (waveNumber === 3) {
-        chosenList.push('imp', 'imp', 'buckethead', 'buckethead', 'pole_vaulting', 'balloon', 'balloon', 'jetpack', 'jetpack', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'jurassic_bully', 'troglobite', 'troglobite', 'shen', 'anivia', 'quan_chua', 'gargantuar');
-      } else if (waveNumber === 4) {
-        chosenList.push('imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'troglobite', 'shen', 'shen', 'anivia', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar');
-      } else {
-        chosenList.push('imp', 'imp', 'imp', 'imp', 'buckethead', 'buckethead', 'buckethead', 'buckethead', 'pole_vaulting', 'pole_vaulting', 'pole_vaulting', 'balloon', 'balloon', 'balloon', 'balloon', 'jetpack', 'jetpack', 'jetpack', 'jetpack', 'thresh', 'thresh', 'thresh', 'thresh', 'turquoise_skull', 'turquoise_skull', 'turquoise_skull', 'lang_khach', 'lang_khach', 'lang_khach', 'lang_khach', 'jurassic_bully', 'jurassic_bully', 'jurassic_bully', 'troglobite', 'troglobite', 'troglobite', 'shen', 'shen', 'shen', 'anivia', 'anivia', 'anivia', 'quan_chua', 'quan_chua', 'quan_chua', 'gargantuar', 'gargantuar', 'gargantuar');
-      }
-    } else if (level === 11) {
-      // MAP SPECIAL (LEVEL 11): VƯƠNG QUỐC LONG TỘC (Chỉ có 6 loài Rồng, 0 zombie cũ; Rồng Nước xuất trận ở giữa game Wave 3)
-      if (waveNumber === 1) {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_adult');
-      } else if (waveNumber === 2) {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_dark');
-      } else if (waveNumber === 3) {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_dark', 'dragon_chemtech');
-      } else if (waveNumber === 4) {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech');
-      } else {
-        chosenList.push('dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_hatchling', 'dragon_wind', 'dragon_wind', 'dragon_wind', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_adult', 'dragon_water', 'dragon_water', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_dark', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech', 'dragon_chemtech');
-      }
-    } else if (level === 12) {
-      // MAP 12: ĐẠI CHIẾN BOSS RỒNG NGÀN TUỔI (10.000 HP - 7 Tuyệt Kỹ)
-      // Điều kiện thắng: Hạ gục Boss và tiêu diệt hết toàn bộ zombie/rồng còn lại
-      chosenList.push('ancient_dragon_boss');
-    } else if (level === 13) {
-      // MAP 13: ĐẠI CHIẾN BOSS AZIR HOÀNG ĐẾ SA MẠC (20.000 HP)
-      chosenList.push('azir_desert_emperor');
-    } else if (level === 14) {
-      // CHIẾN TRƯỜNG NOSUS - MÀN 1/3: TIỀN ĐỒN THIẾT HUYẾT (Binh Sĩ, Sát Thủ & Vệ Binh Khiên Sắt)
-      if (waveNumber === 1) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall');
-      } else if (waveNumber === 2) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin');
-      } else if (waveNumber === 3) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer');
-      } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
-      } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer');
-      }
-    } else if (level === 15) {
-      // CHIẾN TRƯỜNG NOSUS - MÀN 2/3: HUYẾT TẾ PHÁO ĐÀI (+ Huyết Pháp Sư Nosus)
-      if (waveNumber === 1) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_shieldbearer');
-      } else if (waveNumber === 2) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_hemomancer');
-      } else if (waveNumber === 3) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer');
-      } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
-      } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer');
-      }
-    } else if (level === 16) {
-      // CHIẾN TRƯỜNG NOSUS - MÀN 3/3: ĐẠI TƯỚNG THIẾT HUYẾT (Hội tụ toàn quân 5 loại từ yếu tới mạnh)
-      if (waveNumber === 1) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer');
-      } else if (waveNumber === 2) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer');
-      } else if (waveNumber === 3) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
-      } else if (waveNumber === 4) {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord');
-      } else {
-        chosenList.push('nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_thrall', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_assassin', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_shieldbearer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_hemomancer', 'nosus_warlord', 'nosus_warlord');
-      }
+    if (plan) {
+      this.totalWaves = plan.totalWaves;
+      this.waveName = plan.waveName;
+      this.waveDuration = plan.waveDuration;
+      this.restDelay = plan.restDelay;
+      this.isFinalWave = plan.isFinalWave;
+      this.waveBgm = plan.bgm;
+      this.activeSegments = plan.segments;
+      this.waveSpawnQueue = plan.queue;
+      this.miniBossFallbackTimeout = plan.miniBossFallbackTimeout || 18.0;
+    } else {
+      this._prepareFallbackWave(waveNumber);
     }
 
-    // 2. BẮT BUỘC: SẮP XẾP ZOMBIE YẾU RA TRƯỚC, ZOMBIE MẠNH DẦN VỀ SAU
-    chosenList.sort((a, b) => {
-      const tierA = ZOMBIE_TIER[a] || 2;
-      const tierB = ZOMBIE_TIER[b] || 2;
-      return tierA - tierB;
-    });
-
-    this.totalZombiesInWave = chosenList.length;
+    this.totalZombiesInWave = this.waveSpawnQueue.length;
     this.spawnedZombiesInWave = 0;
     this.killedZombiesInWave = 0;
-    this.waveSpawnQueue = [];
     this.lastRegularSpawnTime = 0;
     this.lastMiniBossSpawnTime = -999;
+    this.spawnTimer = 0;
+  }
 
-    const paceScale = level === 16 ? 0.76
-      : level === 15 ? 0.82
-      : level === 14 ? 0.88
-      : level === 11 ? 0.85
-      : level >= 10 ? 0.72
-      : level === 9 ? 0.78
-      : level === 8 ? 0.84
-      : level === 7 ? 0.90
-      : 1.0;
+  _prepareFallbackWave(waveNumber) {
+    const pool = (this.levelConfig && Array.isArray(this.levelConfig.zombiePool) && this.levelConfig.zombiePool.length > 0)
+      ? this.levelConfig.zombiePool
+      : ['basic'];
+    const count = Math.max(1, waveNumber * 2 + 1);
+    const interval = Math.max(2.0, 8.0 - waveNumber * 1.1);
+    const rowsCount = (typeof CONFIG !== 'undefined' && CONFIG.ROWS) ? CONFIG.ROWS : 5;
 
-    // 3. Lên lịch thời gian xuất kích cho từng Zombie theo thứ tự yếu trước, mạnh sau
-    // Mini-boss luôn được gắn cờ isMiniBoss để chốt điều kiện đi sau wave thường ~2 ô
-    let currentDelay = 0;
-    let regularCount = 0;
-    let lastRegularDelay = 0;
-    let miniBossIndex = 0;
-
-    for (let i = 0; i < chosenList.length; i++) {
-      const type = chosenList[i];
-      const assignedRow = Math.floor(Math.random() * CONFIG.ROWS);
+    this.waveName = `Wave ${waveNumber}`;
+    this.isFinalWave = waveNumber >= this.totalWaves;
+    this.waveBgm = this.isFinalWave ? 'boss' : null;
+    this.activeSegments = [{ type: pool[0], startOffset: 0, interval, duration: (count - 1) * interval, count }];
+    this.waveSpawnQueue = [];
+    for (let i = 0; i < count; i++) {
+      const type = pool[Math.min(pool.length - 1, Math.floor((i / count) * pool.length))];
       const isMiniBoss = WaveManager.isWaveMiniBossType(type);
-
-      if (isMiniBoss) {
-        const miniBossGap = Math.max(2.2, 2.8 * paceScale);
-        const minGateDelay = regularCount > 0 ? lastRegularDelay + 1.0 : 0;
-        const bossDelay = minGateDelay + miniBossIndex * miniBossGap;
-        miniBossIndex++;
-        this.waveSpawnQueue.push({
-          type: type,
-          row: assignedRow,
-          delay: bossDelay,
-          isMiniBoss: true,
-          miniBossGap: miniBossGap
-        });
-        continue;
-      }
-
-      let interval;
-      if (waveNumber === 1) {
-        // Wave 1: Rất thưa và thư thả (8.5s - 11s)
-        interval = (8.5 + Math.random() * 2.5) * paceScale;
-      } else if (waveNumber === 2) {
-        // Wave 2: 7.0s - 9.5s
-        interval = (7.0 + Math.random() * 2.5) * paceScale;
-      } else if (waveNumber === 3) {
-        // Wave 3: 5.5s - 7.5s
-        interval = (5.5 + Math.random() * 2.0) * paceScale;
-      } else if (waveNumber === 4) {
-        // Wave 4 (Tăng áp lực): 3.4s - 4.6s
-        interval = (3.4 + Math.random() * 1.2) * paceScale;
-      } else {
-        // Wave 5 (Tổng lực): 2.3s - 3.3s, Mini-Boss đi sau wave thường ~2 ô
-        interval = (2.3 + Math.random() * 1.0) * paceScale;
-      }
-
-      currentDelay += (regularCount === 0 ? 0 : interval);
-      lastRegularDelay = currentDelay;
-      regularCount++;
-
       this.waveSpawnQueue.push({
-        type: type,
-        row: assignedRow,
-        delay: currentDelay,
-        isMiniBoss: false
+        type,
+        row: Math.floor(Math.random() * rowsCount),
+        delay: Number((i * interval).toFixed(3)),
+        isMiniBoss,
+        minCellsBehindRegular: isMiniBoss ? 2 : 0
       });
     }
+    this.waveDuration = count > 1 ? (count - 1) * interval : 0;
+  }
 
-    this.spawnTimer = 0;
+  getScheduleSummary() {
+    return {
+      level: this.level,
+      currentWave: this.currentWave,
+      totalWaves: this.totalWaves,
+      waveName: this.waveName,
+      state: this.state,
+      waveDuration: this.waveDuration,
+      elapsedInWave: this.spawnTimer,
+      totalZombiesInWave: this.totalZombiesInWave,
+      spawnedZombiesInWave: this.spawnedZombiesInWave,
+      remainingInQueue: this.waveSpawnQueue.length,
+      segments: this.activeSegments
+    };
   }
 
   update(dt, gameState) {
@@ -417,28 +241,14 @@ class WaveManager {
       return;
     }
 
-    // 1. Đầu game: Chờ 20s delay trước khi zombie xuất hiện theo yêu cầu
+    // 1. Đầu game: Chờ delay trước khi zombie xuất hiện
     if (this.state === 'initial_delay') {
       this.delayTimer -= dt;
       if (this.delayTimer <= 0) {
         this.state = 'spawning';
         this.delayTimer = 0;
         if (gameState && gameState.audio) {
-          gameState.audio.playZombieGroan();
-        }
-      }
-      return;
-    }
-
-    // 2. Nghỉ 15s giữa các Wave sau khi diệt sạch 100% zombie wave trước
-    if (this.state === 'wave_rest') {
-      this.restTimer -= dt;
-      if (this.restTimer <= 0) {
-        const nextWave = this.currentWave + 1;
-        this.prepareWave(nextWave);
-        this.state = 'spawning';
-        if (gameState && gameState.audio) {
-          if (nextWave === 5) {
+          if (this.waveBgm === 'boss') {
             gameState.audio.playWaveHorn();
             gameState.audio.playBGM('boss');
           } else {
@@ -449,40 +259,60 @@ class WaveManager {
       return;
     }
 
-    // 3. Đang sinh quái của Wave hiện tại (yếu ra trước, mạnh dần về sau)
+    // 2. Nghỉ giữa các Wave sau khi diệt sạch 100% zombie wave trước
+    if (this.state === 'wave_rest') {
+      this.restTimer -= dt;
+      if (this.restTimer <= 0) {
+        const nextWave = this.currentWave + 1;
+        this.prepareWave(nextWave);
+        this.state = 'spawning';
+        if (gameState && gameState.audio) {
+          if (this.isFinalWave || this.waveBgm === 'boss' || nextWave === 5) {
+            gameState.audio.playWaveHorn();
+            gameState.audio.playBGM('boss');
+          } else {
+            gameState.audio.playZombieGroan();
+          }
+        }
+      }
+      return;
+    }
+
+    // 3. Đang sinh quái theo lịch JSON (interval & duration)
     if (this.state === 'spawning') {
       this.spawnTimer += dt;
       const spawnX = CONFIG.CANVAS_WIDTH + 20;
-      const twoCellPx = CONFIG.CELL_WIDTH * 2;
 
       while (this.waveSpawnQueue.length > 0 && this.waveSpawnQueue[0].delay <= this.spawnTimer) {
         const nextItem = this.waveSpawnQueue[0];
 
         if (nextItem.isMiniBoss) {
-          const bossGap = nextItem.miniBossGap || 2.8;
+          const bossGap = nextItem.miniBossGap || 2.5;
           if (this.lastMiniBossSpawnTime >= 0 && (this.spawnTimer - this.lastMiniBossSpawnTime) < bossGap) {
             break;
           }
 
+          const minCells = nextItem.minCellsBehindRegular !== undefined ? nextItem.minCellsBehindRegular : 2;
+          const behindPx = CONFIG.CELL_WIDTH * minCells;
           const liveRegulars = (gameState.zombies || []).filter(z =>
             z.alive && !z.isObstacle && !z.isHypnotized &&
             !WaveManager.isWaveMiniBossType(z.type) && !z.isBoss
           );
 
           let maxRegularX = -Infinity;
-          if (liveRegulars.length > 0) {
+          if (liveRegulars.length > 0 && behindPx > 0) {
             maxRegularX = Math.max(...liveRegulars.map(z => z.x));
-            const maxAllowedRegularX = spawnX - twoCellPx;
+            const maxAllowedRegularX = spawnX - behindPx;
             const elapsedSinceLastRegular = this.spawnTimer - this.lastRegularSpawnTime;
-            if (maxRegularX > maxAllowedRegularX && elapsedSinceLastRegular < 18.0) {
+            if (maxRegularX > maxAllowedRegularX && elapsedSinceLastRegular < this.miniBossFallbackTimeout) {
               break;
             }
           }
 
           const item = this.waveSpawnQueue.shift();
           const spawnedZ = gameState.spawnZombie(item.type, item.row);
-          if (spawnedZ && maxRegularX > spawnX - twoCellPx) {
-            spawnedZ.x = Math.max(spawnedZ.x, maxRegularX + twoCellPx);
+          if (spawnedZ && behindPx > 0 && maxRegularX > spawnX - behindPx) {
+            spawnedZ.x = Math.max(spawnedZ.x, maxRegularX + behindPx);
           }
           this.lastMiniBossSpawnTime = this.spawnTimer;
           this.spawnedZombiesInWave++;
@@ -501,19 +331,17 @@ class WaveManager {
 
     // 4. BẮT BUỘC: Phải diệt sạch 100% quái vật của Wave hiện tại mới chuyển trạng thái
     if (this.state === 'waiting_clear') {
-      const activeEnemies = gameState.zombies.filter(z => z.alive && !z.isObstacle && !z.isHypnotized).length;
+      const activeEnemies = gameState.zombies.filter(z => z.alive && !z.isObstacle && !z.isHypnotized && z.type !== 'yone_body').length;
       const flyingImps = gameState.flyingImps ? gameState.flyingImps.length : 0;
       const pendingWaves = gameState.pendingSandstormWaves ? gameState.pendingSandstormWaves.length : 0;
 
       if (activeEnemies === 0 && flyingImps === 0 && pendingWaves === 0) {
-        // Đã diệt sạch 100% wave hiện tại!
         if (this.currentWave >= this.totalWaves) {
           this.state = 'all_cleared';
           gameState.onLevelVictory();
         } else {
-          // BẮT BUỘC: Nghỉ đúng 15s trước khi vào wave tiếp theo
           this.state = 'wave_rest';
-          this.restTimer = WAVE_CONFIG.REST_DELAY; // 15.0s
+          this.restTimer = this.restDelay;
         }
       }
     }
@@ -523,7 +351,11 @@ class WaveManager {
     if (this.state === 'initial_delay') return 0;
     const waveFraction = (this.currentWave - 1) / this.totalWaves;
     let inWaveProgress = 0;
-    if (this.totalZombiesInWave > 0) {
+    if (this.waveDuration > 0 && this.state === 'spawning') {
+      const timeRatio = Math.min(1, this.spawnTimer / this.waveDuration);
+      const countRatio = this.totalZombiesInWave > 0 ? (this.spawnedZombiesInWave / this.totalZombiesInWave) : 0;
+      inWaveProgress = Math.max(timeRatio, countRatio) * (1 / this.totalWaves);
+    } else if (this.totalZombiesInWave > 0) {
       inWaveProgress = (this.spawnedZombiesInWave / this.totalZombiesInWave) * (1 / this.totalWaves);
     }
     return Math.min(1.0, Math.max(0.0, waveFraction + inWaveProgress));
@@ -547,7 +379,7 @@ class WaveManager {
       };
     }
     if (this.state === 'waiting_clear') {
-      const remaining = gameState ? gameState.zombies.filter(z => z.alive && !z.isObstacle && !z.isHypnotized).length : 0;
+      const remaining = gameState ? gameState.zombies.filter(z => z.alive && !z.isObstacle && !z.isHypnotized && z.type !== 'yone_body').length : 0;
       const bossAlive = gameState && this.level === 12 && gameState.zombies.some(z => z.alive && z.type === 'ancient_dragon_boss');
       const azirAlive = gameState && this.level === 13 && gameState.zombies.some(z => z.alive && z.type === 'azir_desert_emperor');
       const pendingStorm = (gameState && gameState.pendingSandstormWaves && gameState.pendingSandstormWaves.length > 0)
@@ -569,9 +401,9 @@ class WaveManager {
         color: this.level === 13 ? '#ffb300' : '#ff7043'
       };
     }
-    if (this.state === 'spawning' && this.currentWave === 5) {
+    if (this.state === 'spawning' && (this.isFinalWave || this.currentWave === 5)) {
       return {
-        title: '🚨 ĐỢT TẤN CÔNG CUỐI CÙNG (FINAL WAVE)!',
+        title: `🚨 ĐỢT TẤN CÔNG CUỐI CÙNG (${this.waveName.toUpperCase()})!`,
         sub: 'Toàn bộ Zombie đang ồ ạt tràn vào!',
         color: '#e53935'
       };
@@ -1065,6 +897,9 @@ class InputHandler {
     bindSpawn('sb-spawn-nosus-shieldbearer', 'nosus_shieldbearer');
     bindSpawn('sb-spawn-nosus-hemomancer', 'nosus_hemomancer');
     bindSpawn('sb-spawn-nosus-warlord', 'nosus_warlord');
+    bindSpawn('sb-spawn-ionia-zed', 'ionia_zed');
+    bindSpawn('sb-spawn-ionia-yone', 'ionia_yone');
+    bindSpawn('sb-spawn-ionia-sett', 'ionia_sett');
 
     const resetCdBtn = document.getElementById('sb-reset-cooldowns');
     if (resetCdBtn) {

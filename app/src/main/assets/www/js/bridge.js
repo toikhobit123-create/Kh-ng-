@@ -319,7 +319,7 @@
       const game = getGame();
       if (!game) return;
       if (typeof unlockedLevel === 'number') {
-        game.unlockedLevel = Math.max(1, Math.min(13, unlockedLevel));
+        game.unlockedLevel = Math.max(1, Math.min(19, unlockedLevel));
       }
       try {
         const list = JSON.parse(completedJson);

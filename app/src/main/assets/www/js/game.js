@@ -339,7 +339,7 @@ const PLANT_SHOWCASE_DATA = {
     rate: '1.75s / lần · Tầm 5 ô · Mê hoặc 4s / 15s',
     cooldown: '10.0s',
     hp: '200 HP',
-    desc: 'Tấn công mỗi 1.75s theo đường thẳng tầm 5 ô như boomerang: lượt đi gây 25 DMG, khi hết tầm quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp). Mỗi 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP, giáp và mọi trạng thái) quay lại đánh zom địch, hết 4s trở lại bình thường.',
+    desc: 'Tấn công mỗi 1.75s theo đường thẳng tầm 5 ô như boomerang: lượt đi gây 25 DMG, khi hết tầm quả cầu trắng bay về gây 50 Sát Thương Chuẩn (xuyên khiên & giáp). Mỗi 15s thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP, giáp và mọi trạng thái; không thôi miên Boss / Mini-Boss) quay lại đánh zom địch, hết 4s trở lại bình thường.',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><polygon points="10,16 14,6 20,14" fill="#fce4ec" stroke="#e91e63" stroke-width="1.2"/><polygon points="34,16 30,6 24,14" fill="#fce4ec" stroke="#e91e63" stroke-width="1.2"/><circle cx="22" cy="24" r="10" fill="#f48fb1" stroke="#c2185b" stroke-width="1.4"/><circle cx="34" cy="26" r="5" fill="#ffffff" stroke="#80deea" stroke-width="1.4"/></svg>`
   },
   irelia: {
@@ -580,6 +580,24 @@ const ZOMBIE_PREVIEW_INFO = {
     avatar: '🪓',
     hpText: 'HP: 3200 (Mini-Boss) · 6.0s/ô · Miễn Làm Chậm/Thôi Miên/Đẩy',
     desc: 'Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 4s (tốc đánh tăng lên 1s/đòn), ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!'
+  },
+  ionia_zed: {
+    name: 'Zed (Chúa Tể Bóng Tối)',
+    avatar: '🥷',
+    hpText: 'HP: 250 · 1.5s/ô · 50 DMG/s · Dấu Ấn Tử Thần 300 DMG',
+    desc: 'Sát thủ bóng tối tốc độ cực cao (1.5s/ô)! Khi vào máu tử, Zed miễn nhiễm sát thương và lao thẳng vào cây gần nhất cùng hàng, hết miễn nhiễm sẽ gắn Dấu Ấn Tử Thần — phát nổ sau 5s gây 300 DMG cho cây đó!'
+  },
+  ionia_yone: {
+    name: 'Yone (Song Kiếm Đấu Sĩ)',
+    avatar: '⚔️',
+    hpText: 'HP: 500 · 5.0s/ô (Linh Hồn 3.2s/ô) · 70 DMG / 12% HP',
+    desc: 'Tấn công mỗi 0.5s luân phiên đòn thường 70 DMG và đòn cường hóa 12% HP. Tới cột 6 kích hoạt Xuất Hồn (E) để lại Thể Xác miễn nhiễm CC và hóa Linh Hồn (+200 HP) lao nhanh 4.5s rồi giật về. Mỗi 12s tụ lực 1.2s tung Đoạt Mệnh (R) lướt 3 ô hất tung & choáng 2s (120 DMG/cây)!'
+  },
+  ionia_sett: {
+    name: 'Sett (Mini-Boss Đấu Trường)',
+    avatar: '🥊',
+    hpText: 'HP: 3000 (Mini-Boss) · 6.0s/ô · Liên Hoàn 2×300 DMG',
+    desc: 'Mini-Boss Vùng Đất Ionia (Miễn Thôi Miên)! Mỗi 2s đấm liên tiếp 2 đòn × 300 DMG. Tích 100% sát thương thành Gan Lì (max 800 hoặc mất mỗi 700 HP) kích hoạt Cuồng Thú Quyền (W): tạo giáp ảo 500 HP (3s) & đấm sóng 3 ô trước (giữa 550 / rìa 200 DMG). Gặp cây phòng thủ sẽ nhấc ném lùi 2 ô (đè nát nếu ≤300 HP) và nổ 250 DMG lan 3×3 (15s)!'
   }
 };
 
@@ -595,7 +613,7 @@ class Game {
 
     this.currentLevel = 1;
     this.pendingLevel = 1;
-    this.unlockedLevel = 16; // Mở khóa tất cả các map (1-16)
+    this.unlockedLevel = 19; // Mở khóa tất cả các map (1-19)
     this.completedLevels = [];
     this.isSandbox = false;
     this.sandboxNoCooldown = false;
@@ -874,13 +892,13 @@ class Game {
   // ==========================================================================
   loadProgress() {
     try {
-      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 16/16 map theo yêu cầu)
+      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 19/19 map theo yêu cầu)
       const savedLevel = localStorage.getItem('pvz_unlocked_level');
       const parsedLevel = parseInt(savedLevel, 10);
-      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 16) {
-        this.unlockedLevel = Math.max(parsedLevel, 16); // Đảm bảo luôn mở khóa hết cả 16 map
+      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 19) {
+        this.unlockedLevel = Math.max(parsedLevel, 19); // Đảm bảo luôn mở khóa hết cả 19 map
       } else {
-        this.unlockedLevel = 16;
+        this.unlockedLevel = 19;
       }
 
       // 2. Danh sách các màn đã vượt qua (chiến thắng)
@@ -889,7 +907,7 @@ class Game {
         try {
           const list = JSON.parse(savedCompleted);
           if (Array.isArray(list)) {
-            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 16);
+            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 19);
           } else {
             this.completedLevels = [];
           }
@@ -918,7 +936,7 @@ class Game {
       console.log(`[PvZ Progress] Đã tải tiến trình: Đã mở Cấp ${this.unlockedLevel}, Đã vượt qua: [${this.completedLevels.join(', ')}]`);
     } catch (err) {
       console.warn('Lỗi đọc localStorage:', err);
-      this.unlockedLevel = 16;
+      this.unlockedLevel = 19;
       this.completedLevels = [];
     }
   }
@@ -938,9 +956,9 @@ class Game {
 
   resetProgress() {
     try {
-      this.unlockedLevel = 16; // Luôn mở khóa tất cả các map
+      this.unlockedLevel = 19; // Luôn mở khóa tất cả các map
       this.completedLevels = [];
-      localStorage.setItem('pvz_unlocked_level', '16');
+      localStorage.setItem('pvz_unlocked_level', '19');
       localStorage.setItem('pvz_completed_levels', JSON.stringify([]));
     } catch (err) {
       console.warn('Lỗi reset tiến trình:', err);
@@ -1041,7 +1059,10 @@ class Game {
       'sb-spawn-nosus-assassin': 'nosus_assassin',
       'sb-spawn-nosus-shieldbearer': 'nosus_shieldbearer',
       'sb-spawn-nosus-hemomancer': 'nosus_hemomancer',
-      'sb-spawn-nosus-warlord': 'nosus_warlord'
+      'sb-spawn-nosus-warlord': 'nosus_warlord',
+      'sb-spawn-ionia-zed': 'ionia_zed',
+      'sb-spawn-ionia-yone': 'ionia_yone',
+      'sb-spawn-ionia-sett': 'ionia_sett'
     };
 
     for (const [btnId, zType] of Object.entries(btnToType)) {
@@ -1112,7 +1133,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1121,7 +1142,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1315,14 +1336,16 @@ class Game {
     this.gameDeltaTime = 0;
     this.realDeltaTime = 0;
 
-    // Thiết lập chế độ chơi: Map 6 là Conveyor Belt; Map 11-12 là Dragon Realm; Map 13 là Desert Realm; Map 14-16 là Nosus Realm
+    // Thiết lập chế độ chơi: Map 6 là Conveyor Belt; Map 11-12 là Dragon Realm; Map 13 là Desert Realm; Map 14-16 là Nosus Realm; Map 17-19 là Ionia Realm
     const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined') ? LEVEL_CONFIG[this.currentLevel] : null;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
       const isDesertRealm = !this.isSandbox && !!(lvlCfg && lvlCfg.theme === 'desert');
       const isNosusRealm = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'nosus') || (this.currentLevel >= 14 && this.currentLevel <= 16));
-      const isDragonRealm = !this.isSandbox && !isDesertRealm && !isNosusRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
+      const isIoniaRealm = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'ionia') || (this.currentLevel >= 17 && this.currentLevel <= 19));
+      const isDragonRealm = !this.isSandbox && !isDesertRealm && !isNosusRealm && !isIoniaRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
       document.body.classList.toggle('desert-realm', isDesertRealm);
       document.body.classList.toggle('nosus-realm', isNosusRealm);
+      document.body.classList.toggle('ionia-realm', isIoniaRealm);
       document.body.classList.toggle('dragon-realm', isDragonRealm);
     }
     this.gameMode = (!this.isSandbox && (this.currentLevel === 6 || (lvlCfg && (lvlCfg.isConveyor || lvlCfg.gameMode === 'conveyor')))) ? 'conveyor' : 'normal';
@@ -1367,7 +1390,10 @@ class Game {
           13: 'CẤP 13 · HOÀNG ĐẾ SA MẠC AZIR',
           14: 'CẤP 14 · TIỀN ĐỒN NOSUS',
           15: 'CẤP 15 · PHÁO ĐÀI HUYẾT TẾ',
-          16: 'CẤP 16 · ĐẠI TƯỚNG DARIUS NOSUS'
+          16: 'CẤP 16 · ĐẠI TƯỚNG DARIUS NOSUS',
+          17: 'CẤP 17 · ĐỀN HOA ANH ĐÀO IONIA',
+          18: 'CẤP 18 · SONG KIẾM LINH GIỚI',
+          19: 'CẤP 19 · ĐẤU TRƯỜNG ĐẠI CA SETT'
         };
         this.levelBadgeEl.textContent = lvlNames[this.currentLevel] || `CẤP ${this.currentLevel}`;
         this.levelBadgeEl.classList.remove('sandbox-mode-badge');
@@ -2207,7 +2233,12 @@ class Game {
       return true;
     }
 
-    const hasPlant = this.plants.some(p => p.alive && p.row === row && p.col === col);
+    const hasPlant = this.plants.some(
+      p => p.alive && (
+        (p.row === row && p.col === col) ||
+        (p.pendingReturn && p.pendingReturn.row === row && p.pendingReturn.col === col)
+      )
+    );
     if (hasPlant) return true;
 
     // Kiểm tra có Bẫy Hoa Sen của Jhinplant đang nằm trên ô này không (không thể đặt cây lên)
@@ -2514,8 +2545,8 @@ class Game {
       this.completedLevels.push(this.currentLevel);
     }
 
-    // Mở khóa màn tiếp theo (tối đa cấp 16)
-    if (this.currentLevel < 16) {
+    // Mở khóa màn tiếp theo (tối đa cấp 19)
+    if (this.currentLevel < 19) {
       this.unlockedLevel = Math.max(this.unlockedLevel, this.currentLevel + 1);
     }
 
@@ -2523,7 +2554,13 @@ class Game {
     this.saveProgress();
 
     if (this.dialogTitle) {
-      if (this.currentLevel === 16) {
+      if (this.currentLevel === 19) {
+        this.dialogTitle.textContent = 'VICTORY! CHINH PHỤC VÙNG ĐẤT IONIA!';
+      } else if (this.currentLevel === 18) {
+        this.dialogTitle.textContent = 'VICTORY! PHÁ VỠ SONG KIẾM LINH GIỚI IONIA!';
+      } else if (this.currentLevel === 17) {
+        this.dialogTitle.textContent = 'VICTORY! BẢO VỆ ĐỀN HOA ANH ĐÀO IONIA!';
+      } else if (this.currentLevel === 16) {
         this.dialogTitle.textContent = 'VICTORY! CHINH PHỤC CHIẾN TRƯỜNG NOSUS!';
       } else if (this.currentLevel === 15) {
         this.dialogTitle.textContent = 'VICTORY! PHÁ TAN PHÁO ĐÀI HUYẾT TẾ NOSUS!';
@@ -2547,8 +2584,14 @@ class Game {
       this.dialogTitle.className = 'win';
     }
     if (this.dialogMessage) {
-      if (this.currentLevel === 16) {
-        this.dialogMessage.textContent = 'BÁ CHỦ CHIẾN TRƯỜNG! Bạn đã hạ gục song Đại Tướng Darius, phá tan pháo đài sắt máu và chinh phục hoàn toàn thế giới Chiến Trường Nosus!';
+      if (this.currentLevel === 19) {
+        this.dialogMessage.textContent = 'ĐỆ NHẤT TÔNG SƯ IONIA! Bạn đã đánh bại song Mini-Boss Sett, hóa giải Dấu Ấn Zed & Xuất Hồn Yone và chinh phục hoàn toàn Vùng Đất Ionia!';
+      } else if (this.currentLevel === 18) {
+        this.dialogMessage.textContent = 'TUYỆT ĐỈNH PHÒNG THỦ! Bạn đã ngăn cản Yone Xuất Hồn - Đoạt Mệnh và hạ gục Sett mở đường tới trận cuối Cấp 19!';
+      } else if (this.currentLevel === 17) {
+        this.dialogMessage.textContent = 'XUẤT SẮC! Bạn đã đẩy lùi sát thủ Zed và Song Kiếm Yone tại Đền Hoa Anh Đào! Tiến lên Cấp 18!';
+      } else if (this.currentLevel === 16) {
+        this.dialogMessage.textContent = 'BÁ CHỦ CHIẾN TRƯỜNG! Bạn đã hạ gục song Đại Tướng Darius và mở cánh cổng bước sang Vùng Đất Ionia (Cấp 17–19)!';
       } else if (this.currentLevel === 15) {
         this.dialogMessage.textContent = 'XUẤT SẮC! Bạn đã ngăn chặn Huyết Tế của Huyết Pháp Sư Nosus! Cấp 16: Đại Tướng Darius Nosus đang chờ ở trận cuối!';
       } else if (this.currentLevel === 14) {
@@ -2562,7 +2605,7 @@ class Game {
       } else if (this.currentLevel === 10) {
         this.dialogMessage.textContent = 'HUYỀN THOẠI BÁ KHÍ! Bạn đã vượt qua Đêm Tận Thế Hắc Ám ở Cấp 10! Hãy thử sức ngay với Map Special Vương Quốc Long Tộc!';
       } else if (this.currentLevel === 6) {
-        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–16 đã sẵn sàng!';
+        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–19 đã sẵn sàng!';
       } else if (this.currentLevel === 5) {
         this.dialogMessage.textContent = 'Xuất sắc! Bạn đã đánh bại BOSS Gargantuar! Hãy chuẩn bị tiến vào CẤP 6 đối đầu Zombot Dark Dragon!';
       } else {
@@ -2571,7 +2614,7 @@ class Game {
     }
     if (this.dialogNextBtn) {
       this.dialogNextBtn.classList.remove('hidden');
-      this.dialogNextBtn.textContent = this.currentLevel < 16 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
+      this.dialogNextBtn.textContent = this.currentLevel < 19 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
     }
     if (this.dialogOverlay) this.dialogOverlay.classList.remove('hidden');
   }
@@ -2955,7 +2998,13 @@ class Game {
                   ? '80 DMG / 1.4s (Tầm 2.5 ô) · Huyết Tế +120 HP'
                   : key === 'nosus_warlord'
                     ? '240 / 1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit (<100 HP)'
-                    : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
+                    : key === 'ionia_zed'
+                      ? '50 DMG/s · Máu Tử Lao Bóng Gắn Dấu Ấn (5s nổ 300 DMG)'
+                      : key === 'ionia_yone'
+                        ? '70 DMG / 0.5s · Luân Phiên 12% HP · E Xuất Hồn · R Lướt 3 Ô (120 DMG)'
+                        : key === 'ionia_sett'
+                          ? '2×300 DMG / 2s · W Giáp 500 + Sóng 550/200 · R Ném Lùi 2 Ô + 250 Lan 3×3'
+                          : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
     if (this.almanacStatsEl) {
       this.almanacStatsEl.innerHTML = `
         <div class="almanac-stat-chip" style="grid-column: span 2;"><span class="stat-label">SỨC CHỊU ĐỰNG & GIÁP:</span><span class="stat-val">${z.hpText}</span></div>

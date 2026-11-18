@@ -89,6 +89,13 @@ val NosusCardTop = Color(0xFF431119)
 val NosusCardBottom = Color(0xFF1A070B)
 val NosusBorderCrimson = Color(0xFFE53935)
 
+// Vung Dat Ionia Theme (Maps 17-19)
+val IoniaTealTop = Color(0xFF0E3538)
+val IoniaCardTop = Color(0xFF134042)
+val IoniaCardBottom = Color(0xFF091C1E)
+val IoniaBorderSakura = Color(0xFFF48FB1)
+val IoniaJadeAccent = Color(0xFF64FFDA)
+
 // Typography & Borders
 val TextPrimary = Color(0xFFF3EFFA)
 val CssSlateText = Color(0xFFE2E8F0)        // CSS body color

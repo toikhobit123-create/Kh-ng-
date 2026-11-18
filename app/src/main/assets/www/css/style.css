@@ -1476,3 +1476,14 @@ body.nosus-realm canvas#gameCanvas {
   background-color: #1c080c;
   box-shadow: 0 4px 28px rgba(229, 57, 53, 0.34), 0 4px 18px rgba(0, 0, 0, 0.88);
 }
+
+body.ionia-realm #game-container,
+body.native-compose-hud.ionia-realm #game-container {
+  background: radial-gradient(circle at center, #123638 0%, #09181b 100%);
+}
+
+body.ionia-realm canvas#gameCanvas {
+  background-color: #112a2b;
+  box-shadow: 0 4px 28px rgba(100, 255, 218, 0.30), 0 4px 18px rgba(0, 0, 0, 0.88);
+}
+

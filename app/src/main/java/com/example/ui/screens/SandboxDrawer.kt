@@ -314,7 +314,10 @@ fun SandboxDrawer(
                 "nosus_assassin" to "NA",
                 "nosus_shieldbearer" to "NS",
                 "nosus_hemomancer" to "NH",
-                "nosus_warlord" to "DR"
+                "nosus_warlord" to "DR",
+                "ionia_zed" to "ZD",
+                "ionia_yone" to "YN",
+                "ionia_sett" to "ST"
               )
             }
 

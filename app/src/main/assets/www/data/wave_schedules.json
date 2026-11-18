@@ -1,0 +1,1281 @@
+{
+  "schemaVersion": 1,
+  "defaults": {
+    "initialDelay": 20.0,
+    "restDelay": 15.0,
+    "miniBossMinCellsBehind": 2,
+    "miniBossFallbackTimeout": 18.0
+  },
+  "levels": {
+    "1": {
+      "level": 1,
+      "name": "Khởi Đầu Nghĩa Địa",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Trinh Sát",
+          "duration": 10.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 10.0, "duration": 10.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Tiến Công Nhẹ",
+          "duration": 10.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 8.5, "duration": 8.5, "count": 2, "jitter": 0.4 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Quỷ Lùn Xuất Hiện",
+          "duration": 14.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "basic", "startOffset": 6.5, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.4 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Làn Sóng Áp Lực",
+          "duration": 28.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 4.0, "duration": 8.0, "count": 3, "jitter": 0.3 },
+            { "type": "basic", "startOffset": 10.0, "interval": 4.0, "duration": 16.0, "count": 5, "jitter": 0.4 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Tổng Lực Nghĩa Địa",
+          "duration": 29.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.8, "duration": 8.4, "count": 4, "jitter": 0.25 },
+            { "type": "basic", "startOffset": 10.0, "interval": 2.8, "duration": 16.8, "count": 7, "jitter": 0.3 }
+          ]
+        }
+      ]
+    },
+    "2": {
+      "level": 2,
+      "name": "Bia Mộ & Nón Sắt",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Đội Tiền Phong",
+          "duration": 10.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 9.0, "duration": 9.0, "count": 2, "jitter": 0.4 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Nón Nhựa Tham Chiến",
+          "duration": 17.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 8.0, "duration": 8.0, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 15.5, "interval": 8.0, "duration": 8.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Nhảy Sào Vượt Rào",
+          "duration": 20.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 12.5, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 19.0, "interval": 6.0, "duration": 6.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Xung Kích Sào & Nón",
+          "duration": 36.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 3.8, "duration": 11.4, "count": 4, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 14.0, "interval": 4.0, "duration": 12.0, "count": 4, "jitter": 0.3 },
+            { "type": "pole_vaulting", "startOffset": 28.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.25 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Đại Quân Nón Sắt",
+          "duration": 36.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 2.7, "duration": 10.8, "count": 5, "jitter": 0.25 },
+            { "type": "conehead", "startOffset": 12.5, "interval": 2.8, "duration": 11.2, "count": 5, "jitter": 0.25 },
+            { "type": "pole_vaulting", "startOffset": 26.5, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.2 }
+          ]
+        }
+      ]
+    },
+    "3": {
+      "level": 3,
+      "name": "Binh Đoàn Thùng Sắt, Bay & Thresh",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Không Quân Bóng Bay",
+          "duration": 30.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 9.5, "duration": 9.5, "count": 2, "jitter": 0.4 },
+            { "type": "conehead", "startOffset": 18.0, "interval": 8.0, "duration": 8.0, "count": 1 },
+            { "type": "balloon", "startOffset": 27.0, "interval": 8.0, "duration": 8.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Áp Lực Thùng Sắt",
+          "duration": 32.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 8.0, "duration": 8.0, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 14.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "balloon", "startOffset": 21.5, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 29.0, "interval": 7.0, "duration": 7.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Thresh & Jetpack Tập Kích",
+          "duration": 38.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 11.0, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "balloon", "startOffset": 16.5, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 22.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "jetpack", "startOffset": 27.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "thresh", "startOffset": 34.0, "interval": 5.5, "duration": 5.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Phối Hợp Đa Binh Chủng",
+          "duration": 50.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 3.8, "duration": 7.6, "count": 3, "jitter": 0.25 },
+            { "type": "conehead", "startOffset": 10.5, "interval": 3.8, "duration": 7.6, "count": 3, "jitter": 0.25 },
+            { "type": "balloon", "startOffset": 21.0, "interval": 4.0, "duration": 4.0, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 28.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 34.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 41.5, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "turquoise_skull", "startOffset": 46.5, "interval": 4.5, "duration": 4.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Cơn Bão Laser & Xích Ngục",
+          "duration": 54.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 2.6, "duration": 7.8, "count": 4, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 10.0, "interval": 2.7, "duration": 5.4, "count": 3, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 17.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 23.0, "interval": 2.8, "duration": 5.6, "count": 3, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 31.0, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 39.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 45.0, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 }
+          ]
+        }
+      ]
+    },
+    "4": {
+      "level": 4,
+      "name": "Kỷ Băng Hà & Quận Chúa",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Mở Màn Giá Lạnh",
+          "duration": 36.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 9.0, "duration": 9.0, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 16.5, "interval": 8.0, "duration": 8.0, "count": 1 },
+            { "type": "balloon", "startOffset": 25.0, "interval": 8.0, "duration": 8.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 33.5, "interval": 8.0, "duration": 8.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Khủng Long Càn Quét",
+          "duration": 38.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 7.5, "duration": 7.5, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 14.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "jetpack", "startOffset": 21.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "thresh", "startOffset": 28.5, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "jurassic_bully", "startOffset": 36.0, "interval": 7.0, "duration": 7.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Troglobite & Quận Chúa",
+          "duration": 48.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.25 },
+            { "type": "conehead", "startOffset": 11.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "balloon", "startOffset": 16.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "buckethead", "startOffset": 22.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "thresh", "startOffset": 27.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 33.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "troglobite", "startOffset": 39.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "quan_chua", "startOffset": 45.0, "interval": 5.5, "duration": 5.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Bão Tuyết Tràn Bờ",
+          "duration": 60.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.25 },
+            { "type": "conehead", "startOffset": 6.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.25 },
+            { "type": "balloon", "startOffset": 13.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 20.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 27.5, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 34.0, "interval": 3.8, "duration": 3.8, "count": 1 },
+            { "type": "lang_khach", "startOffset": 38.0, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 45.0, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "troglobite", "startOffset": 49.0, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "anivia", "startOffset": 53.5, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "quan_chua", "startOffset": 57.5, "interval": 4.0, "duration": 4.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Hội Tụ Băng Giá",
+          "duration": 66.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 7.5, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 15.0, "interval": 2.6, "duration": 2.6, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 20.0, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 28.0, "interval": 2.6, "duration": 2.6, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 33.0, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 38.5, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 46.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.2 },
+            { "type": "troglobite", "startOffset": 52.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.2 },
+            { "type": "anivia", "startOffset": 58.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.2 },
+            { "type": "quan_chua", "startOffset": 63.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.2 }
+          ]
+        }
+      ]
+    },
+    "5": {
+      "level": 5,
+      "name": "Đại Chiến Boss Gargantuar",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Quân Tiên Phong",
+          "duration": 36.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 8.0, "duration": 8.0, "count": 1 },
+            { "type": "basic", "startOffset": 8.5, "interval": 9.0, "duration": 9.0, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 25.0, "interval": 8.0, "duration": 8.0, "count": 1 },
+            { "type": "balloon", "startOffset": 33.5, "interval": 8.0, "duration": 8.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Tổng Hợp Giáp Sắt",
+          "duration": 38.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 7.5, "duration": 7.5, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 14.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 21.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 28.5, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "jetpack", "startOffset": 35.5, "interval": 7.0, "duration": 7.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Tinh Nhuệ Hợp Kích",
+          "duration": 50.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.25 },
+            { "type": "balloon", "startOffset": 11.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "thresh", "startOffset": 17.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 22.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "turquoise_skull", "startOffset": 28.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "jurassic_bully", "startOffset": 34.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "troglobite", "startOffset": 40.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "quan_chua", "startOffset": 46.5, "interval": 5.5, "duration": 5.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Đại Binh Đoàn Áp Sát",
+          "duration": 88.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 3.4, "duration": 3.4, "count": 2, "jitter": 0.2 },
+            { "type": "basic", "startOffset": 6.5, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 13.0, "interval": 3.6, "duration": 7.2, "count": 3, "jitter": 0.2 },
+            { "type": "pole_vaulting", "startOffset": 23.0, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 29.5, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 36.0, "interval": 3.6, "duration": 7.2, "count": 3, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 46.0, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 52.5, "interval": 3.8, "duration": 3.8, "count": 1 },
+            { "type": "thresh", "startOffset": 56.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 63.5, "interval": 3.8, "duration": 3.8, "count": 2, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 70.5, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "troglobite", "startOffset": 74.5, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "shen", "startOffset": 78.5, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "anivia", "startOffset": 82.5, "interval": 4.0, "duration": 4.0, "count": 1 },
+            { "type": "quan_chua", "startOffset": 86.5, "interval": 4.0, "duration": 4.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Gargantuar Giáng Lâm",
+          "duration": 86.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.4, "duration": 4.8, "count": 3, "jitter": 0.2 },
+            { "type": "basic", "startOffset": 7.0, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 14.5, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.2 },
+            { "type": "pole_vaulting", "startOffset": 22.0, "interval": 2.6, "duration": 2.6, "count": 2, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 27.0, "interval": 2.6, "duration": 2.6, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 32.0, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 39.5, "interval": 2.6, "duration": 2.6, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 44.5, "interval": 2.8, "duration": 2.8, "count": 1 },
+            { "type": "thresh", "startOffset": 47.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 53.0, "interval": 2.8, "duration": 5.6, "count": 3, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 61.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.2 },
+            { "type": "troglobite", "startOffset": 67.0, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.2 },
+            { "type": "shen", "startOffset": 72.5, "interval": 2.8, "duration": 2.8, "count": 1 },
+            { "type": "anivia", "startOffset": 75.5, "interval": 2.8, "duration": 2.8, "count": 1 },
+            { "type": "quan_chua", "startOffset": 78.5, "interval": 2.8, "duration": 2.8, "count": 1 },
+            { "type": "gargantuar", "startOffset": 81.5, "interval": 2.8, "duration": 2.8, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "6": {
+      "level": 6,
+      "name": "Đại Chiến Zombot Dark Dragon",
+      "initialDelay": 8.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Trùm Rồng Hắc Ám",
+          "duration": 0.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "zombot_dark_dragon", "startOffset": 0.0, "interval": 0.0, "duration": 0.0, "count": 1 }
+          ]
+        }
+      ]
+    },
+    "7": {
+      "level": 7,
+      "name": "Bầu Trời Hỗn Loạn",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Không Quân Mở Đường",
+          "duration": 50.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 8.5, "duration": 8.5, "count": 2, "jitter": 0.3 },
+            { "type": "conehead", "startOffset": 16.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "balloon", "startOffset": 24.0, "interval": 7.5, "duration": 7.5, "count": 2, "jitter": 0.3 },
+            { "type": "buckethead", "startOffset": 39.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "jetpack", "startOffset": 46.5, "interval": 7.5, "duration": 7.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Phượng Hoàng Băng Xuất Trận",
+          "duration": 58.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "conehead", "startOffset": 7.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "balloon", "startOffset": 14.0, "interval": 6.8, "duration": 6.8, "count": 2, "jitter": 0.25 },
+            { "type": "buckethead", "startOffset": 27.0, "interval": 6.8, "duration": 6.8, "count": 2, "jitter": 0.25 },
+            { "type": "jetpack", "startOffset": 39.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "turquoise_skull", "startOffset": 45.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "thresh", "startOffset": 51.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "anivia", "startOffset": 57.5, "interval": 6.5, "duration": 6.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Đội Hình Áp Sát Bầu Trời",
+          "duration": 68.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "conehead", "startOffset": 5.5, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 16.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 26.5, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 37.0, "interval": 5.2, "duration": 5.2, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 47.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "thresh", "startOffset": 52.0, "interval": 5.2, "duration": 5.2, "count": 2, "jitter": 0.2 },
+            { "type": "anivia", "startOffset": 62.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "quan_chua", "startOffset": 67.0, "interval": 5.2, "duration": 5.2, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Cơn Mưa Không Kích",
+          "duration": 80.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 6.0, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.2 },
+            { "type": "balloon", "startOffset": 12.0, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 21.5, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 31.0, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 40.5, "interval": 3.4, "duration": 3.4, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 47.0, "interval": 3.4, "duration": 6.8, "count": 3, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 56.5, "interval": 3.4, "duration": 3.4, "count": 2, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 63.0, "interval": 3.5, "duration": 3.5, "count": 1 },
+            { "type": "shen", "startOffset": 66.5, "interval": 3.5, "duration": 3.5, "count": 1 },
+            { "type": "anivia", "startOffset": 70.0, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 },
+            { "type": "quan_chua", "startOffset": 76.5, "interval": 3.5, "duration": 3.5, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Bầu Trời Sụp Đổ",
+          "duration": 78.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.3, "duration": 4.6, "count": 3, "jitter": 0.15 },
+            { "type": "conehead", "startOffset": 6.5, "interval": 2.3, "duration": 2.3, "count": 2, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 11.0, "interval": 2.3, "duration": 6.9, "count": 4, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 20.0, "interval": 2.4, "duration": 4.8, "count": 3, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 27.0, "interval": 2.3, "duration": 6.9, "count": 4, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 36.0, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 43.5, "interval": 2.5, "duration": 5.0, "count": 3, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 51.0, "interval": 2.5, "duration": 2.5, "count": 2, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 56.0, "interval": 2.5, "duration": 2.5, "count": 1 },
+            { "type": "shen", "startOffset": 58.5, "interval": 2.5, "duration": 2.5, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 63.5, "interval": 2.5, "duration": 2.5, "count": 2, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 68.5, "interval": 2.5, "duration": 2.5, "count": 2, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 73.5, "interval": 2.6, "duration": 2.6, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "8": {
+      "level": 8,
+      "name": "Kỷ Băng Hà & Kiếm Hồn",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Làn Sóng Băng Giá",
+          "duration": 52.0,
+          "segments": [
+            { "type": "yeti_imp", "startOffset": 0.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "basic", "startOffset": 7.5, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "conehead", "startOffset": 15.0, "interval": 7.5, "duration": 7.5, "count": 2, "jitter": 0.25 },
+            { "type": "buckethead", "startOffset": 29.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "jetpack", "startOffset": 36.5, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 44.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "troglobite", "startOffset": 51.0, "interval": 7.5, "duration": 7.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Tảng Băng Trượt Sân",
+          "duration": 66.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.25 },
+            { "type": "balloon", "startOffset": 13.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "buckethead", "startOffset": 19.5, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.25 },
+            { "type": "thresh", "startOffset": 32.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 38.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "jurassic_bully", "startOffset": 44.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "troglobite", "startOffset": 51.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.25 },
+            { "type": "anivia", "startOffset": 62.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "quan_chua", "startOffset": 66.0, "interval": 5.5, "duration": 5.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Kiếm Hồn Shen Bọc Giáp",
+          "duration": 78.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "conehead", "startOffset": 5.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 10.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 20.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 30.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "thresh", "startOffset": 35.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "lang_khach", "startOffset": 40.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 50.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "troglobite", "startOffset": 55.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "shen", "startOffset": 65.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "anivia", "startOffset": 70.0, "interval": 5.0, "duration": 5.0, "count": 1 },
+            { "type": "quan_chua", "startOffset": 75.0, "interval": 5.0, "duration": 5.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Hồ Băng & Gargantuar",
+          "duration": 90.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "conehead", "startOffset": 6.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 12.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 18.0, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 27.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 33.0, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 39.0, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 48.0, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.15 },
+            { "type": "troglobite", "startOffset": 54.5, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 64.0, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 70.5, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 77.0, "interval": 3.2, "duration": 3.2, "count": 2, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 83.5, "interval": 3.0, "duration": 3.0, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Đại Đế Băng Hồn",
+          "duration": 84.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.2, "duration": 4.4, "count": 3, "jitter": 0.15 },
+            { "type": "conehead", "startOffset": 6.5, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 11.0, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 15.5, "interval": 2.2, "duration": 4.4, "count": 3, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 22.0, "interval": 2.2, "duration": 4.4, "count": 3, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 28.5, "interval": 2.3, "duration": 2.3, "count": 2, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 33.0, "interval": 2.3, "duration": 4.6, "count": 3, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 40.0, "interval": 2.3, "duration": 4.6, "count": 3, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 47.0, "interval": 2.4, "duration": 2.4, "count": 2, "jitter": 0.15 },
+            { "type": "troglobite", "startOffset": 52.0, "interval": 2.3, "duration": 6.9, "count": 4, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 61.5, "interval": 2.4, "duration": 2.4, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 66.5, "interval": 2.4, "duration": 2.4, "count": 2, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 71.5, "interval": 2.4, "duration": 4.8, "count": 3, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 79.0, "interval": 2.6, "duration": 2.6, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "9": {
+      "level": 9,
+      "name": "Binh Đoàn Tinh Nhuệ",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Đội Quân Chủ Lực",
+          "duration": 60.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "conehead", "startOffset": 7.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "balloon", "startOffset": 14.0, "interval": 7.0, "duration": 7.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 21.0, "interval": 7.0, "duration": 7.0, "count": 2, "jitter": 0.25 },
+            { "type": "jetpack", "startOffset": 34.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "turquoise_skull", "startOffset": 41.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "thresh", "startOffset": 47.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 54.0, "interval": 6.5, "duration": 6.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Tấn Công Dồn Dập",
+          "duration": 78.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 6.0, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "balloon", "startOffset": 12.0, "interval": 6.0, "duration": 6.0, "count": 1 },
+            { "type": "buckethead", "startOffset": 18.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 29.5, "interval": 5.8, "duration": 5.8, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 41.0, "interval": 5.8, "duration": 5.8, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 52.5, "interval": 5.8, "duration": 5.8, "count": 1 },
+            { "type": "jurassic_bully", "startOffset": 58.0, "interval": 5.8, "duration": 5.8, "count": 1 },
+            { "type": "troglobite", "startOffset": 63.5, "interval": 5.8, "duration": 5.8, "count": 1 },
+            { "type": "shen", "startOffset": 69.0, "interval": 5.8, "duration": 5.8, "count": 1 },
+            { "type": "quan_chua", "startOffset": 74.5, "interval": 5.8, "duration": 5.8, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Gargantuar Hộ Tống",
+          "duration": 84.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 4.5, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "balloon", "startOffset": 9.0, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "buckethead", "startOffset": 13.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 22.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 31.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "thresh", "startOffset": 40.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 49.5, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "jurassic_bully", "startOffset": 58.5, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "troglobite", "startOffset": 63.0, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "shen", "startOffset": 67.5, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "anivia", "startOffset": 72.0, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "quan_chua", "startOffset": 76.5, "interval": 4.5, "duration": 4.5, "count": 1 },
+            { "type": "gargantuar", "startOffset": 81.5, "interval": 4.5, "duration": 4.5, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Liên Hoàn Tinh Nhuệ",
+          "duration": 98.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.9, "duration": 5.8, "count": 3, "jitter": 0.15 },
+            { "type": "pole_vaulting", "startOffset": 8.5, "interval": 2.9, "duration": 2.9, "count": 2, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 14.0, "interval": 2.9, "duration": 5.8, "count": 3, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 22.5, "interval": 2.9, "duration": 8.7, "count": 4, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 34.0, "interval": 2.9, "duration": 5.8, "count": 3, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 42.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 48.5, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 57.5, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 66.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "troglobite", "startOffset": 72.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 78.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 84.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 90.5, "interval": 3.0, "duration": 3.0, "count": 2, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 96.0, "interval": 3.0, "duration": 3.0, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Tam Hùng Gargantuar",
+          "duration": 86.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.15 },
+            { "type": "conehead", "startOffset": 6.0, "interval": 2.0, "duration": 2.0, "count": 2, "jitter": 0.15 },
+            { "type": "pole_vaulting", "startOffset": 10.0, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 16.0, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 22.0, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 28.0, "interval": 2.0, "duration": 6.0, "count": 4, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 36.0, "interval": 2.1, "duration": 4.2, "count": 3, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 42.5, "interval": 2.1, "duration": 4.2, "count": 3, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 49.0, "interval": 2.1, "duration": 4.2, "count": 3, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 55.5, "interval": 2.1, "duration": 4.2, "count": 3, "jitter": 0.15 },
+            { "type": "troglobite", "startOffset": 62.0, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 66.5, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 71.0, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 75.5, "interval": 2.2, "duration": 2.2, "count": 2, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 80.5, "interval": 2.4, "duration": 4.8, "count": 3, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "10": {
+      "level": 10,
+      "name": "Đêm Tận Thế Hắc Ám",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Đêm Kinh Hoàng I",
+          "duration": 66.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "conehead", "startOffset": 6.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 13.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "balloon", "startOffset": 19.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "buckethead", "startOffset": 26.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 39.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "turquoise_skull", "startOffset": 45.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "thresh", "startOffset": 52.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "lang_khach", "startOffset": 58.5, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "quan_chua", "startOffset": 65.0, "interval": 6.5, "duration": 6.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Đêm Kinh Hoàng II",
+          "duration": 80.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "pole_vaulting", "startOffset": 5.5, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "balloon", "startOffset": 11.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 22.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "jetpack", "startOffset": 33.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "turquoise_skull", "startOffset": 44.0, "interval": 5.5, "duration": 5.5, "count": 1 },
+            { "type": "thresh", "startOffset": 49.5, "interval": 5.2, "duration": 5.2, "count": 2, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 60.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "jurassic_bully", "startOffset": 65.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "troglobite", "startOffset": 70.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "shen", "startOffset": 75.0, "interval": 5.2, "duration": 5.2, "count": 1 },
+            { "type": "anivia", "startOffset": 79.5, "interval": 5.2, "duration": 5.2, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Bão Lớn Tận Thế",
+          "duration": 92.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "pole_vaulting", "startOffset": 8.5, "interval": 4.2, "duration": 4.2, "count": 1 },
+            { "type": "balloon", "startOffset": 12.5, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 21.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 29.5, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 38.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 46.5, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 55.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 63.5, "interval": 4.2, "duration": 4.2, "count": 1 },
+            { "type": "troglobite", "startOffset": 68.0, "interval": 4.2, "duration": 4.2, "count": 2, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 76.5, "interval": 4.2, "duration": 4.2, "count": 1 },
+            { "type": "anivia", "startOffset": 80.5, "interval": 4.2, "duration": 4.2, "count": 1 },
+            { "type": "quan_chua", "startOffset": 84.5, "interval": 4.2, "duration": 4.2, "count": 1 },
+            { "type": "gargantuar", "startOffset": 89.5, "interval": 4.2, "duration": 4.2, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Hủy Diệt Đợt 4",
+          "duration": 108.0,
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.15 },
+            { "type": "pole_vaulting", "startOffset": 7.5, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.15 },
+            { "type": "balloon", "startOffset": 15.0, "interval": 2.6, "duration": 5.2, "count": 3, "jitter": 0.15 },
+            { "type": "buckethead", "startOffset": 22.5, "interval": 2.6, "duration": 7.8, "count": 4, "jitter": 0.15 },
+            { "type": "jetpack", "startOffset": 33.0, "interval": 2.6, "duration": 7.8, "count": 4, "jitter": 0.15 },
+            { "type": "turquoise_skull", "startOffset": 43.5, "interval": 2.7, "duration": 5.4, "count": 3, "jitter": 0.15 },
+            { "type": "thresh", "startOffset": 51.5, "interval": 2.7, "duration": 5.4, "count": 3, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 59.5, "interval": 2.7, "duration": 5.4, "count": 3, "jitter": 0.15 },
+            { "type": "jurassic_bully", "startOffset": 67.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.15 },
+            { "type": "troglobite", "startOffset": 73.0, "interval": 2.8, "duration": 5.6, "count": 3, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 81.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.15 },
+            { "type": "anivia", "startOffset": 87.0, "interval": 2.8, "duration": 5.6, "count": 3, "jitter": 0.15 },
+            { "type": "quan_chua", "startOffset": 95.5, "interval": 2.8, "duration": 2.8, "count": 2, "jitter": 0.15 },
+            { "type": "gargantuar", "startOffset": 101.5, "interval": 2.4, "duration": 2.4, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Ngày Tận Thế",
+          "duration": 96.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "imp", "startOffset": 0.0, "interval": 1.9, "duration": 5.7, "count": 4, "jitter": 0.1 },
+            { "type": "pole_vaulting", "startOffset": 7.5, "interval": 1.9, "duration": 3.8, "count": 3, "jitter": 0.1 },
+            { "type": "balloon", "startOffset": 13.0, "interval": 1.9, "duration": 5.7, "count": 4, "jitter": 0.1 },
+            { "type": "buckethead", "startOffset": 20.5, "interval": 1.9, "duration": 5.7, "count": 4, "jitter": 0.1 },
+            { "type": "jetpack", "startOffset": 28.0, "interval": 1.9, "duration": 5.7, "count": 4, "jitter": 0.1 },
+            { "type": "turquoise_skull", "startOffset": 35.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "thresh", "startOffset": 41.5, "interval": 2.0, "duration": 6.0, "count": 4, "jitter": 0.1 },
+            { "type": "lang_khach", "startOffset": 49.5, "interval": 2.0, "duration": 6.0, "count": 4, "jitter": 0.1 },
+            { "type": "jurassic_bully", "startOffset": 57.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "troglobite", "startOffset": 63.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "shen", "startOffset": 69.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "anivia", "startOffset": 75.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "quan_chua", "startOffset": 81.5, "interval": 2.0, "duration": 4.0, "count": 3, "jitter": 0.1 },
+            { "type": "gargantuar", "startOffset": 88.5, "interval": 2.2, "duration": 4.4, "count": 3, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "11": {
+      "level": 11,
+      "name": "Vương Quốc Long Tộc",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Bầy Rồng Non",
+          "duration": 26.0,
+          "segments": [
+            { "type": "dragon_hatchling", "startOffset": 0.0, "interval": 8.0, "duration": 16.0, "count": 3, "jitter": 0.3 },
+            { "type": "dragon_adult", "startOffset": 24.0, "interval": 8.0, "duration": 8.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Rồng Gió & Hắc Ám",
+          "duration": 36.0,
+          "segments": [
+            { "type": "dragon_hatchling", "startOffset": 0.0, "interval": 6.8, "duration": 6.8, "count": 2, "jitter": 0.25 },
+            { "type": "dragon_wind", "startOffset": 13.5, "interval": 6.8, "duration": 6.8, "count": 1 },
+            { "type": "dragon_adult", "startOffset": 20.5, "interval": 6.8, "duration": 6.8, "count": 2, "jitter": 0.25 },
+            { "type": "dragon_dark", "startOffset": 34.0, "interval": 6.8, "duration": 6.8, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Rồng Nước & Hóa Kỹ",
+          "duration": 40.0,
+          "segments": [
+            { "type": "dragon_hatchling", "startOffset": 0.0, "interval": 5.4, "duration": 5.4, "count": 2, "jitter": 0.2 },
+            { "type": "dragon_wind", "startOffset": 10.5, "interval": 5.4, "duration": 5.4, "count": 1 },
+            { "type": "dragon_adult", "startOffset": 16.0, "interval": 5.4, "duration": 5.4, "count": 2, "jitter": 0.2 },
+            { "type": "dragon_water", "startOffset": 26.5, "interval": 5.4, "duration": 5.4, "count": 1 },
+            { "type": "dragon_dark", "startOffset": 32.0, "interval": 5.4, "duration": 5.4, "count": 1 },
+            { "type": "dragon_chemtech", "startOffset": 37.5, "interval": 5.4, "duration": 5.4, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Long Tộc Hợp Kích",
+          "duration": 54.0,
+          "segments": [
+            { "type": "dragon_hatchling", "startOffset": 0.0, "interval": 3.2, "duration": 9.6, "count": 4, "jitter": 0.2 },
+            { "type": "dragon_wind", "startOffset": 12.5, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "dragon_adult", "startOffset": 22.0, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "dragon_water", "startOffset": 31.5, "interval": 3.4, "duration": 3.4, "count": 1 },
+            { "type": "dragon_dark", "startOffset": 35.0, "interval": 3.4, "duration": 6.8, "count": 3, "jitter": 0.2 },
+            { "type": "dragon_chemtech", "startOffset": 45.0, "interval": 3.4, "duration": 6.8, "count": 3, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Cơn Thịnh Nộ Long Vương",
+          "duration": 52.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "dragon_hatchling", "startOffset": 0.0, "interval": 2.2, "duration": 8.8, "count": 5, "jitter": 0.15 },
+            { "type": "dragon_wind", "startOffset": 11.0, "interval": 2.2, "duration": 4.4, "count": 3, "jitter": 0.15 },
+            { "type": "dragon_adult", "startOffset": 17.5, "interval": 2.2, "duration": 6.6, "count": 4, "jitter": 0.15 },
+            { "type": "dragon_water", "startOffset": 26.5, "interval": 2.4, "duration": 2.4, "count": 2, "jitter": 0.15 },
+            { "type": "dragon_dark", "startOffset": 31.5, "interval": 2.3, "duration": 6.9, "count": 4, "jitter": 0.15 },
+            { "type": "dragon_chemtech", "startOffset": 41.0, "interval": 2.3, "duration": 9.2, "count": 5, "jitter": 0.15 }
+          ]
+        }
+      ]
+    },
+    "12": {
+      "level": 12,
+      "name": "Boss Rồng Ngàn Tuổi",
+      "initialDelay": 8.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Long Vương Cổ Đại",
+          "duration": 0.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "ancient_dragon_boss", "startOffset": 0.0, "interval": 0.0, "duration": 0.0, "count": 1 }
+          ]
+        }
+      ]
+    },
+    "13": {
+      "level": 13,
+      "name": "Hoàng Đế Sa Mạc Azir",
+      "initialDelay": 18.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Hoàng Đế Azir",
+          "duration": 0.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "azir_desert_emperor", "startOffset": 0.0, "interval": 0.0, "duration": 0.0, "count": 1 }
+          ]
+        }
+      ]
+    },
+    "14": {
+      "level": 14,
+      "name": "Chiến Trường Nosus - Tiền Đồn Thiết Huyết",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Tuần Tra Tiền Đồn",
+          "duration": 18.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 8.5, "duration": 17.0, "count": 3, "jitter": 0.3 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Sát Thủ Huyết Đao",
+          "duration": 22.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 7.0, "duration": 14.0, "count": 3, "jitter": 0.3 },
+            { "type": "nosus_assassin", "startOffset": 21.0, "interval": 7.0, "duration": 7.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Vệ Binh Khiên Sắt",
+          "duration": 24.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.25 },
+            { "type": "nosus_assassin", "startOffset": 11.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.25 },
+            { "type": "nosus_shieldbearer", "startOffset": 22.0, "interval": 5.5, "duration": 5.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Đội Hình Thiết Giáp",
+          "duration": 40.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 3.4, "duration": 13.6, "count": 5, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 17.0, "interval": 3.4, "duration": 10.2, "count": 4, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 30.5, "interval": 3.6, "duration": 7.2, "count": 3, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Phá Vây Tiền Đồn",
+          "duration": 38.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 2.3, "duration": 11.5, "count": 6, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 14.0, "interval": 2.4, "duration": 9.6, "count": 5, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 26.0, "interval": 2.5, "duration": 10.0, "count": 5, "jitter": 0.2 }
+          ]
+        }
+      ]
+    },
+    "15": {
+      "level": 15,
+      "name": "Chiến Trường Nosus - Huyết Tế Pháo Đài",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Xung Kích Cổng Thành",
+          "duration": 32.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 7.8, "duration": 15.6, "count": 3, "jitter": 0.25 },
+            { "type": "nosus_assassin", "startOffset": 23.0, "interval": 7.5, "duration": 7.5, "count": 1 },
+            { "type": "nosus_shieldbearer", "startOffset": 30.5, "interval": 7.5, "duration": 7.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Huyết Pháp Sư Tham Chiến",
+          "duration": 34.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 13.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 26.0, "interval": 6.5, "duration": 6.5, "count": 1 },
+            { "type": "nosus_hemomancer", "startOffset": 32.5, "interval": 6.5, "duration": 6.5, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Nghi Lễ Huyết Tế",
+          "duration": 38.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 5.2, "duration": 10.4, "count": 3, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 15.5, "interval": 5.2, "duration": 5.2, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 26.0, "interval": 5.2, "duration": 5.2, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_hemomancer", "startOffset": 36.5, "interval": 5.2, "duration": 5.2, "count": 1 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Bão Huyết Tế",
+          "duration": 50.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 3.1, "duration": 12.4, "count": 5, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 15.5, "interval": 3.2, "duration": 9.6, "count": 4, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 28.0, "interval": 3.2, "duration": 9.6, "count": 4, "jitter": 0.2 },
+            { "type": "nosus_hemomancer", "startOffset": 41.0, "interval": 3.4, "duration": 6.8, "count": 3, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Trận Chiến Huyết Đài",
+          "duration": 46.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 2.2, "duration": 11.0, "count": 6, "jitter": 0.15 },
+            { "type": "nosus_assassin", "startOffset": 13.0, "interval": 2.2, "duration": 8.8, "count": 5, "jitter": 0.15 },
+            { "type": "nosus_shieldbearer", "startOffset": 24.0, "interval": 2.2, "duration": 8.8, "count": 5, "jitter": 0.15 },
+            { "type": "nosus_hemomancer", "startOffset": 35.0, "interval": 2.3, "duration": 9.2, "count": 5, "jitter": 0.15 }
+          ]
+        }
+      ]
+    },
+    "16": {
+      "level": 16,
+      "name": "Chiến Trường Nosus - Đại Tướng Darius",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Đoàn Quân Thiết Huyết",
+          "duration": 36.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 7.2, "duration": 14.4, "count": 3, "jitter": 0.25 },
+            { "type": "nosus_assassin", "startOffset": 21.5, "interval": 7.0, "duration": 7.0, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 35.0, "interval": 7.0, "duration": 7.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Áp Sát Đại Điện",
+          "duration": 38.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 12.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 24.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_hemomancer", "startOffset": 36.0, "interval": 6.0, "duration": 6.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Darius Thử Lửa",
+          "duration": 46.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 4.8, "duration": 9.6, "count": 3, "jitter": 0.2 },
+            { "type": "nosus_assassin", "startOffset": 14.5, "interval": 4.8, "duration": 4.8, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_shieldbearer", "startOffset": 24.0, "interval": 4.8, "duration": 4.8, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_hemomancer", "startOffset": 33.5, "interval": 4.8, "duration": 4.8, "count": 2, "jitter": 0.2 },
+            { "type": "nosus_warlord", "startOffset": 42.5, "interval": 2.5, "duration": 2.5, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Đại Quân Nosus Đợt 4",
+          "duration": 52.0,
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 2.9, "duration": 11.6, "count": 5, "jitter": 0.15 },
+            { "type": "nosus_assassin", "startOffset": 14.5, "interval": 2.9, "duration": 8.7, "count": 4, "jitter": 0.15 },
+            { "type": "nosus_shieldbearer", "startOffset": 26.0, "interval": 2.9, "duration": 8.7, "count": 4, "jitter": 0.15 },
+            { "type": "nosus_hemomancer", "startOffset": 37.5, "interval": 3.0, "duration": 6.0, "count": 3, "jitter": 0.15 },
+            { "type": "nosus_warlord", "startOffset": 47.0, "interval": 2.5, "duration": 2.5, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Song Hùng Darius",
+          "duration": 50.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "nosus_thrall", "startOffset": 0.0, "interval": 2.0, "duration": 12.0, "count": 7, "jitter": 0.15 },
+            { "type": "nosus_assassin", "startOffset": 14.0, "interval": 2.0, "duration": 8.0, "count": 5, "jitter": 0.15 },
+            { "type": "nosus_shieldbearer", "startOffset": 24.0, "interval": 2.1, "duration": 6.3, "count": 4, "jitter": 0.15 },
+            { "type": "nosus_hemomancer", "startOffset": 32.5, "interval": 2.1, "duration": 6.3, "count": 4, "jitter": 0.15 },
+            { "type": "nosus_warlord", "startOffset": 42.0, "interval": 2.4, "duration": 2.4, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    },
+    "17": {
+      "level": 17,
+      "name": "Vùng Đất Ionia - Đền Thờ Bóng Tối",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Tuần Tra Rừng Anh Đào",
+          "duration": 20.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 7.5, "duration": 15.0, "count": 3, "jitter": 0.25 },
+            { "type": "ionia_zed", "startOffset": 17.5, "interval": 5.0, "duration": 5.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Ảnh Kiếm Bóng Tối",
+          "duration": 26.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 6.5, "duration": 13.0, "count": 3, "jitter": 0.25 },
+            { "type": "ionia_zed", "startOffset": 15.0, "interval": 6.5, "duration": 6.5, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Kiếm Khách & Sát Thủ",
+          "duration": 30.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 5.5, "duration": 11.0, "count": 3, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 13.5, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 21.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Bão Ảnh Đền Thờ",
+          "duration": 42.0,
+          "segments": [
+            { "type": "basic", "startOffset": 0.0, "interval": 2.8, "duration": 11.2, "count": 5, "jitter": 0.2 },
+            { "type": "conehead", "startOffset": 12.5, "interval": 3.0, "duration": 9.0, "count": 4, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 23.0, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 31.0, "interval": 3.0, "duration": 9.0, "count": 4, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Hội Sát Thủ Bóng Tối",
+          "duration": 44.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 2.2, "duration": 11.0, "count": 6, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 13.0, "interval": 2.4, "duration": 9.6, "count": 5, "jitter": 0.15 },
+            { "type": "ionia_zed", "startOffset": 24.5, "interval": 2.3, "duration": 13.8, "count": 7, "jitter": 0.15 }
+          ]
+        }
+      ]
+    },
+    "18": {
+      "level": 18,
+      "name": "Vùng Đất Ionia - Linh Giới Song Kiếm",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Vệ Đạo Ionia",
+          "duration": 26.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 7.0, "duration": 14.0, "count": 3, "jitter": 0.25 },
+            { "type": "ionia_zed", "startOffset": 16.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Song Kiếm Xuất Hồn",
+          "duration": 34.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 12.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_yone", "startOffset": 22.0, "interval": 6.0, "duration": 6.0, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Kinh Hồn & Nhất Thống",
+          "duration": 40.0,
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 4.8, "duration": 9.6, "count": 3, "jitter": 0.2 },
+            { "type": "shen", "startOffset": 14.5, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 23.0, "interval": 4.5, "duration": 4.5, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_yone", "startOffset": 30.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Cơn Lốc Linh Giới Đợt 4",
+          "duration": 50.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 2.8, "duration": 11.2, "count": 5, "jitter": 0.2 },
+            { "type": "buckethead", "startOffset": 13.0, "interval": 3.0, "duration": 9.0, "count": 4, "jitter": 0.2 },
+            { "type": "shen", "startOffset": 23.5, "interval": 3.2, "duration": 6.4, "count": 3, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 31.5, "interval": 2.6, "duration": 7.8, "count": 4, "jitter": 0.15 },
+            { "type": "ionia_yone", "startOffset": 41.0, "interval": 3.0, "duration": 9.0, "count": 4, "jitter": 0.15 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Tuyệt Kỹ Đoạt Mệnh",
+          "duration": 48.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 2.2, "duration": 11.0, "count": 6, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 12.5, "interval": 2.3, "duration": 9.2, "count": 5, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 23.0, "interval": 2.5, "duration": 7.5, "count": 4, "jitter": 0.15 },
+            { "type": "ionia_zed", "startOffset": 31.5, "interval": 2.1, "duration": 8.4, "count": 5, "jitter": 0.15 },
+            { "type": "ionia_yone", "startOffset": 41.0, "interval": 2.2, "duration": 8.8, "count": 5, "jitter": 0.15 }
+          ]
+        }
+      ]
+    },
+    "19": {
+      "level": 19,
+      "name": "Vùng Đất Ionia - Đấu Trường Sett",
+      "initialDelay": 20.0,
+      "restDelay": 15.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Võ Đài Anh Đào",
+          "duration": 30.0,
+          "segments": [
+            { "type": "conehead", "startOffset": 0.0, "interval": 6.5, "duration": 13.0, "count": 3, "jitter": 0.25 },
+            { "type": "ionia_zed", "startOffset": 15.0, "interval": 5.5, "duration": 5.5, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_yone", "startOffset": 24.0, "interval": 5.0, "duration": 5.0, "count": 1 }
+          ]
+        },
+        {
+          "wave": 2,
+          "name": "Liên Minh Kiếm Khách",
+          "duration": 38.0,
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 5.5, "duration": 11.0, "count": 3, "jitter": 0.2 },
+            { "type": "lang_khach", "startOffset": 13.5, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 21.0, "interval": 4.8, "duration": 4.8, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_yone", "startOffset": 29.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 }
+          ]
+        },
+        {
+          "wave": 3,
+          "name": "Sett Ra Sân Thử Lửa",
+          "duration": 46.0,
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 4.6, "duration": 9.2, "count": 3, "jitter": 0.2 },
+            { "type": "shen", "startOffset": 12.0, "interval": 5.0, "duration": 5.0, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_zed", "startOffset": 20.0, "interval": 4.4, "duration": 8.8, "count": 3, "jitter": 0.2 },
+            { "type": "ionia_yone", "startOffset": 31.0, "interval": 4.6, "duration": 4.6, "count": 2, "jitter": 0.2 },
+            { "type": "ionia_sett", "startOffset": 41.5, "interval": 2.5, "duration": 2.5, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 4,
+          "name": "Cuồng Thú Quyền Đợt 4",
+          "duration": 52.0,
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 2.8, "duration": 11.2, "count": 5, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 13.0, "interval": 3.0, "duration": 9.0, "count": 4, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 23.0, "interval": 2.8, "duration": 5.6, "count": 3, "jitter": 0.15 },
+            { "type": "ionia_zed", "startOffset": 30.0, "interval": 2.6, "duration": 7.8, "count": 4, "jitter": 0.15 },
+            { "type": "ionia_yone", "startOffset": 39.0, "interval": 2.7, "duration": 8.1, "count": 4, "jitter": 0.15 },
+            { "type": "ionia_sett", "startOffset": 48.0, "interval": 2.5, "duration": 2.5, "count": 1, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        },
+        {
+          "wave": 5,
+          "name": "Song Vương Đấu Trường Ionia",
+          "duration": 52.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "buckethead", "startOffset": 0.0, "interval": 2.0, "duration": 10.0, "count": 6, "jitter": 0.15 },
+            { "type": "shen", "startOffset": 11.5, "interval": 2.3, "duration": 6.9, "count": 4, "jitter": 0.15 },
+            { "type": "lang_khach", "startOffset": 20.0, "interval": 2.2, "duration": 6.6, "count": 4, "jitter": 0.15 },
+            { "type": "ionia_zed", "startOffset": 28.0, "interval": 2.1, "duration": 8.4, "count": 5, "jitter": 0.15 },
+            { "type": "ionia_yone", "startOffset": 37.5, "interval": 2.2, "duration": 8.8, "count": 5, "jitter": 0.15 },
+            { "type": "ionia_sett", "startOffset": 46.5, "interval": 2.4, "duration": 2.4, "count": 2, "isMiniBoss": true, "minCellsBehindRegular": 2 }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,6 @@
 package com.example.bridge
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.Handler
 import android.os.Looper
@@ -24,9 +25,22 @@ class PvzWebBridge(
 ) {
   private val mainHandler = Handler(Looper.getMainLooper())
   private var webView: WebView? = null
+  @Volatile
+  private var appContext: Context? = null
 
   fun attachWebView(view: WebView) {
     webView = view
+    appContext = view.context.applicationContext
+  }
+
+  @JavascriptInterface
+  fun getWaveSchedulesJson(): String {
+    val ctx = appContext ?: return ""
+    return try {
+      ctx.assets.open("www/data/wave_schedules.json").bufferedReader().use { it.readText() }
+    } catch (_: Exception) {
+      ""
+    }
   }
 
   @JavascriptInterface

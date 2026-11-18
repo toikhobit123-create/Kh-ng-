@@ -368,7 +368,7 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
       repository.resetCampaignProgress()
       bridge.applyProgress(
         CampaignProgress(
-          unlockedLevel = 16,
+          unlockedLevel = 19,
           completedLevels = emptySet(),
           selectedDeck = _uiState.value.progress.selectedDeck
         )
@@ -410,7 +410,7 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
   fun goToNextLevelFromVictory() {
     val result = _uiState.value.matchResult ?: return
     _uiState.update { it.copy(matchResult = null) }
-    if (result.level < 16) {
+    if (result.level < 19) {
       openSeedSelection(result.level + 1)
     } else {
       openWorldMap()

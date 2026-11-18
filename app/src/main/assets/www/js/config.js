@@ -478,7 +478,7 @@ const PLANT_CONFIG = {
 
   // Ahri (Hồ Ly Chín Đuôi): 200 Sun, 200 HP, hồi 10s, tấn công 1.75s tầm 5 ô boomerang
   // (lượt đi 25 DMG, hết tầm biến thành quả cầu trắng bay về gây 50 sát thương chuẩn xuyên khiên/giáp).
-  // Skill mỗi 15s: thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP/giáp/trạng thái) quay lại đánh zom địch.
+  // Skill mỗi 15s: thôi miên tạm thời 4s zombie gần nhất cùng hàng (giữ nguyên HP/giáp/trạng thái, không áp dụng lên Boss / Mini-Boss) quay lại đánh zom địch.
   ahri: {
     id: 'ahri',
     name: 'Ahri',
@@ -520,6 +520,9 @@ const PLANT_CONFIG = {
     executeLowRatio: 0.10,
     maxAtkSpeedStacks: 3,
     atkSpeedBonusPerStack: 0.10,
+    returnDelay: 1.5,
+    projectileType: 'irelia_blade',
+    projectileSpeed: 10.5,
     canAttack: true,
     produceSun: false
   },
@@ -798,6 +801,56 @@ const ZOMBIE_COMBAT_STATS = {
       giantThresholdRatio: 0.60,
       giantAttackInterval: 2.0,
       giantHealOnKill: 350
+    },
+    ionia_zed: {
+      damage: 50,
+      attackInterval: 1.0,
+      atkSpeed: 1.0,
+      deathMarkDelay: 5.0,
+      deathMarkDamage: 300
+    },
+    ionia_yone: {
+      damage: 70,
+      attackInterval: 0.5,
+      atkSpeed: 0.5,
+      empoweredHpRatio: 0.12,
+      spiritDuration: 4.5,
+      spiritShieldHp: 200,
+      spiritSpeedPerCell: 3.2,
+      spiritTriggerCol: 6,
+      ultCooldown: 12.0,
+      ultChannelDuration: 1.2,
+      ultDashCells: 3,
+      ultDamage: 120,
+      ultStunDuration: 2.0
+    },
+    yone_body: {
+      damage: 0,
+      attackInterval: 999,
+      ccImmune: true,
+      stunImmune: true,
+      slowImmune: true,
+      freezeImmune: true,
+      knockbackImmune: true,
+      hypnoImmune: true
+    },
+    ionia_sett: {
+      damage: 300,
+      attackInterval: 2.0,
+      atkSpeed: 2.0,
+      maxGrit: 800,
+      wHpLostThreshold: 700,
+      wShieldHp: 500,
+      wShieldDuration: 3.0,
+      wCenterDamage: 550,
+      wSideDamage: 200,
+      wForwardCells: 3,
+      wSideRows: 2,
+      rCooldown: 15.0,
+      rThrowCells: 2,
+      rCrushMaxHp: 300,
+      rSlamDamage: 250,
+      hypnoImmune: true
     }
   }
 };
@@ -876,6 +929,7 @@ const ZOMBIE_BASE_STATS = {
     speedCellsPerSec: 0.24,
     damage: 500,
     isBoss: true,
+    hypnoImmune: true,
     hasShield: false,
     resistanceKnockback: 1.0
   },
@@ -892,6 +946,7 @@ const ZOMBIE_BASE_STATS = {
     attackInterval: 1.0,
     knockbackImmune: true,
     stunImmune: true,
+    hypnoImmune: true,
     slowActionDelay: 1.5,
     resistanceKnockback: 1.0,
     hasShield: false
@@ -909,6 +964,7 @@ const ZOMBIE_BASE_STATS = {
     attackInterval: 1.0,
     knockbackImmune: true,
     stunImmune: true,
+    hypnoImmune: true,
     slowActionDelay: 1.5,
     resistanceKnockback: 1.0,
     hasShield: false
@@ -1334,6 +1390,7 @@ const ZOMBIE_BASE_STATS = {
     attackInterval: 1.0,
     knockbackImmune: true,
     stunImmune: true,
+    hypnoImmune: true,
     slowActionDelay: 1.5,
     resistanceKnockback: 1.0,
     hasShield: false
@@ -1385,6 +1442,7 @@ const ZOMBIE_BASE_STATS = {
     atkSpeed: 1.0,
     isBoss: false,
     isMiniBoss: true,
+    hypnoImmune: true,
     hasShield: false,
     resistanceKnockback: 0.85
   },
@@ -1402,6 +1460,7 @@ const ZOMBIE_BASE_STATS = {
     atkSpeed: 1.0,
     isBoss: false,
     isMiniBoss: true,
+    hypnoImmune: true,
     hasShield: false,
     resistanceKnockback: 0.85
   },
@@ -1506,6 +1565,105 @@ const ZOMBIE_BASE_STATS = {
     isMiniBoss: true,
     hasShield: false,
     resistanceKnockback: 1.0
+  },
+
+  // ============================================================================
+  // VÙNG ĐẤT IONIA (Zed, Yone, Thể Xác Yone, Mini-Boss Sett)
+  // ============================================================================
+  ionia_zed: {
+    id: 'ionia_zed',
+    name: 'Zed (Chúa Tể Bóng Tối)',
+    hp: 250,
+    baseHp: 250,
+    armorHp: 0,
+    speed: 0.889,
+    speedPerCell: 1.5,
+    damage: 50,
+    attackInterval: 1.0,
+    atkSpeed: 1.0,
+    deathMarkDelay: 5.0,
+    deathMarkDamage: 300,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.1
+  },
+
+  ionia_yone: {
+    id: 'ionia_yone',
+    name: 'Yone (Song Kiếm Đấu Sĩ)',
+    hp: 500,
+    baseHp: 500,
+    armorHp: 0,
+    speed: 0.267,
+    speedPerCell: 5.0,
+    spiritSpeedPerCell: 3.2,
+    damage: 70,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    empoweredHpRatio: 0.12,
+    spiritDuration: 4.5,
+    spiritShieldHp: 200,
+    spiritTriggerCol: 6,
+    ultCooldown: 12.0,
+    ultChannelDuration: 1.2,
+    ultDashCells: 3,
+    ultDamage: 120,
+    ultStunDuration: 2.0,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.2
+  },
+
+  yone_body: {
+    id: 'yone_body',
+    name: 'Thể Xác Yone',
+    hp: 350,
+    baseHp: 350,
+    armorHp: 0,
+    speed: 0,
+    speedPerCell: 999999,
+    damage: 0,
+    attackInterval: 999,
+    atkSpeed: 999,
+    ccImmune: true,
+    stunImmune: true,
+    slowImmune: true,
+    freezeImmune: true,
+    knockbackImmune: true,
+    hypnoImmune: true,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 1.0
+  },
+
+  ionia_sett: {
+    id: 'ionia_sett',
+    name: 'Sett (Đại Ca Đấu Trường)',
+    hp: 3000,
+    baseHp: 3000,
+    armorHp: 0,
+    speed: 0.222,
+    speedPerCell: 6.0,
+    damage: 300,
+    attackInterval: 2.0,
+    atkSpeed: 2.0,
+    maxGrit: 800,
+    wHpLostThreshold: 700,
+    wShieldHp: 500,
+    wShieldDuration: 3.0,
+    wCenterDamage: 550,
+    wSideDamage: 200,
+    wForwardCells: 3,
+    wSideRows: 2,
+    rCooldown: 15.0,
+    rThrowCells: 2,
+    rCrushMaxHp: 300,
+    rSlamDamage: 250,
+    hypnoImmune: true,
+    isBoss: false,
+    isMiniBoss: true,
+    hasShield: false,
+    resistanceKnockback: 0.8
   }
 };
 
@@ -1810,6 +1968,46 @@ const LEVEL_CONFIG = {
     hasTombstones: false,
     tombstoneCount: 0,
     spawnMultiplier: 3.0,
+    isBossLevel: true,
+    waves: 5
+  },
+  17: {
+    level: 17,
+    title: 'Level 17: Đền Thờ Bóng Tối Ionia',
+    subtitle: 'Vùng Đất Ionia · Màn 1/3',
+    description: 'Đặt chân vào Vùng Đất Ionia thanh tịnh nhưng ẩn chứa sát cơ! Đối đầu Ninja Bóng Tối Zed (1.5s/ô, Dấu Ấn Tử Thần 300 DMG) cùng Lãng Khách.',
+    theme: 'ionia',
+    worldName: 'Vùng Đất Ionia',
+    zombiePool: ['basic', 'conehead', 'lang_khach', 'ionia_zed'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 2.6,
+    waves: 5
+  },
+  18: {
+    level: 18,
+    title: 'Level 18: Linh Giới Song Kiếm Ionia',
+    subtitle: 'Vùng Đất Ionia · Màn 2/3',
+    description: 'Song Kiếm Đấu Sĩ Yone xuất trận! Dùng Xuất Hồn (E) hóa Linh Hồn 3.2s/ô và Đoạt Mệnh (R) hất tung choáng 2s toàn bộ cây trên đường lướt.',
+    theme: 'ionia',
+    worldName: 'Vùng Đất Ionia',
+    zombiePool: ['basic', 'conehead', 'buckethead', 'shen', 'lang_khach', 'ionia_zed', 'ionia_yone'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 2.9,
+    waves: 5
+  },
+  19: {
+    level: 19,
+    title: 'Level 19: Đấu Trường Ionia - Mini-Boss Sett',
+    subtitle: 'Vùng Đất Ionia · Màn 3/3 (Toàn Quân)',
+    description: 'Trận quyết chiến Vùng Đất Ionia! Toàn bộ Zed, Yone, Shen hội tụ cùng Mini-Boss Sett 3000 HP tung Cuồng Thú Quyền (W) & Hủy Diệt Đấu Trường (R) ném văng cây phòng thủ!',
+    theme: 'ionia',
+    worldName: 'Vùng Đất Ionia',
+    zombiePool: ['conehead', 'buckethead', 'shen', 'lang_khach', 'ionia_zed', 'ionia_yone', 'ionia_sett'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 3.2,
     isBossLevel: true,
     waves: 5
   }
