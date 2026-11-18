@@ -3658,12 +3658,13 @@ class Zombie {
       this.isSpiritForm = false;
       this.spiritFormTimer = 0;
       this.spiritBody = null;
-      this.yoneRCd = proto.ultCooldown || 12.0;
+      this.yoneRCd = proto.ultCooldown || 8.0;
       this.yoneRTimer = this.yoneRCd;
+      this.yoneHasAttacked = false;
       this.isChargingR = false;
       this.rChargeTimer = 0;
       this.rChargeDuration = proto.ultChannelDuration || 1.2;
-      this.ultDashCells = proto.ultDashCells || 3;
+      this.ultDashCells = proto.ultDashCells || 2;
       this.ultDamage = proto.ultDamage || 120;
       this.ultStunDuration = proto.ultStunDuration || 2.0;
       this.isDashingR = false;
@@ -3696,6 +3697,9 @@ class Zombie {
       this.wSideDamage = proto.wSideDamage || 200;
       this.wForwardCells = proto.wForwardCells || 3;
       this.wSideRows = proto.wSideRows || 2;
+      this.isChargingW = false;
+      this.wChargeTimer = 0;
+      this.wChargeDuration = 0.50;
       this.wCastAnimTimer = 0;
       this.settRCd = 0;
       this.settRCooldown = proto.rCooldown || 15.0;
@@ -5571,39 +5575,51 @@ class Zombie {
         return;
       }
 
-      // Đếm hồi chiêu Skill 2 R (12s)
-      if (this.yoneRTimer > 0) {
-        this.yoneRTimer = Math.max(0, this.yoneRTimer - dt);
-      }
-      if (this.yoneRTimer <= 0 && this.x <= CONFIG.CANVAS_WIDTH - 10 && gameState) {
-        const checkRange = CONFIG.CELL_WIDTH * 3.4;
-        const hasTargetInUlt = (gameState.plants || []).some(p =>
-          p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row &&
-          p.x <= this.x + 20 && (this.x - p.x) <= checkRange
-        ) || (gameState.barriers || []).some(b =>
-          b.alive && b.x <= this.x + 20 && (this.x - b.x) <= checkRange
-        );
-        if (hasTargetInUlt) {
-          this.isChargingR = true;
-          this.rChargeTimer = this.rChargeDuration || 1.2;
-          this.yoneRTimer = this.yoneRCd || 12.0;
-          this.isEating = false;
-          this.eatingPlant = null;
-          if (gameState.spawnParticles) {
-            gameState.spawnParticles(this.x, this.y - 12, '#ff1744', 12);
+      // Đếm hồi chiêu Skill 2 R (8s kể từ khi Yone bắt đầu tấn công mới kích hoạt, lướt 2 ô)
+      if (this.yoneHasAttacked) {
+        if (this.yoneRTimer > 0) {
+          this.yoneRTimer = Math.max(0, this.yoneRTimer - dt);
+        }
+        if (this.yoneRTimer <= 0 && this.x <= CONFIG.CANVAS_WIDTH - 10 && gameState) {
+          const checkRange = CONFIG.CELL_WIDTH * ((this.ultDashCells || 2) + 0.35);
+          const hasTargetInUlt = (gameState.plants || []).some(p =>
+            p.alive && !p.isRecharging && !p.isGroundPlant && p.row === this.row &&
+            p.x <= this.x + 20 && (this.x - p.x) <= checkRange
+          ) || (gameState.barriers || []).some(b =>
+            b.alive && b.x <= this.x + 20 && (this.x - b.x) <= checkRange
+          );
+          if (hasTargetInUlt) {
+            this.isChargingR = true;
+            this.rChargeTimer = this.rChargeDuration || 1.2;
+            this.yoneRTimer = this.yoneRCd || 8.0;
+            this.isEating = false;
+            this.eatingPlant = null;
+            if (gameState.spawnParticles) {
+              gameState.spawnParticles(this.x, this.y - 12, '#ff1744', 12);
+            }
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(this.x, this.y - 44, 'ĐOẠT MỆNH TỤ LỰC (1.2s)! ⚔️💢', '#ff5252', 16);
+            }
+            return;
           }
-          if (gameState.spawnFloatingText) {
-            gameState.spawnFloatingText(this.x, this.y - 44, 'ĐOẠT MỆNH TỤ LỰC (1.2s)! ⚔️💢', '#ff5252', 16);
-          }
-          return;
         }
       }
     }
 
     // ----------------------------------------------------
-    // XỬ LÝ SETT MINI-BOSS (Đấm liên hoàn 2 đòn + Skill 2 R Ném cây phòng thủ lùi 2 ô)
+    // XỬ LÝ SETT MINI-BOSS (Tụ W Cuồng Thú Quyền + Đấm liên hoàn 2 đòn + Skill 2 R Ném cây phòng thủ lùi 2 ô)
     // ----------------------------------------------------
     if (this.type === 'ionia_sett' && this.alive) {
+      if (this.isChargingW) {
+        this.isEating = false;
+        this.eatingPlant = null;
+        this.comboHitsPending = 0;
+        this.wChargeTimer = Math.max(0, this.wChargeTimer - dt);
+        if (this.wChargeTimer <= 0) {
+          this.releaseSettHaymakerBlast(gameState);
+        }
+        return;
+      }
       if (this.comboHitsPending > 0) {
         this.comboHitDelay -= atkDt;
         if (this.comboHitDelay <= 0) {
@@ -5622,7 +5638,7 @@ class Zombie {
             this.punchAnimTimer = 0.28;
             this.punchHand = 1;
             if (gameState) {
-              gameState.spawnParticles(secondTarget.x + 8, secondTarget.y - 8, '#ffab00', 12);
+              gameState.spawnParticles(secondTarget.x + 8, secondTarget.y - 8, '#ffab00', 14);
               gameState.spawnParticles(secondTarget.x + 8, secondTarget.y - 8, '#ff5252', 8);
               if (gameState.spawnAttackEffect) {
                 gameState.spawnAttackEffect({
@@ -5632,7 +5648,7 @@ class Zombie {
                   startX: this.x - 16,
                   startY: this.y - 12,
                   hand: 1,
-                  duration: 0.24
+                  duration: 0.28
                 });
               }
               if (gameState.audio && gameState.audio.playMelee) {
@@ -5921,6 +5937,11 @@ class Zombie {
             }
           } else if (this.type === 'ionia_yone') {
             // Yone: 70 DMG mỗi 0.5s, luân phiên đánh thường (70) và đánh cường hóa (12% HP mục tiêu)
+            // Skill R (8s) chỉ bắt đầu đếm từ khi Yone tấn công lần đầu
+            if (!this.yoneHasAttacked) {
+              this.yoneHasAttacked = true;
+              this.yoneRTimer = this.yoneRCd || 8.0;
+            }
             const isEmpowered = this.yoneAttackPhase === 1;
             const targetMaxHp = targetToAttack.maxHp || targetToAttack.hp || 300;
             const dealDmg = isEmpowered
@@ -6191,7 +6212,7 @@ class Zombie {
       const hpLost = Math.max(0, prevHp - Math.max(0, this.hp));
       this.grit = Math.min(this.maxGrit || 800, (this.grit || 0) + hpLost);
       this.hpLostSinceW = (this.hpLostSinceW || 0) + hpLost;
-      if (this.grit >= (this.maxGrit || 800) || this.hpLostSinceW >= (this.wHpLostThreshold || 700)) {
+      if (!this.isChargingW && (this.grit >= (this.maxGrit || 800) || this.hpLostSinceW >= (this.wHpLostThreshold || 700))) {
         this.castSettHaymakerW(this.gameState);
       }
     }
@@ -6826,14 +6847,14 @@ class Zombie {
     }
   }
 
-  // Yone Skill 2 (R): Sau 1.2s tụ lực -> Lướt xuyên 3 ô trên hàng, hất tung & choáng 2s, gây 120 DMG/cây
+  // Yone Skill 2 (R): Sau 1.2s tụ lực -> Lướt xuyên 2 ô trên hàng, hất tung & choáng 2s, gây 120 DMG/cây
   triggerYoneUltDash(gameState) {
     this.isChargingR = false;
     this.isDashingR = true;
     this.rDashTimer = 0;
     this.rDashStartX = this.x;
     const minSafeX = CONFIG.GRID_OFFSET_X + 18;
-    this.rDashTargetX = Math.max(minSafeX, this.x - CONFIG.CELL_WIDTH * (this.ultDashCells || 3));
+    this.rDashTargetX = Math.max(minSafeX, this.x - CONFIG.CELL_WIDTH * (this.ultDashCells || 2));
     this.rDashHitIds = new Set();
 
     if (gameState && gameState.spawnAttackEffect) {
@@ -6852,13 +6873,32 @@ class Zombie {
     }
   }
 
-  // Sett Skill 1 (W) – Cuồng Thú Quyền: Giáp ảo 500 HP (3s) + Sóng xung kích 3 ô trước, 2 ô trên dưới (giữa 550 / rìa 200)
+  // Sett Skill 1 (W) – Cuồng Thú Quyền: Tạo giáp ảo 500 HP (3s) + Gồng tụ lực 0.5s hiện vùng hình thang vàng rực trước khi đấm
   castSettHaymakerW(gameState) {
+    if (this.isChargingW) return;
     this.grit = 0;
     this.hpLostSinceW = 0;
     this.settShieldHp = this.settMaxShieldHp || 500;
     this.settShieldTimer = this.settShieldDuration || 3.0;
-    this.wCastAnimTimer = 0.65;
+    this.isChargingW = true;
+    this.wChargeTimer = this.wChargeDuration || 0.50;
+    this.isEating = false;
+    this.eatingPlant = null;
+
+    if (gameState) {
+      gameState.spawnParticles(this.x + 12, this.y - 14, '#ffd54f', 16);
+      gameState.spawnParticles(this.x + 16, this.y - 18, '#ff8f00', 10);
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 54, 'CUỒNG THÚ QUYỀN · +500 GIÁP! 🔥🥊', '#ffd54f', 16);
+      }
+    }
+  }
+
+  // Tung đòn Cuồng Thú Quyền (W): Sóng xung kích hình thang 3 ô trước, 2 ô trên dưới (giữa 550 / rìa 200)
+  releaseSettHaymakerBlast(gameState) {
+    this.isChargingW = false;
+    this.wChargeTimer = 0;
+    this.wCastAnimTimer = 0.70;
 
     if (!gameState) return;
     const forwardCells = this.wForwardCells || 3;
@@ -6878,7 +6918,7 @@ class Zombie {
         const isCenter = p.row === this.row;
         const dmg = isCenter ? centerDmg : sideDmg;
         p.takeDamage(dmg, false);
-        gameState.spawnParticles(p.x, p.y - 10, isCenter ? '#ffd54f' : '#ff6d00', isCenter ? 14 : 8);
+        gameState.spawnParticles(p.x, p.y - 10, isCenter ? '#ffd54f' : '#ff6d00', isCenter ? 16 : 9);
       }
     });
     (gameState.barriers || []).forEach(b => {
@@ -6892,8 +6932,8 @@ class Zombie {
       }
     });
 
-    gameState.spawnParticles(this.x, this.y - 14, '#ffd54f', 24);
-    gameState.spawnParticles(this.x - 40, this.y - 10, '#ff6d00', 18);
+    gameState.spawnParticles(this.x, this.y - 14, '#ffd54f', 26);
+    gameState.spawnParticles(this.x - 60, this.y - 10, '#ff8f00', 22);
     if (gameState.spawnAttackEffect) {
       gameState.spawnAttackEffect({
         kind: 'sett_w_blast',
@@ -6903,12 +6943,12 @@ class Zombie {
         minRow,
         maxRow,
         startX: minX,
-        endX: maxX,
-        duration: 0.60
+        endX: this.x - 10,
+        duration: 0.72
       });
     }
     if (gameState.spawnFloatingText) {
-      gameState.spawnFloatingText(this.x, this.y - 52, `CUỒNG THÚ QUYỀN · +500 GIÁP (550/200)! 💥🥊`, '#ffd54f', 17);
+      gameState.spawnFloatingText(this.x - 75, this.y - 42, 'SÓNG XUNG KÍCH (550 / 200 DMG)! 💥', '#ffab00', 17);
     }
     if (gameState.audio && gameState.audio.playRoar) {
       gameState.audio.playRoar();
@@ -6928,6 +6968,7 @@ class Zombie {
     const destCol = Math.max(0, origCol - (this.rThrowCells || 2));
     const destX = CONFIG.GRID_OFFSET_X + destCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
     const destY = CONFIG.GRID_OFFSET_Y + this.row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+    const thrownType = defensivePlant.type || 'wall_nut';
 
     if (gameState && destCol !== origCol) {
       const occupant = (gameState.plants || []).find(p =>
@@ -6989,10 +7030,11 @@ class Zombie {
           x: destX,
           y: destY,
           startX: origX,
-          startY: destY,
+          startY: destY - 10,
           endX: destX,
           endY: destY,
-          duration: 0.42
+          plantType: thrownType,
+          duration: 0.50
         });
         gameState.spawnAttackEffect({
           kind: 'sett_r_slam',

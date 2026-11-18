@@ -591,7 +591,7 @@ const ZOMBIE_PREVIEW_INFO = {
     name: 'Yone (Song Kiếm Đấu Sĩ)',
     avatar: '⚔️',
     hpText: 'HP: 500 · 5.0s/ô (Linh Hồn 3.2s/ô) · 70 DMG / 12% HP',
-    desc: 'Tấn công mỗi 0.5s luân phiên đòn thường 70 DMG và đòn cường hóa 12% HP. Tới cột 6 kích hoạt Xuất Hồn (E) để lại Thể Xác miễn nhiễm CC và hóa Linh Hồn (+200 HP) lao nhanh 4.5s rồi giật về. Mỗi 12s tụ lực 1.2s tung Đoạt Mệnh (R) lướt 3 ô hất tung & choáng 2s (120 DMG/cây)!'
+    desc: 'Tấn công mỗi 0.5s luân phiên đòn thường 70 DMG và đòn cường hóa 12% HP. Tới cột 6 kích hoạt Xuất Hồn (E) để lại Thể Xác miễn nhiễm CC và hóa Linh Hồn (+200 HP) lao nhanh 4.5s rồi giật về. Mỗi 8s kể từ khi tấn công tụ lực 1.2s tung Đoạt Mệnh (R) lướt 2 ô hất tung & choáng 2s (120 DMG/cây)!'
   },
   ionia_sett: {
     name: 'Sett (Mini-Boss Đấu Trường)',

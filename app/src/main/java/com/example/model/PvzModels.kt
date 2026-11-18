@@ -590,7 +590,7 @@ object PvzCatalog {
     ZombieCatalogItem("nosus_hemomancer", "Huyết Pháp Sư Nosus", "🩸", "760 HP", "6.5s / ô · Tầm 2.5 ô", "Cầu Máu 80 DMG / 1.4s · Huyết Tế", "Pháp sư huyết thuật tầm xa: bắn cầu máu tầm 2.5 ô gây 80 DMG mỗi 1.4s. Mỗi 6.5s niệm Huyết Tế hồi +120 HP và tăng +25% tốc độ cho bản thân cùng đồng minh phạm vi 3×2 trong 2.5s."),
     ZombieCatalogItem("nosus_warlord", "Darius (Đại Tướng Nosus)", "🪓", "3.200 HP (Mini-Boss)", "6.0s / ô · Miễn Làm Chậm / Thôi Miên / Đẩy", "240 DMG/1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit", "Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 4s (tốc đánh tăng lên 1s/đòn), ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!", isBoss = true),
     ZombieCatalogItem("ionia_zed", "Zed (Chúa Tể Bóng Tối)", "🥷", "250 HP", "1.5s / ô", "50 DMG/s · Dấu Ấn Tử Thần 300 DMG", "Sát thủ bóng đêm siêu tốc Ionia! Khi tụt vào máu tử, Zed kích hoạt miễn nhiễm sát thương và lao thẳng tới cây gần nhất cùng hàng; khi đáp xuống hết miễn nhiễm và gắn Dấu Ấn Tử Thần phát nổ sau 5s gây 300 DMG lên cây đó."),
-    ZombieCatalogItem("ionia_yone", "Yone (Song Kiếm Linh Giới)", "⚔️", "500 HP (+200 Linh Hồn)", "5.0s / ô (Linh Hồn: 3.2s / ô)", "70 DMG/0.5s & 12% MaxHP · E Xuất Hồn · R Đoạt Mệnh", "Song kiếm đấu sĩ Ionia luân phiên đánh thường 70 DMG và cường hóa 12% Máu tối đa mỗi 0.5s. Đến cột 6 dùng Xuất Hồn (E) để lại Thể Xác (350 HP, miễn khống chế) và hóa Linh Hồn (+200 HP) lao 4.5s rồi giật về. Mỗi 12s tụ 1.2s tung Đoạt Mệnh (R) lướt 3 ô hất tung & choáng 2s, gây 120 DMG/cây."),
+    ZombieCatalogItem("ionia_yone", "Yone (Song Kiếm Linh Giới)", "⚔️", "500 HP (+200 Linh Hồn)", "5.0s / ô (Linh Hồn: 3.2s / ô)", "70 DMG/0.5s & 12% MaxHP · E Xuất Hồn · R Đoạt Mệnh", "Song kiếm đấu sĩ Ionia luân phiên đánh thường 70 DMG và cường hóa 12% Máu tối đa mỗi 0.5s. Đến cột 6 dùng Xuất Hồn (E) để lại Thể Xác (350 HP, miễn khống chế) và hóa Linh Hồn (+200 HP) lao 4.5s rồi giật về. Mỗi 8s kể từ khi tấn công, tụ 1.2s tung Đoạt Mệnh (R) lướt 2 ô hất tung & choáng 2s, gây 120 DMG/cây."),
     ZombieCatalogItem("ionia_sett", "Sett (Đại Ca Đấu Trường)", "🥊", "3.000 HP (Mini-Boss)", "6.0s / ô", "2 Đòn 300 DMG/2s · W Gan Lì 550 · R Ném Cây", "Mini-Boss Đấu Trường Ionia (Ahri không thể thôi miên)! Mỗi 2s đấm liên hoàn 2 đòn × 300 DMG. Tích 100% sát thương thành Gan Lì (tối đa 800 hoặc mỗi mất 700 HP) tạo giáp ảo 500 HP (3s) & đấm Cuồng Thú Quyền (W) 3 ô trước mặt (±2 hàng): tâm 550 DMG, rìa 200 DMG. Gặp cây phòng thủ dùng R nhấc ném lùi 2 ô (đè nát ≤300 HP) & gây 250 DMG 3×3 (hồi 15s).", isBoss = true)
   )
 
@@ -746,7 +746,7 @@ object PvzCatalog {
       level = 18,
       title = "Song Kiếm Linh Giới Ionia",
       subtitle = "Vùng Đất Ionia · Màn 2/3",
-      description = "Yone nhập trận với song kiếm luân phiên 70 DMG & 12% MaxHP, Xuất Hồn (E) ở cột 6 và Đoạt Mệnh (R) lướt 3 ô hất tung toàn hàng!",
+      description = "Yone nhập trận với song kiếm luân phiên 70 DMG & 12% MaxHP, Xuất Hồn (E) ở cột 6 và Đoạt Mệnh (R) lướt 2 ô hất tung toàn hàng!",
       zombieIds = listOf("ionia_zed", "ionia_yone", "nosus_thrall", "shen"),
       tacticalTip = "Phá hủy Thể Xác (350 HP) của Yone để kéo giật hắn về sớm trước 4.5s, đồng thời đề phòng vệt đỏ tụ lực 1.2s của chiêu Đoạt Mệnh (R)!"
     ),
