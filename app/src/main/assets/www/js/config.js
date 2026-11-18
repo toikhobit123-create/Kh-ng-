@@ -202,6 +202,7 @@ const PLANT_CONFIG = {
     rangeRadiusCells: 1.5,
     cooldown: 35.0,
     isInstant: true,
+    singleUse: true,
     canAttack: true,
     produceSun: false
   },
@@ -247,6 +248,7 @@ const PLANT_CONFIG = {
     hp: 300,
     cooldown: 15.0,
     isInstant: true,
+    singleUse: true,
     stunDuration: 5.0,
     gasRangeCols: 2
   },
@@ -313,6 +315,7 @@ const PLANT_CONFIG = {
     canAttack: false,
     produceSun: false,
     singleTarget: true,
+    singleUse: true,
     desc: 'Khi thây ma ăn nấm thôi miên, chúng sẽ quay lại và chiến đấu cho bạn.'
   },
 
@@ -333,6 +336,7 @@ const PLANT_CONFIG = {
     splashRadiusCells: 1.5,
     canAttack: true,
     produceSun: false,
+    singleUse: true,
     desc: '5s sau khi đặt xuống sẽ nhô lên. Nếu chưa nhô lên mà bị zom ăn sẽ bị mất luôn. Nổ gây 2700 sát thương phạm vi 3x3 ô.'
   },
 
@@ -362,6 +366,7 @@ const PLANT_CONFIG = {
     hp: 300,
     cooldown: 10.0,
     isInstant: true,
+    singleUse: true,
     canAttack: true,
     produceSun: false
   },
@@ -542,6 +547,24 @@ const PLANT_CONFIG = {
     shieldAmount: 200,
     mantraStacksRequired: 3,
     canAttack: false,
+    produceSun: false
+  },
+
+  // Bí Đè (Squash): 50 Sun, hồi 20s, 300 HP, 1800 DMG dùng 1 lần. Đè bẹp Zombie tiếp cận.
+  squash: {
+    id: 'squash',
+    name: 'Squash',
+    nameVi: 'Bí Đè',
+    group: 'instant',
+    cost: 50,
+    hp: 300,
+    damage: 1800,
+    cooldown: 20.0,
+    triggerRangeCols: 1.35,
+    splashRadiusCells: 0.75,
+    isInstant: true,
+    singleUse: true,
+    canAttack: true,
     produceSun: false
   }
 
@@ -851,6 +874,47 @@ const ZOMBIE_COMBAT_STATS = {
       rCrushMaxHp: 300,
       rSlamDamage: 250,
       hypnoImmune: true
+    },
+    drowned_sailor: {
+      damage: 50,
+      attackInterval: 0.5,
+      atkSpeed: 0.5
+    },
+    anchor_bearer: {
+      damage: 75,
+      attackInterval: 0.7,
+      atkSpeed: 0.7,
+      anchorPushEveryBites: 3
+    },
+    swimming_ghost: {
+      damage: 50,
+      attackInterval: 0.5,
+      atkSpeed: 0.5,
+      submergeSurfaceCol: 4
+    },
+    wanted_captain: {
+      damage: 65,
+      attackInterval: 0.5,
+      atkSpeed: 0.5,
+      isWanted: true,
+      hypnoImmune: true
+    },
+    zombot_pyke: {
+      damage: 0,
+      attackInterval: 999,
+      isBoss: true,
+      hypnoImmune: true,
+      ccImmune: true,
+      stunImmune: true,
+      slowImmune: true,
+      freezeImmune: true,
+      knockbackImmune: true,
+      phase1Interval: 8.0,
+      phase2Interval: 6.5,
+      phase3Interval: 5.0,
+      telegraphDuration: 2.0,
+      rDamage: 1800,
+      rHealRatio: 0.10
     }
   }
 };
@@ -1664,6 +1728,97 @@ const ZOMBIE_BASE_STATS = {
     isMiniBoss: true,
     hasShield: false,
     resistanceKnockback: 0.8
+  },
+
+  drowned_sailor: {
+    id: 'drowned_sailor',
+    name: 'Thủy Thủ Đắm Tàu',
+    hp: 270,
+    baseHp: 270,
+    armorHp: 0,
+    speed: 0.266,
+    speedPerCell: 5.0,
+    damage: 50,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0
+  },
+
+  anchor_bearer: {
+    id: 'anchor_bearer',
+    name: 'Kẻ Vác Neo',
+    hp: 1350,
+    baseHp: 1350,
+    armorHp: 0,
+    hardened: true,
+    speed: 0.177,
+    speedPerCell: 7.5,
+    damage: 75,
+    attackInterval: 0.7,
+    atkSpeed: 0.7,
+    anchorPushEveryBites: 3,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.6
+  },
+
+  swimming_ghost: {
+    id: 'swimming_ghost',
+    name: 'Ma Bơi Lội',
+    hp: 420,
+    baseHp: 420,
+    armorHp: 0,
+    speed: 0.444,
+    speedPerCell: 3.0,
+    submergeSpeedPerCell: 2.2,
+    submergeSurfaceCol: 4,
+    damage: 50,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.2
+  },
+
+  wanted_captain: {
+    id: 'wanted_captain',
+    name: 'Thuyền Trưởng Truy Nã',
+    hp: 950,
+    baseHp: 950,
+    armorHp: 0,
+    speed: 0.417,
+    speedPerCell: 3.2,
+    damage: 65,
+    attackInterval: 0.5,
+    atkSpeed: 0.5,
+    isWanted: true,
+    hypnoImmune: true,
+    isBoss: false,
+    hasShield: false,
+    resistanceKnockback: 0.3
+  },
+
+  zombot_pyke: {
+    id: 'zombot_pyke',
+    name: 'Zombot Đồ Tể Pyke',
+    hp: 15000,
+    baseHp: 15000,
+    armorHp: 0,
+    speed: 0.15,
+    speedPerCell: 9.0,
+    damage: 0,
+    attackInterval: 999,
+    isBoss: true,
+    hypnoImmune: true,
+    ccImmune: true,
+    stunImmune: true,
+    slowImmune: true,
+    freezeImmune: true,
+    knockbackImmune: true,
+    hasShield: false,
+    resistanceKnockback: 1.0
   }
 };
 
@@ -1764,7 +1919,8 @@ const CONFIG = {
       { plantId: "aurora", weight: 12 },
       { plantId: "ahri", weight: 12 },
       { plantId: "irelia", weight: 13 },
-      { plantId: "karma", weight: 14 }
+      { plantId: "karma", weight: 14 },
+      { plantId: "squash", weight: 14 }
     ]
   }
 };
@@ -2010,6 +2166,28 @@ const LEVEL_CONFIG = {
     spawnMultiplier: 3.2,
     isBossLevel: true,
     waves: 5
+  },
+  20: {
+    level: 20,
+    title: 'Level 20: Bến Cảng Tử Thần (Bloodharbor Pier)',
+    subtitle: 'Boss Zombot Đồ Tể 15.000 HP · 0 Sun · Dàn Trận & Chia Phần',
+    description: 'Bản đồ 5×9: Cột 1–6 sàn gỗ, cột 7–9 vùng nước đen của Zombot Đồ Tể. Không Sun, không Máy Cắt Cỏ! Chọn 6 cây (cấm Sun), đặt miễn phí tối đa 12 cây, dùng Xẻng đảo vị trí (giữ máu, hồi 2.5s) để né chiêu và hạ Truy Nã Chia Phần!',
+    theme: 'bloodharbor',
+    worldName: 'Bến Cảng Tử Thần',
+    zombiePool: ['drowned_sailor', 'anchor_bearer', 'swimming_ghost', 'wanted_captain', 'zombot_pyke'],
+    hasTombstones: false,
+    tombstoneCount: 0,
+    spawnMultiplier: 2.5,
+    isBossLevel: true,
+    isSpecial: true,
+    freeSunCost: true,
+    noSunMode: true,
+    noLawnmowers: true,
+    deckSize: 6,
+    setupMaxPlants: 12,
+    maxPlantsCap: 16,
+    bossType: 'zombot_pyke',
+    waves: 1
   }
 };
 

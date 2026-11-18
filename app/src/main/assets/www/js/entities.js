@@ -10,7 +10,7 @@ function generateId() {
 }
 
 function isZombieOnLawn(z) {
-  if (!z || !z.alive) return false;
+  if (!z || !z.alive || z.isSubmerged) return false;
   const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
   return z.x <= lawnRight;
 }
@@ -29,7 +29,8 @@ function isBossOrMiniBoss(z) {
     z.type === 'renekton_croc' ||
     z.type === 'nasus_hound' ||
     z.type === 'nosus_warlord' ||
-    z.type === 'ionia_sett'
+    z.type === 'ionia_sett' ||
+    z.type === 'zombot_pyke'
   );
 }
 
@@ -175,6 +176,19 @@ class Plant {
     // Cỏ Ba Lá: Blover (kích hoạt tức thì rồi biến mất)
     if (type === 'blover') {
       this.activated = false;
+    }
+
+    // Bí Đè: Squash (nhảy lên và đè bẹp zombie tiến gần)
+    if (type === 'squash') {
+      this.isJumping = false;
+      this.jumpTimer = 0;
+      this.jumpDuration = 0.42;
+      this.squashStartX = this.x;
+      this.squashStartY = this.y;
+      this.squashTargetX = this.x;
+      this.squashTargetY = this.y;
+      this.squashLockedTarget = null;
+      this.hasCrushed = false;
     }
 
     // Cỏ Gai: Spikeweed (cây sát đất không bị zombie ăn)
@@ -408,6 +422,21 @@ class Plant {
       return;
     }
 
+    // Trói Nước (Lướt Sóng E của Zombot Đồ Tể): trói 3 ô trên hàng trong 4s (có thể dùng Xẻng dời cây để thoát)
+    if (gameState && typeof gameState.isTileRooted === 'function' && gameState.isTileRooted(this.row, this.col)) {
+      this.isRooted = true;
+      this.state = 'stunned';
+      return;
+    } else {
+      this.isRooted = false;
+    }
+
+    const rangeFactor = (gameState && typeof gameState.getEffectiveRangeFactor === 'function')
+      ? gameState.getEffectiveRangeFactor(this)
+      : 1.0;
+    const lawnRightBoundary = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
+    const effectiveMaxAheadX = this.x + (lawnRightBoundary - this.x) * rangeFactor + 12;
+
     if (this.shootStateTimer > 0) {
       this.shootStateTimer -= dt;
       if (this.shootStateTimer <= 0 && this.state === 'shooting') {
@@ -518,7 +547,7 @@ class Plant {
       // Tìm zombie hoặc vật cản còn sống trên cùng hàng ở phía trước (hoặc Boss Rồng 2 hàng)
       const hasTargetAhead = gameState.zombies.some(z => {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
-        return isBossRowMatch(z, this.row) && z.x > this.x - 10;
+        return isBossRowMatch(z, this.row) && z.x > this.x - 10 && z.x <= effectiveMaxAheadX;
       });
 
       if (hasTargetAhead && this.shootTimer <= 0 && this.burstRemaining === 0) {
@@ -591,7 +620,7 @@ class Plant {
 
         const hasTargetAhead = gameState.zombies.some(z => {
           if (!isZombieOnLawn(z) || z.isHypnotized) return false;
-          return isBossRowMatch(z, this.row) && z.x > this.x - 10;
+          return isBossRowMatch(z, this.row) && z.x > this.x - 10 && z.x <= effectiveMaxAheadX;
         });
 
         if (hasTargetAhead && this.shootTimer <= 0) {
@@ -610,6 +639,9 @@ class Plant {
           );
           proj.isJhinBullet = true;
           proj.isFourthShot = isFourthShot;
+          if (rangeFactor < 1.0) {
+            proj.maxReachX = effectiveMaxAheadX;
+          }
 
           this.state = 'shooting';
           this.shootStateTimer = isFourthShot ? 0.3 : 0.2;
@@ -701,8 +733,8 @@ class Plant {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
         return isBossRowMatch(z, this.row);
       });
-      const targetsAhead = rowTargets.filter(z => z.x > this.x - 10);
-      const combatZombies = rowTargets.filter(z => !z.isObstacle);
+      const targetsAhead = rowTargets.filter(z => z.x > this.x - 10 && z.x <= effectiveMaxAheadX);
+      const combatZombies = rowTargets.filter(z => !z.isObstacle && z.x <= effectiveMaxAheadX);
 
       // Đòn đánh thường: 15 DMG mỗi 0.5s lên kẻ địch phía trước trên hàng
       if (targetsAhead.length > 0 && this.shootTimer <= 0) {
@@ -718,6 +750,9 @@ class Plant {
           speed
         );
         bolt.isSyndraBolt = true;
+        if (rangeFactor < 1.0) {
+          bolt.maxReachX = effectiveMaxAheadX;
+        }
         this.state = 'shooting';
         this.shootStateTimer = 0.2;
         gameState.spawnParticles(this.x + 18, this.y - 14, '#ba68c8', 3);
@@ -822,7 +857,7 @@ class Plant {
           this.shootTimer = 0.2;
         }
       } else {
-        const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCells || 2.15);
+        const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCells || 2.15) * rangeFactor;
         const targetsInRange = (gameState.zombies || []).filter(z => {
           if (!isZombieOnLawn(z) || z.isHypnotized) return false;
           return isBossRowMatch(z, this.row) && z.x >= this.x - 10 && z.x <= this.x + rangePx;
@@ -895,7 +930,7 @@ class Plant {
 
       const targetsAhead = (gameState.zombies || []).filter(z => {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
-        return isBossRowMatch(z, this.row) && z.x > this.x - 10;
+        return isBossRowMatch(z, this.row) && z.x > this.x - 10 && z.x <= effectiveMaxAheadX;
       });
 
       if (targetsAhead.length > 0 && this.shootTimer <= 0) {
@@ -914,6 +949,9 @@ class Plant {
         rabbit.maxPierces = proto.pierceCount || 4;
         rabbit.firstKnockbackPx = CONFIG.CELL_WIDTH * (proto.firstKnockbackCells || 1.0);
         rabbit.flightTime = 0;
+        if (rangeFactor < 1.0) {
+          rabbit.maxReachX = effectiveMaxAheadX;
+        }
 
         this.state = 'shooting';
         this.shootStateTimer = 0.25;
@@ -953,7 +991,7 @@ class Plant {
         this.shootTimer -= atkDt;
       }
 
-      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 5.0);
+      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 5.0) * rangeFactor;
       const maxReachX = Math.min(CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH + 10, this.x + rangePx);
 
       const targetsInRange = (gameState.zombies || []).filter(z => {
@@ -1261,7 +1299,7 @@ class Plant {
       }
 
       // 2. Đòn đánh thường tầm 2 ô: Phi ra thanh kiếm bay tới mục tiêu gây 35 DMG / 0.8s (cường hóa +10% tốc đánh mỗi stack, tối đa 3 lần)
-      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 2.0) + 12;
+      const rangePx = CONFIG.CELL_WIDTH * (proto.rangeCols || 2.0) * rangeFactor + 12;
       const meleeTargets = (gameState.zombies || []).filter(z => {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
         return isBossRowMatch(z, this.row) && Math.abs(z.x - this.x) <= rangePx;
@@ -1438,7 +1476,7 @@ class Plant {
       for (let i = 0; i < gameState.zombies.length; i++) {
         const z = gameState.zombies[i];
         if (!isZombieOnLawn(z) || z.isHypnotized) continue;
-        if (!isBossRowMatch(z, this.row) || z.x <= this.x - 10) continue;
+        if (!isBossRowMatch(z, this.row) || z.x <= this.x - 10 || z.x > effectiveMaxAheadX) continue;
 
         if (!z.isObstacle) {
           if (z.x < minZombieX) {
@@ -1495,7 +1533,7 @@ class Plant {
       }
 
       // Phạm vi tấn công 2 ô trước mặt và 2 ô đằng sau lưng (rangeCols: 2 ô)
-      const rangePx = CONFIG.CELL_WIDTH * 2.15;
+      const rangePx = CONFIG.CELL_WIDTH * 2.15 * rangeFactor;
       const targets = gameState.zombies.filter(z => {
         return isZombieOnLawn(z) && !z.isHypnotized && isBossRowMatch(z, this.row) && Math.abs(z.x - this.x) <= rangePx;
       });
@@ -1547,7 +1585,7 @@ class Plant {
       }
 
       // Tầm 1x3 ô: hàng trên, hàng hiện tại, hàng dưới; 2.2 ô phía trước (không thiêu đồng minh thôi miên)
-      const rangePx = CONFIG.CELL_WIDTH * 2.2;
+      const rangePx = CONFIG.CELL_WIDTH * 2.2 * rangeFactor;
       const targets = gameState.zombies.filter(z => {
         if (!isZombieOnLawn(z) || z.isHypnotized) return false;
         const rowMatch = isTwoRowBoss(z)
@@ -1598,7 +1636,7 @@ class Plant {
       }
 
       const proto = PLANT_CONFIG.galio;
-      const rangePx = CONFIG.CELL_WIDTH * 2.15; // 2 ô tính từ bản thân
+      const rangePx = CONFIG.CELL_WIDTH * 2.15 * rangeFactor; // 2 ô tính từ bản thân
 
       // Basic Attack: 2 ô tính từ bản thân, 50 sát thương / 0.5s
       const meleeTargets = gameState.zombies.filter(z => {
@@ -1684,6 +1722,9 @@ class Plant {
         if (this.fuseTimer <= 0) {
           this.hasExploded = true;
           this.alive = false;
+          if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+            gameState.markSingleUseExhausted('cherry_bomb');
+          }
 
           const proto = PLANT_CONFIG.cherry_bomb;
           const radiusPx = CONFIG.CELL_WIDTH * 1.6;
@@ -1739,8 +1780,8 @@ class Plant {
         }
 
         // Tầm cắn: Bao gồm ô của bản thân và 1 ô trước mặt (Ví dụ đặt sau Hạt Dẻ, khi zombie cắn hạt dẻ Chomper vẫn với tới ăn được)
-        const cellLeft = this.x - CONFIG.CELL_WIDTH * 0.45;
-        const reachRight = this.x + CONFIG.CELL_WIDTH * 1.85;
+        const cellLeft = this.x - CONFIG.CELL_WIDTH * 0.45 * rangeFactor;
+        const reachRight = this.x + CONFIG.CELL_WIDTH * 1.85 * rangeFactor;
         const targetsInRange = gameState.zombies.filter(z => {
           if (!isZombieOnLawn(z) || z.isHypnotized) return false;
           return isBossRowMatch(z, this.row) && z.x >= cellLeft && z.x <= reachRight;
@@ -1828,6 +1869,9 @@ class Plant {
         if (targetZombie) {
           this.activated = true;
           this.state = 'shooting';
+          if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+            gameState.markSingleUseExhausted('stunion');
+          }
           gameState.zombies.forEach(z => {
             if (matchesStunionHit(z)) {
               z.applyStun(stunDur);
@@ -1858,6 +1902,9 @@ class Plant {
       if (!this.activated) {
         this.activated = true;
         this.alive = false;
+        if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+          gameState.markSingleUseExhausted('blover');
+        }
         let blownCount = 0;
 
         // 1. Thổi bay Imp đang bay trên không (do Gargantuar ném)
@@ -2069,6 +2116,9 @@ class Plant {
 
         if (triggerZombie) {
           this.alive = false;
+          if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+            gameState.markSingleUseExhausted('potato_mine');
+          }
           // Hiệu ứng nổ SPUDOW!
           gameState.spawnParticles(this.x, this.y, '#ff6f00', 25);
           gameState.spawnParticles(this.x, this.y, '#ffd54f', 20);
@@ -2112,6 +2162,80 @@ class Plant {
         }
       }
     }
+
+    // ----------------------------------------------------
+    // BÍ ĐÈ (Squash) - Nhảy vọt lên đè bẹp Zombie tiếp cận (1800 DMG)
+    // ----------------------------------------------------
+    if (this.type === 'squash') {
+      const proto = PLANT_CONFIG.squash || {};
+      if (!this.isJumping) {
+        const triggerRangePx = CONFIG.CELL_WIDTH * (proto.triggerRangeCols || 1.35) * rangeFactor;
+        const candidates = (gameState.zombies || []).filter(z => {
+          if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle) return false;
+          if (!isBossRowMatch(z, this.row)) return false;
+          return Math.abs(z.x - this.x) <= triggerRangePx;
+        });
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => Math.abs(a.x - this.x) - Math.abs(b.x - this.x));
+          const target = candidates[0];
+          this.isJumping = true;
+          this.jumpTimer = 0;
+          this.jumpDuration = 0.42;
+          this.squashStartX = this.x;
+          this.squashStartY = this.y;
+          this.squashTargetX = target.x;
+          this.squashTargetY = CONFIG.GRID_OFFSET_Y + this.row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          this.squashLockedTarget = target;
+          this.state = 'shooting';
+          if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+            gameState.markSingleUseExhausted('squash');
+          }
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(this.x, this.y - 26, 'HMPH! 🎃', '#aeea00', 15);
+          }
+        }
+      } else {
+        this.jumpTimer += dt;
+        const t = Math.min(1.0, this.jumpTimer / (this.jumpDuration || 0.42));
+        if (this.squashLockedTarget && this.squashLockedTarget.alive && t < 0.75) {
+          this.squashTargetX = this.squashLockedTarget.x;
+        }
+        const arcHeight = 72;
+        this.x = this.squashStartX + (this.squashTargetX - this.squashStartX) * t;
+        this.y = this.squashStartY + (this.squashTargetY - this.squashStartY) * t - 4 * arcHeight * t * (1 - t);
+        if (t >= 1.0 && !this.hasCrushed) {
+          this.hasCrushed = true;
+          this.alive = false;
+          const crushDmg = proto.damage || 1800;
+          const splashPx = CONFIG.CELL_WIDTH * (proto.splashRadiusCells || 0.75);
+          for (const z of (gameState.zombies || [])) {
+            if (!isZombieOnLawn(z) || z.isHypnotized || z.isObstacle) continue;
+            if (!isBossRowMatch(z, this.row)) continue;
+            if (Math.abs(z.x - this.squashTargetX) <= splashPx) {
+              z.takeDamage(crushDmg, false);
+              gameState.spawnParticles(z.x, z.y - 8, '#76ff03', 10);
+            }
+          }
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'squash_slam',
+              x: this.squashTargetX,
+              y: this.squashTargetY,
+              row: this.row,
+              duration: 0.42
+            });
+          }
+          gameState.spawnParticles(this.squashTargetX, this.squashTargetY, '#76ff03', 18);
+          gameState.spawnParticles(this.squashTargetX, this.squashTargetY, '#ffd54f', 10);
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(this.squashTargetX, this.squashTargetY - 30, `BÍ ĐÈ -${crushDmg}! 🎃💥`, '#aeea00', 18);
+          }
+          if (gameState.audio && gameState.audio.playGargantuarSmash) {
+            gameState.audio.playGargantuarSmash();
+          }
+        }
+      }
+    }
   }
 
   shoot(gameState, projType = 'pea') {
@@ -2121,7 +2245,14 @@ class Plant {
     const dmg = proto.damage || this.damage || 20;
     const speed = proto.projectileSpeed || 6.5;
 
-    gameState.spawnProjectile(projType, this.row, spawnX, spawnY, dmg, speed);
+    const proj = gameState.spawnProjectile(projType, this.row, spawnX, spawnY, dmg, speed);
+    const rangeFactor = (gameState && typeof gameState.getEffectiveRangeFactor === 'function')
+      ? gameState.getEffectiveRangeFactor(this)
+      : 1.0;
+    if (proj && rangeFactor < 1.0) {
+      const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
+      proj.maxReachX = this.x + (lawnRight - this.x) * rangeFactor + 12;
+    }
     if (gameState && gameState.audio) {
       gameState.audio.playShoot(projType);
     }
@@ -2520,6 +2651,9 @@ class Plant {
       const stunDur = proto.stunDuration || 5.0;
       this.activated = true;
       this.state = 'shooting';
+      if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+        gameState.markSingleUseExhausted('stunion');
+      }
       const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
       const reachX = Math.min(lawnRight, this.x + CONFIG.CELL_WIDTH * 4.2);
       for (let r = Math.max(0, this.row - 1); r <= Math.min(CONFIG.ROWS - 1, this.row + 1); r++) {
@@ -2555,6 +2689,30 @@ class Plant {
         gameState.spawnFloatingText(this.x, this.y - 28, `3x4 STUN ${stunDur} SECONDS! 🧅💨`, '#ffd54f', 18);
       }
       setTimeout(() => { if (this.alive) this.alive = false; }, 400);
+      return true;
+    }
+
+    if (this.type === 'squash') {
+      // Bí Đè PF: Nhảy đè tối đa 2 mục tiêu trên sân (1800 DMG/lần)
+      if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+        gameState.markSingleUseExhausted('squash');
+      }
+      const targets = (gameState.zombies || [])
+        .filter(z => isZombieOnLawn(z) && !z.isHypnotized && !z.isObstacle)
+        .sort((a, b) => a.x - b.x)
+        .slice(0, 2);
+      const dmg = (PLANT_CONFIG.squash && PLANT_CONFIG.squash.damage) || 1800;
+      for (const t of targets) {
+        t.takeDamage(dmg, false);
+        gameState.spawnParticles(t.x, t.y - 8, '#76ff03', 16);
+        if (gameState.spawnAttackEffect) {
+          gameState.spawnAttackEffect({ kind: 'squash_slam', x: t.x, y: t.y, row: t.row, duration: 0.45 });
+        }
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 30, `SIÊU BÍ ĐÈ ×${Math.max(1, targets.length)}! 🎃💥`, '#aeea00', 18);
+      }
+      this.alive = false;
       return true;
     }
 
@@ -3086,9 +3244,15 @@ class Plant {
     this.state = 'shooting';
     this.shootStateTimer = 0.5;
 
+    const rangeFactor = (gameState && typeof gameState.getEffectiveRangeFactor === 'function')
+      ? gameState.getEffectiveRangeFactor(this)
+      : 1.0;
+    const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
+    const beamEndX = this.x + (lawnRight - this.x) * rangeFactor + 12;
+
     const targets = (gameState.zombies || []).filter(z => {
       if (!isZombieOnLawn(z) || z.isHypnotized) return false;
-      return isBossRowMatch(z, this.row) && z.x > this.x - 10;
+      return isBossRowMatch(z, this.row) && z.x > this.x - 10 && z.x <= beamEndX;
     });
 
     for (const z of targets) {
@@ -3103,7 +3267,6 @@ class Plant {
       gameState.spawnParticles(z.x, z.y - 12, '#ffffff', 5);
     }
 
-    const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
     if (gameState.spawnAttackEffect) {
       gameState.spawnAttackEffect({
         kind: 'lux_ult_beam',
@@ -3113,7 +3276,7 @@ class Plant {
         minRow: this.row,
         maxRow: this.row,
         startX: this.x + 18,
-        endX: lawnRight,
+        endX: Math.min(lawnRight, beamEndX),
         duration: 0.55
       });
     }
@@ -3285,6 +3448,43 @@ class Zombie {
 
     this.x = CONFIG.CANVAS_WIDTH + 20;
     this.y = CONFIG.GRID_OFFSET_Y + row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+
+    if (type === 'wanted_captain') {
+      this.isWanted = true;
+      if (gameState && typeof gameState.pickLowestDpsRow === 'function') {
+        this.row = gameState.pickLowestDpsRow();
+        this.y = CONFIG.GRID_OFFSET_Y + this.row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+      }
+    }
+    if (type === 'anchor_bearer') {
+      this.anchorBiteCount = 0;
+      this.anchorPushEveryBites = proto.anchorPushEveryBites || 3;
+      this.anchorSlamAnimTimer = 0;
+    }
+    if (type === 'swimming_ghost') {
+      this.isSubmerged = true;
+      this.submergeSurfaceCol = proto.submergeSurfaceCol !== undefined ? proto.submergeSurfaceCol : 4;
+      this.submergeSpeedPerCell = proto.submergeSpeedPerCell || 2.2;
+    }
+    if (type === 'zombot_pyke') {
+      this.isBoss = true;
+      this.row = 2;
+      this.x = CONFIG.GRID_OFFSET_X + 7.5 * CONFIG.CELL_WIDTH;
+      this.y = CONFIG.GRID_OFFSET_Y + 2 * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+      this.pykePhase = 1;
+      this.pykeSkillTimer = 3.5;
+      this.pykeSkillIndex = 0; // 0: Q (Lao Móc), 1: E (Lướt Sóng), 2: R (Dấu Chữ X)
+      this.pykeTelegraph = null;
+      this.pykeStuckTimer = 0;
+      this.pykeVulnerableTimer = 0;
+      this.pykeVulnerableMult = 1.0;
+      this.pykePatrolDir = 1;
+      this.pykeMinionTimer = 8.0;
+      this.pykeSlashAnimTimer = 0;
+      this.pykeChainSlashesRemaining = 0;
+      this.pykeChainDelay = 0;
+      this.pykeAllMissed = true;
+    }
 
     this.maxHp = proto.hp;
     this.hp = proto.hp;
@@ -4459,6 +4659,48 @@ class Zombie {
       if (this.poisonDuration <= 0) {
         this.poisonStacks = 0;
       }
+    }
+
+    // Zombot Đồ Tể Pyke: Tuần tra vùng nước cột 7-9 và tung Q / E / R theo 3 Phase
+    if (this.type === 'zombot_pyke') {
+      this.updateZombotPyke(dt, gameState);
+      return;
+    }
+
+    // Ma Bơi Lội: Lặn dưới nước đen từ cột 9, bỏ qua hàng phòng thủ cột 6 và trồi lên tại cột 5 (col 4)
+    if (this.type === 'swimming_ghost' && this.isSubmerged) {
+      this.isEating = false;
+      this.eatingPlant = null;
+      const swimSpeed = CONFIG.CELL_WIDTH / (this.submergeSpeedPerCell || 2.2);
+      this.x -= swimSpeed * dt;
+      this.walkCycle = (Number.isFinite(this.walkCycle) ? this.walkCycle : 0) + dt * 7.5;
+      const surfaceCol = this.submergeSurfaceCol !== undefined ? this.submergeSurfaceCol : 4;
+      const surfaceX = CONFIG.GRID_OFFSET_X + surfaceCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH * 0.55;
+      if (this.x <= surfaceX) {
+        this.x = surfaceX;
+        this.isSubmerged = false;
+        if (gameState) {
+          gameState.spawnParticles(this.x, this.y, '#00e5ff', 18);
+          gameState.spawnParticles(this.x, this.y, '#0d1b2a', 12);
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'swimmer_surface',
+              x: this.x,
+              y: this.y,
+              row: this.row,
+              duration: 0.55
+            });
+          }
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(this.x, this.y - 32, 'TRỒI LÊN CỘT 5! 🌊👻', '#00e5ff', 16);
+          }
+        }
+      }
+      return;
+    }
+
+    if (this.anchorSlamAnimTimer > 0) {
+      this.anchorSlamAnimTimer = Math.max(0, this.anchorSlamAnimTimer - dt);
     }
 
     // Zed: Lao bóng bất tử tới plant gần nhất cùng hàng và gắn Dấu Ấn Tử Thần (không bị ngắt bởi stun)
@@ -5737,6 +5979,9 @@ class Zombie {
           // Nếu là nấm thôi miên bị đập thì bị nghiền nát
           if (targetToAttack.type === 'hypno_shroom') {
             targetToAttack.alive = false;
+            if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+              gameState.markSingleUseExhausted('hypno_shroom');
+            }
           }
         }
 
@@ -5798,6 +6043,9 @@ class Zombie {
 
           // ĐẶC ĐIỂM BẢN GỐC: KHI THÂY MA ĂN NẤM THÔI MIÊN, CHÚNG SẼ QUAY LẠI VÀ CHIẾN ĐẤU CHO BẠN!
           if (targetToAttack.type === 'hypno_shroom') {
+            if (gameState && typeof gameState.markSingleUseExhausted === 'function') {
+              gameState.markSingleUseExhausted('hypno_shroom');
+            }
             if (this.hypnoImmune) {
               targetToAttack.alive = false;
               targetToAttack.takeDamage(99999, true);
@@ -5999,6 +6247,40 @@ class Zombie {
               gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ce93d8', 5);
             } else if (this.type === 'nosus_thrall' || this.type === 'nosus_assassin' || this.type === 'nosus_shieldbearer') {
               gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ff5252', 5);
+            } else if (this.type === 'anchor_bearer') {
+              this.anchorBiteCount = (this.anchorBiteCount || 0) + 1;
+              gameState.spawnParticles(targetToAttack.x + 8, targetToAttack.y - 6, '#ffab00', 7);
+              const pushEvery = this.anchorPushEveryBites || 3;
+              if (this.anchorBiteCount >= pushEvery && !(typeof HolographicBarrier !== 'undefined' && targetToAttack instanceof HolographicBarrier) && !targetToAttack.isHypnotized && Number.isFinite(targetToAttack.col)) {
+                this.anchorBiteCount = 0;
+                this.anchorSlamAnimTimer = 0.45;
+                const destCol = targetToAttack.col - 1;
+                if (destCol >= 0 && gameState && Array.isArray(gameState.plants)) {
+                  const occupied = gameState.plants.some(p => p.alive && p !== targetToAttack && p.row === targetToAttack.row && p.col === destCol);
+                  if (!occupied) {
+                    const prevX = targetToAttack.x;
+                    targetToAttack.col = destCol;
+                    targetToAttack.x = CONFIG.GRID_OFFSET_X + destCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+                    this.isEating = false;
+                    this.eatingPlant = null;
+                    if (gameState.spawnAttackEffect) {
+                      gameState.spawnAttackEffect({
+                        kind: 'anchor_slam',
+                        x: targetToAttack.x,
+                        y: targetToAttack.y,
+                        startX: prevX,
+                        endX: targetToAttack.x,
+                        row: targetToAttack.row,
+                        duration: 0.42
+                      });
+                    }
+                    gameState.spawnParticles(targetToAttack.x, targetToAttack.y, '#00e5ff', 12);
+                    if (gameState.spawnFloatingText) {
+                      gameState.spawnFloatingText(targetToAttack.x, targetToAttack.y - 28, 'MỎ NEO ĐẨY LÙI 1 Ô! ⚓', '#ffb300', 15);
+                    }
+                  }
+                }
+              }
             } else if (this.type === 'dragon_hatchling' || this.type === 'dragon_adult') {
               gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 6, '#ff6d00', 8);
               gameState.spawnParticles(targetToAttack.x + 6, targetToAttack.y - 6, '#ffd54f', 5);
@@ -6134,6 +6416,9 @@ class Zombie {
     }
 
     this.flashTimer = 0.12;
+    if (this.type === 'zombot_pyke' && this.pykeVulnerableTimer > 0 && amount > 0 && amount < 99999) {
+      amount = Math.round(amount * (this.pykeVulnerableMult || 2.0));
+    }
     const prevHp = this.hp;
 
     // Nếu có cờ bypassArmor (Đậu Độc): Đánh thẳng vào máu, bỏ qua giáp nón/xô và giáp Kiếm Linh Hồn
@@ -6175,6 +6460,11 @@ class Zombie {
     // Kiểm tra các mốc Phase 2 (15.000 HP) & Phase 3 (7.000 HP) của Boss Azir Hoàng Đế Sa Mạc
     if (this.type === 'azir_desert_emperor' && typeof this.checkAzirHpTriggers === 'function') {
       this.checkAzirHpTriggers(this.gameState);
+    }
+
+    // Kiểm tra các mốc Phase 2 (<= 10.000 HP) & Phase 3 (<= 5.000 HP) của Zombot Đồ Tể Pyke
+    if (this.type === 'zombot_pyke' && typeof this.checkPykePhaseTransition === 'function') {
+      this.checkPykePhaseTransition(this.gameState);
     }
 
     // Kiểm tra mốc Hóa Lớn (< 60% HP) của Thần Khuyển
@@ -6362,6 +6652,17 @@ class Zombie {
         for (const boss of livingBosses) {
           boss.grantAncientShield(500, this.gameState, this);
         }
+      }
+      // Thuyền Trưởng Truy Nã chết -> Chia Phần (Your Cut)
+      if (this.type === 'wanted_captain' && !this.grantedYourCut && !this.isHypnotized && this.gameState && typeof this.gameState.grantYourCutReward === 'function') {
+        this.grantedYourCut = true;
+        this.gameState.grantYourCutReward(this);
+      }
+
+      // Boss Zombot Đồ Tể Pyke bị hạ gục -> Chiến thắng Level 20!
+      if (this.type === 'zombot_pyke' && !this.pykeDefeatedTriggered && this.gameState && typeof this.gameState.onBloodharborBossDefeated === 'function') {
+        this.pykeDefeatedTriggered = true;
+        this.gameState.onBloodharborBossDefeated(this);
       }
     }
 
@@ -7767,6 +8068,372 @@ class Zombie {
     }
     return zone;
   }
+
+  checkPykePhaseTransition(gameState) {
+    if (this.type !== 'zombot_pyke' || !this.alive) return;
+    if (this.hp <= 10000 && this.pykePhase < 2) {
+      this.pykePhase = 2;
+      if (gameState && typeof gameState.enterBloodharborPhase === 'function') {
+        gameState.enterBloodharborPhase(2, this);
+      }
+    }
+    if (this.hp <= 5000 && this.pykePhase < 3) {
+      this.pykePhase = 3;
+      if (gameState && typeof gameState.enterBloodharborPhase === 'function') {
+        gameState.enterBloodharborPhase(3, this);
+      }
+    }
+  }
+
+  updateZombotPyke(dt, gameState) {
+    if (!this.alive) return;
+    this.checkPykePhaseTransition(gameState);
+
+    if (this.pykeSlashAnimTimer > 0) {
+      this.pykeSlashAnimTimer = Math.max(0, this.pykeSlashAnimTimer - dt);
+    }
+    if (this.pykeVulnerableTimer > 0) {
+      this.pykeVulnerableTimer = Math.max(0, this.pykeVulnerableTimer - dt);
+      if (this.pykeVulnerableTimer === 0) {
+        this.pykeVulnerableMult = 1.0;
+      }
+    }
+
+    // Tuần tra mượt trong vùng nước đen cột 7-9 (col 6..8)
+    const minWaterX = CONFIG.GRID_OFFSET_X + 6.7 * CONFIG.CELL_WIDTH;
+    const maxWaterX = CONFIG.GRID_OFFSET_X + 8.3 * CONFIG.CELL_WIDTH;
+    const minWaterY = CONFIG.GRID_OFFSET_Y + 0.85 * CONFIG.CELL_HEIGHT;
+    const maxWaterY = CONFIG.GRID_OFFSET_Y + 4.15 * CONFIG.CELL_HEIGHT;
+
+    if (this.pykeStuckTimer > 0) {
+      this.pykeStuckTimer = Math.max(0, this.pykeStuckTimer - dt);
+      if (this.pykeStuckTimer === 0 && gameState && gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x, this.y - 54, 'RÚT NEO KHỎI SÀN GỖ! ⚓', '#ff8a65', 14);
+      }
+      return;
+    }
+
+    // Di chuyển tuần tra trên mặt nước đen
+    this.walkCycle = (Number.isFinite(this.walkCycle) ? this.walkCycle : 0) + dt * 3.5;
+    this.y += (this.pykePatrolDir || 1) * 44 * dt;
+    if (this.y >= maxWaterY) {
+      this.y = maxWaterY;
+      this.pykePatrolDir = -1;
+    } else if (this.y <= minWaterY) {
+      this.y = minWaterY;
+      this.pykePatrolDir = 1;
+    }
+    this.x = (minWaterX + maxWaterX) * 0.5 + Math.sin(this.animTime + this.walkCycle * 0.35) * ((maxWaterX - minWaterX) * 0.42);
+    this.row = Math.max(0, Math.min(CONFIG.ROWS - 1, Math.floor((this.y - CONFIG.GRID_OFFSET_Y) / CONFIG.CELL_HEIGHT)));
+
+    // Triệu hồi lính theo Phase để giữ nhịp áp lực ngay cả khi Boss còn sống
+    if (this.pykeMinionTimer > 0) {
+      this.pykeMinionTimer -= dt;
+    } else if (gameState && typeof gameState.spawnZombie === 'function') {
+      this.pykeMinionTimer = this.pykePhase === 3 ? 6.5 : (this.pykePhase === 2 ? 8.0 : 10.5);
+      const r = Math.floor(Math.random() * CONFIG.ROWS);
+      if (this.pykePhase === 1) {
+        gameState.spawnZombie('drowned_sailor', r);
+      } else if (this.pykePhase === 2) {
+        const pool = ['drowned_sailor', 'swimming_ghost', 'anchor_bearer'];
+        gameState.spawnZombie(pool[Math.floor(Math.random() * pool.length)], r);
+      } else {
+        const pool = ['swimming_ghost', 'anchor_bearer', 'drowned_sailor'];
+        gameState.spawnZombie(pool[Math.floor(Math.random() * pool.length)], r);
+      }
+    }
+
+    // Chuỗi chém liên tiếp của R (Phase 2: 2 lần; Phase 3: 3 lần)
+    if (this.pykeChainSlashesRemaining > 0) {
+      this.pykeChainDelay -= dt;
+      if (this.pykeChainDelay <= 0) {
+        this.executePykeUltStrike(gameState);
+      }
+      return;
+    }
+
+    // Đang gồng / telegraph chiêu (2.0s cảnh báo rõ ràng để người chơi dùng Xẻng né!)
+    if (this.pykeTelegraph) {
+      this.pykeTelegraph.remaining -= dt;
+      if (this.pykeTelegraph.remaining <= 0) {
+        const tel = this.pykeTelegraph;
+        this.pykeTelegraph = null;
+        this.resolvePykeTelegraph(tel, gameState);
+      }
+      return;
+    }
+
+    const interval = this.pykePhase === 3 ? 5.0 : (this.pykePhase === 2 ? 6.5 : 8.0);
+    this.pykeSkillTimer -= dt;
+    if (this.pykeSkillTimer <= 0) {
+      this.pykeSkillTimer = interval;
+      const skillIdx = this.pykeSkillIndex % 3;
+      this.pykeSkillIndex++;
+      this.startPykeSkillTelegraph(skillIdx, gameState);
+    }
+  }
+
+  startPykeSkillTelegraph(skillIdx, gameState) {
+    const plants = (gameState && Array.isArray(gameState.plants))
+      ? gameState.plants.filter(p => p.alive && !p.isRecharging)
+      : [];
+    if (plants.length === 0) return;
+
+    const telDur = 2.0;
+    if (skillIdx === 0) {
+      // Q – Lao Móc: Phase 1/2 bắn 1 hàng; Phase 3 bắn 2 hàng cùng lúc
+      const populatedRows = Array.from(new Set(plants.map(p => p.row)));
+      populatedRows.sort(() => Math.random() - 0.5);
+      const count = this.pykePhase >= 3 ? Math.min(2, populatedRows.length) : 1;
+      const rows = populatedRows.slice(0, count);
+      this.pykeTelegraph = { kind: 'Q', rows, remaining: telDur, duration: telDur };
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x - 40, this.y - 44, `🪝 LAO MÓC (Q) · HÀNG ${rows.map(r => r + 1).join(' & ')}!`, '#00e5ff', 17);
+      }
+    } else if (skillIdx === 1) {
+      // E – Lướt Sóng: chọn hàng có nhiều cây nhất và cảnh báo 3 ô để trói 4s
+      const rowCounts = [0, 0, 0, 0, 0];
+      for (const p of plants) rowCounts[p.row]++;
+      let bestRow = plants[0].row;
+      let bestCnt = -1;
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        if (rowCounts[r] > bestCnt) {
+          bestCnt = rowCounts[r];
+          bestRow = r;
+        }
+      }
+      const rowPlants = plants.filter(p => p.row === bestRow).sort((a, b) => b.col - a.col);
+      const maxDryCol = (gameState && gameState.floodedCols && gameState.floodedCols.includes(5)) ? 4 : 5;
+      const anchorCol = rowPlants.length > 0 ? Math.min(maxDryCol, rowPlants[0].col) : maxDryCol;
+      const startCol = Math.max(0, anchorCol - 2);
+      const cols = [];
+      for (let c = startCol; c <= Math.min(maxDryCol, startCol + 2); c++) cols.push(c);
+      this.pykeTelegraph = { kind: 'E', row: bestRow, cols, remaining: telDur, duration: telDur };
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(this.x - 40, this.y - 44, `🌊 LƯỚT SÓNG (E) · TRÓI HÀNG ${bestRow + 1}!`, '#26c6da', 17);
+      }
+    } else {
+      // R – Dấu Chữ X: Khóa mục tiêu trên cây có DPS cao nhất (hoặc đầu hàng)
+      const targetPlant = this.pickPykeUltTarget(gameState);
+      if (!targetPlant) return;
+      this.pykeAllMissed = true;
+      this.pykeTelegraph = {
+        kind: 'R',
+        targetRow: targetPlant.row,
+        targetCol: targetPlant.col,
+        targetX: targetPlant.x,
+        targetY: targetPlant.y,
+        remaining: telDur,
+        duration: telDur
+      };
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'pyke_r_x_mark',
+          x: targetPlant.x,
+          y: targetPlant.y,
+          row: targetPlant.row,
+          col: targetPlant.col,
+          duration: telDur
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(targetPlant.x, targetPlant.y - 36, '❌ DẤU CHỮ X! RÚT CÂY NGAY!', '#ff1744', 18);
+      }
+    }
+  }
+
+  pickPykeUltTarget(gameState) {
+    const plants = (gameState && Array.isArray(gameState.plants))
+      ? gameState.plants.filter(p => p.alive && !p.isRecharging)
+      : [];
+    if (plants.length === 0) return null;
+    let best = plants[0];
+    let bestScore = -1;
+    for (const p of plants) {
+      const cfg = (typeof PLANT_CONFIG !== 'undefined' && PLANT_CONFIG[p.type]) ? PLANT_CONFIG[p.type] : {};
+      const dps = cfg.canAttack ? ((cfg.damage || 20) / Math.max(0.25, cfg.atkSpeed || 1.0)) : (cfg.isDefensive ? 15 : 5);
+      const score = dps + p.col * 2 + Math.random() * 4;
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    return best;
+  }
+
+  resolvePykeTelegraph(tel, gameState) {
+    if (!tel || !gameState) return;
+    const maxDryCol = (gameState.floodedCols && gameState.floodedCols.includes(5)) ? 4 : 5;
+
+    if (tel.kind === 'Q') {
+      // Q – Lao Móc: Bắn mỗi hàng trong tel.rows, kéo cây đầu tiên trúng đòn tiến lên 2 ô
+      for (const r of (tel.rows || [])) {
+        const rowPlants = (gameState.plants || [])
+          .filter(p => p.alive && !p.isRecharging && p.row === r && p.col <= maxDryCol)
+          .sort((a, b) => b.col - a.col);
+        let pulledPlant = null;
+        let destCol = -1;
+        if (rowPlants.length > 0) {
+          pulledPlant = rowPlants[0];
+          const fromX = pulledPlant.x;
+          const desiredCol = Math.min(maxDryCol, pulledPlant.col + 2);
+          // Tìm ô trống gần desiredCol nhất (hoặc hoán đổi nếu tất cả bị chiếm)
+          let chosenCol = desiredCol;
+          for (let c = desiredCol; c > pulledPlant.col; c--) {
+            if (!gameState.plants.some(p => p.alive && p !== pulledPlant && p.row === r && p.col === c)) {
+              chosenCol = c;
+              break;
+            }
+          }
+          if (chosenCol !== pulledPlant.col) {
+            const occ = gameState.plants.find(p => p.alive && p !== pulledPlant && p.row === r && p.col === chosenCol);
+            if (occ) {
+              occ.col = pulledPlant.col;
+              occ.x = CONFIG.GRID_OFFSET_X + occ.col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+            }
+            pulledPlant.col = chosenCol;
+            pulledPlant.x = CONFIG.GRID_OFFSET_X + chosenCol * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+            destCol = chosenCol;
+            gameState.spawnParticles(pulledPlant.x, pulledPlant.y - 8, '#00e5ff', 14);
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(pulledPlant.x, pulledPlant.y - 30, 'KÉO MÓC +2 Ô! 🪝', '#00e5ff', 15);
+            }
+          }
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'pyke_q_hook',
+              row: r,
+              startX: this.x - 24,
+              endX: destCol >= 0 ? pulledPlant.x : fromX,
+              y: CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2,
+              duration: 0.42
+            });
+          }
+        } else if (gameState.spawnAttackEffect) {
+          gameState.spawnAttackEffect({
+            kind: 'pyke_q_hook',
+            row: r,
+            startX: this.x - 24,
+            endX: CONFIG.GRID_OFFSET_X + 20,
+            y: CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2,
+            duration: 0.36
+          });
+        }
+      }
+      return;
+    }
+
+    if (tel.kind === 'E') {
+      // E – Lướt Sóng: Trói 3 ô trên hàng trong 4 giây
+      if (typeof gameState.addRootedTiles === 'function') {
+        gameState.addRootedTiles(tel.row, tel.cols || [], 4.0);
+      }
+      const rowY = CONFIG.GRID_OFFSET_Y + tel.row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+      const startCol = (tel.cols && tel.cols.length > 0) ? tel.cols[0] : 0;
+      const endCol = (tel.cols && tel.cols.length > 0) ? tel.cols[tel.cols.length - 1] : 2;
+      if (gameState.spawnAttackEffect) {
+        gameState.spawnAttackEffect({
+          kind: 'pyke_e_surge',
+          row: tel.row,
+          y: rowY,
+          startX: CONFIG.GRID_OFFSET_X + startCol * CONFIG.CELL_WIDTH,
+          endX: CONFIG.GRID_OFFSET_X + (endCol + 1) * CONFIG.CELL_WIDTH,
+          duration: 0.55
+        });
+      }
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(CONFIG.GRID_OFFSET_X + (startCol + 1.5) * CONFIG.CELL_WIDTH, rowY - 28, 'TRÓI SÓNG 4s! (Dùng Xẻng thoát) 🌊⛓️', '#26c6da', 15);
+      }
+      return;
+    }
+
+    if (tel.kind === 'R') {
+      this.pykePendingRTarget = { row: tel.targetRow, col: tel.targetCol, x: tel.targetX, y: tel.targetY };
+      const maxSlashes = this.pykePhase >= 3 ? 3 : (this.pykePhase === 2 ? 2 : 1);
+      this.pykeChainSlashesRemaining = maxSlashes;
+      this.executePykeUltStrike(gameState);
+    }
+  }
+
+  executePykeUltStrike(gameState) {
+    if (!this.alive || !gameState) return;
+    const tgt = this.pykePendingRTarget || null;
+    this.pykeChainSlashesRemaining = Math.max(0, (this.pykeChainSlashesRemaining || 1) - 1);
+    this.pykeSlashAnimTimer = 0.45;
+
+    const hitPlant = tgt
+      ? (gameState.plants || []).find(p => p.alive && !p.isRecharging && p.row === tgt.row && p.col === tgt.col)
+      : null;
+
+    const strikeX = tgt ? tgt.x : (CONFIG.GRID_OFFSET_X + 3 * CONFIG.CELL_WIDTH);
+    const strikeY = tgt ? tgt.y : this.y;
+
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'pyke_r_exec',
+        x: strikeX,
+        y: strikeY,
+        hit: !!hitPlant,
+        duration: 0.52
+      });
+    }
+
+    if (hitPlant) {
+      this.pykeAllMissed = false;
+      const rDmg = (ZOMBIE_CONFIG.zombot_pyke && ZOMBIE_CONFIG.zombot_pyke.rDamage) || 1800;
+      hitPlant.takeDamage(rDmg, true);
+      const healAmt = Math.round(this.maxHp * ((ZOMBIE_CONFIG.zombot_pyke && ZOMBIE_CONFIG.zombot_pyke.rHealRatio) || 0.10));
+      this.hp = Math.min(this.maxHp, this.hp + healAmt);
+      gameState.spawnParticles(strikeX, strikeY, '#ff1744', 22);
+      gameState.spawnParticles(this.x, this.y - 20, '#69f0ae', 16);
+      if (gameState.spawnFloatingText) {
+        gameState.spawnFloatingText(strikeX, strikeY - 30, `TỬ THẦN PHÁN QUYẾT! -${rDmg} 💀`, '#ff1744', 17);
+        gameState.spawnFloatingText(this.x, this.y - 54, `HỒI +${healAmt} HP! 🩸`, '#69f0ae', 17);
+      }
+      if (gameState.audio && gameState.audio.playGargantuarSmash) {
+        gameState.audio.playGargantuarSmash();
+      }
+
+      if (this.pykeChainSlashesRemaining > 0) {
+        const nextPlant = this.pickPykeUltTarget(gameState);
+        if (nextPlant) {
+          this.pykePendingRTarget = { row: nextPlant.row, col: nextPlant.col, x: nextPlant.x, y: nextPlant.y };
+          this.pykeChainDelay = 0.42;
+          if (gameState.spawnAttackEffect) {
+            gameState.spawnAttackEffect({
+              kind: 'pyke_r_x_mark',
+              x: nextPlant.x,
+              y: nextPlant.y,
+              row: nextPlant.row,
+              col: nextPlant.col,
+              duration: 0.42
+            });
+          }
+          return;
+        }
+      }
+      this.pykeChainSlashesRemaining = 0;
+      this.pykePendingRTarget = null;
+    } else {
+      // Chém hụt (người chơi đã nhanh tay Xẻng rút cây!) -> Kẹt xuống sàn gỗ!
+      this.pykeChainSlashesRemaining = 0;
+      this.pykePendingRTarget = null;
+      const isPhase3Miss = this.pykePhase >= 3 && this.pykeAllMissed;
+      this.pykeStuckTimer = isPhase3Miss ? 4.0 : 3.0;
+      if (isPhase3Miss) {
+        this.pykeVulnerableTimer = 4.0;
+        this.pykeVulnerableMult = 2.0;
+      }
+      gameState.spawnParticles(strikeX, strikeY, '#ffd54f', 16);
+      gameState.spawnParticles(this.x, this.y, '#ffab00', 14);
+      if (gameState.spawnFloatingText) {
+        const msg = isPhase3Miss
+          ? 'CHÉM HỤT! KẸT 4s · CHỊU ×2 SÁT THƯƠNG! 💥⚡'
+          : 'CHÉM HỤT! ZOMBOT BỊ KẸT 3s! ⚓🪵';
+        gameState.spawnFloatingText(this.x - 20, this.y - 54, msg, '#ffd54f', 17);
+      }
+    }
+  }
 }
 
 /**
@@ -8399,6 +9066,14 @@ class Projectile {
         }
         break;
       }
+    }
+
+    if (this.maxReachX !== undefined && this.x > this.maxReachX) {
+      this.alive = false;
+      if (gameState && gameState.spawnParticles) {
+        gameState.spawnParticles(this.x, this.y, '#b0bec5', 3);
+      }
+      return;
     }
 
     if (this.x > CONFIG.CANVAS_WIDTH + 20) {

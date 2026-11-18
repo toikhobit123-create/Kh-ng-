@@ -1487,3 +1487,53 @@ body.ionia-realm canvas#gameCanvas {
   box-shadow: 0 4px 28px rgba(100, 255, 218, 0.30), 0 4px 18px rgba(0, 0, 0, 0.88);
 }
 
+body.bloodharbor-realm #game-container,
+body.native-compose-hud.bloodharbor-realm #game-container {
+  background: radial-gradient(circle at center, #0c262b 0%, #050c0f 100%);
+}
+
+body.bloodharbor-realm canvas#gameCanvas {
+  background-color: #09181d;
+  box-shadow: 0 4px 30px rgba(0, 229, 255, 0.28), 0 4px 18px rgba(0, 0, 0, 0.92);
+}
+
+.bloodharbor-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.bloodharbor-controls.hidden {
+  display: none;
+}
+
+.bh-badge {
+  background: rgba(8, 24, 30, 0.92);
+  border: 1px solid #26c6da;
+  color: #e0f7fa;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bh-horn-btn {
+  background: linear-gradient(135deg, #00838f 0%, #004d40 100%) !important;
+  border-color: #4dd0e1 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  padding: 3px 10px !important;
+}
+
+.bh-horn-btn.hidden {
+  display: none !important;
+}
+
+.seed-card.exhausted-single-use .card-inner {
+  filter: grayscale(1) brightness(0.45);
+  border-color: #ef5350 !important;
+}
+
+

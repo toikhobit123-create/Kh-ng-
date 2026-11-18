@@ -75,7 +75,7 @@ fun MainMenuScreen(
   onOpenAlmanac: () -> Unit,
   onOpenSettings: () -> Unit
 ) {
-  val nextLevel = (1..19).firstOrNull { !progress.completedLevels.contains(it) } ?: 19
+  val nextLevel = (1..20).firstOrNull { !progress.completedLevels.contains(it) } ?: 20
   val insetsModifier = if (respectCutoutInsets) {
     Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
   } else {
@@ -182,7 +182,7 @@ fun MainMenuScreen(
                   modifier = Modifier.size(18.dp)
                 )
                 Text(
-                  text = "Tiến trình: ${progress.completedLevels.size}/19 màn hoàn thành",
+                  text = "Tiến trình: ${progress.completedLevels.size}/20 màn hoàn thành",
                   style = MaterialTheme.typography.titleSmall,
                   color = AmberGold
                 )
@@ -251,7 +251,7 @@ fun MainMenuScreen(
           Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
           Spacer(Modifier.width(8.dp))
           Text(
-            text = if (progress.completedLevels.size >= 19) "CHINH PHỤC IONIA CẤP 19" else "CHƠI TIẾP CẤP $nextLevel",
+            text = if (progress.completedLevels.size >= 20) "CHINH PHỤC BẾN CẢNG CẤP 20" else "CHƠI TIẾP CẤP $nextLevel",
             style = MaterialTheme.typography.labelLarge
           )
         }
@@ -266,7 +266,7 @@ fun MainMenuScreen(
         ) {
           Icon(Icons.Filled.Map, contentDescription = null, tint = ToxicLime, modifier = Modifier.size(20.dp))
           Spacer(Modifier.width(8.dp))
-          Text("BẢN ĐỒ CHIẾN DỊCH (19 CẤP)", color = TextPrimary)
+          Text("BẢN ĐỒ CHIẾN DỊCH (20 CẤP)", color = TextPrimary)
         }
 
         GothicActionButton(

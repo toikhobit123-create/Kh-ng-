@@ -34,18 +34,28 @@
       }
     }
 
-    const isBossLevel = game.currentLevel === 6 || game.currentLevel === 12 || game.currentLevel === 13;
-    const expectedBossType = game.currentLevel === 13
-      ? 'azir_desert_emperor'
-      : (game.currentLevel === 12 ? 'ancient_dragon_boss' : 'zombot_dark_dragon');
+    const isBossLevel = game.currentLevel === 6 || game.currentLevel === 12 || game.currentLevel === 13 || game.currentLevel === 20;
+    const expectedBossType = game.currentLevel === 20
+      ? 'zombot_pyke'
+      : (game.currentLevel === 13
+          ? 'azir_desert_emperor'
+          : (game.currentLevel === 12 ? 'ancient_dragon_boss' : 'zombot_dark_dragon'));
     let bossHp = 0;
-    let bossMaxHp = game.currentLevel === 13 ? 20000 : (game.currentLevel === 12 ? 10000 : 27000);
+    let bossMaxHp = game.currentLevel === 20 ? 15000 : (game.currentLevel === 13 ? 20000 : (game.currentLevel === 12 ? 10000 : 27000));
+    let pykeStuckTimer = 0;
+    let pykeVulnerableTimer = 0;
     if (isBossLevel && Array.isArray(game.zombies)) {
       const boss = game.zombies.find(z => z.alive && z.type === expectedBossType);
-      const hasSpawned = !game.waveManager || game.waveManager.state !== 'initial_delay';
+      const hasSpawned = expectedBossType === 'zombot_pyke'
+        ? !game.isSetupPhase
+        : (!game.waveManager || game.waveManager.state !== 'initial_delay');
       if (boss) {
         bossHp = Math.max(0, Math.ceil(boss.hp));
         bossMaxHp = Math.max(1, Math.ceil(boss.maxHp || bossMaxHp));
+        if (boss.type === 'zombot_pyke') {
+          pykeStuckTimer = Number((boss.pykeStuckTimer || 0).toFixed(1));
+          pykeVulnerableTimer = Number((boss.pykeVulnerableTimer || 0).toFixed(1));
+        }
       } else if (game.isVictory || hasSpawned) {
         bossHp = 0;
       } else {
@@ -59,7 +69,23 @@
 
     const isFreePlantSun = typeof game.isFreePlantSunLevel === 'function'
       ? !!game.isFreePlantSunLevel()
-      : (!game.isSandbox && (game.currentLevel === 12 || game.currentLevel === 13));
+      : (!game.isSandbox && (game.currentLevel === 12 || game.currentLevel === 13 || game.currentLevel === 20));
+
+    const recalledPlantHps = {};
+    if (game.recalledPlantHpMap && typeof game.recalledPlantHpMap === 'object') {
+      for (const [k, arr] of Object.entries(game.recalledPlantHpMap)) {
+        if (Array.isArray(arr) && arr.length > 0) {
+          recalledPlantHps[k] = Math.max(1, Math.round(arr[0]));
+        }
+      }
+    }
+    const exhaustedSingleUse = game.exhaustedSingleUse instanceof Set
+      ? Array.from(game.exhaustedSingleUse)
+      : (Array.isArray(game.exhaustedSingleUse) ? game.exhaustedSingleUse : []);
+
+    const plantCountOnBoard = Array.isArray(game.plants)
+      ? game.plants.filter(p => p.alive).length
+      : 0;
 
     return {
       sun: Math.floor(game.sun || 0),
@@ -82,6 +108,16 @@
       isBossLevel: isBossLevel,
       bossHp: bossHp,
       bossMaxHp: bossMaxHp,
+      isBloodharborMode: !!game.isBloodharborMode,
+      isSetupPhase: !!game.isSetupPhase,
+      bloodharborPhase: game.bloodharborPhase || 1,
+      maxPlantsOnBoard: game.maxPlantsOnBoard || 12,
+      plantCountOnBoard: plantCountOnBoard,
+      yourCutTimer: Number((game.yourCutTimer !== undefined ? game.yourCutTimer : 25).toFixed(1)),
+      recalledPlantHps: recalledPlantHps,
+      exhaustedSingleUse: exhaustedSingleUse,
+      pykeStuckTimer: pykeStuckTimer,
+      pykeVulnerableTimer: pykeVulnerableTimer,
       selectedDeck: Array.isArray(game.selectedDeck) ? game.selectedDeck : [],
       sandboxPlants: Array.isArray(game.sandboxPlantDeck) ? game.sandboxPlantDeck : [],
       sandboxZombies: Array.isArray(game.sandboxZombieDeck) ? game.sandboxZombieDeck : [],
@@ -201,11 +237,22 @@
       try {
         const parsedDeck = JSON.parse(deckJson);
         if (Array.isArray(parsedDeck) && parsedDeck.length > 0) {
-          game.selectedDeck = parsedDeck.slice(0, 7);
+          const maxLimit = level === 20 ? 6 : 7;
+          const filtered = level === 20
+            ? parsedDeck.filter(id => id !== 'sunflower' && id !== 'sun_shroom')
+            : parsedDeck;
+          game.selectedDeck = filtered.slice(0, maxLimit);
         }
       } catch (_) {}
       game.startLevel(level);
       game.setSpeed(preferredDefaultSpeed);
+      pushHudSnapshot(true);
+    },
+
+    startBloodharborHorn: function () {
+      const game = getGame();
+      if (!game || typeof game.blowBloodharborHorn !== 'function') return;
+      game.blowBloodharborHorn();
       pushHudSnapshot(true);
     },
 
@@ -319,7 +366,7 @@
       const game = getGame();
       if (!game) return;
       if (typeof unlockedLevel === 'number') {
-        game.unlockedLevel = Math.max(1, Math.min(19, unlockedLevel));
+        game.unlockedLevel = Math.max(1, Math.min(20, unlockedLevel));
       }
       try {
         const list = JSON.parse(completedJson);

@@ -77,7 +77,7 @@ fun WorldMapScreen(
 ) {
   var showResetDialog by remember { mutableStateOf(false) }
   val nextLevel = remember(progress.completedLevels) {
-    (1..19).firstOrNull { !progress.completedLevels.contains(it) } ?: 19
+    (1..20).firstOrNull { !progress.completedLevels.contains(it) } ?: 20
   }
 
   val insetsModifier = if (respectCutoutInsets) {
@@ -117,12 +117,12 @@ fun WorldMapScreen(
           )
           Column {
             Text(
-              text = "BẢN ĐỒ CHIẾN DỊCH (19 CẤP)",
+              text = "BẢN ĐỒ CHIẾN DỊCH (20 CẤP)",
               style = MaterialTheme.typography.headlineSmall,
               color = ToxicLime
             )
             Text(
-              text = "Chọn cấp độ để lập đội hình 7 cây và phòng thủ",
+              text = "Chọn cấp độ để lập đội hình và phòng thủ",
               style = MaterialTheme.typography.bodySmall,
               color = TextSecondary
             )
@@ -150,7 +150,7 @@ fun WorldMapScreen(
                 modifier = Modifier.size(15.dp)
               )
               Text(
-                text = "${progress.completedLevels.size}/19",
+                text = "${progress.completedLevels.size}/20",
                 style = MaterialTheme.typography.labelLarge,
                 color = AmberGold
               )
@@ -248,7 +248,9 @@ private fun LevelCardItem(
 ) {
   val isNosus = levelInfo.level in 14..16
   val isIonia = levelInfo.level in 17..19
+  val isBloodharbor = levelInfo.level == 20
   val borderColor = when {
+    isBloodharbor -> PvZTheme.colors.bloodharborJadeCyan
     levelInfo.isSpecial -> AmberGold
     isIonia -> PvZTheme.colors.ioniaBorderSakura
     levelInfo.isBoss -> CrimsonSoul
@@ -257,6 +259,7 @@ private fun LevelCardItem(
     else -> ToxicLime.copy(alpha = 0.7f)
   }
   val bgBrush = when {
+    isBloodharbor -> PvZTheme.colors.bloodharborCardBrush
     isIonia -> PvZTheme.colors.ioniaCardBrush
     isNosus -> PvZTheme.colors.nosusCardBrush
     levelInfo.level == 13 -> PvZTheme.colors.desertCardBrush
@@ -288,7 +291,7 @@ private fun LevelCardItem(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Surface(
-          color = if (isIonia) PvZTheme.colors.ioniaTealTop else if (levelInfo.isBoss || levelInfo.isSpecial || isNosus) CrimsonDark else PlumSurface,
+          color = if (isBloodharbor) PvZTheme.colors.bloodharborSeaTop else if (isIonia) PvZTheme.colors.ioniaTealTop else if (levelInfo.isBoss || levelInfo.isSpecial || isNosus) CrimsonDark else PlumSurface,
           shape = RoundedCornerShape(6.dp),
           border = BorderStroke(1.dp, borderColor.copy(alpha = 0.6f))
         ) {
@@ -297,16 +300,17 @@ private fun LevelCardItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
-            if (levelInfo.isBoss || levelInfo.isSpecial || isNosus || isIonia) {
+            if (levelInfo.isBoss || levelInfo.isSpecial || isNosus || isIonia || isBloodharbor) {
               Icon(
                 imageVector = Icons.Filled.Whatshot,
                 contentDescription = null,
-                tint = if (isIonia) PvZTheme.colors.ioniaBorderSakura else if (isNosus) PvZTheme.colors.crimsonSoft else AmberGold,
+                tint = if (isBloodharbor) PvZTheme.colors.bloodharborJadeCyan else if (isIonia) PvZTheme.colors.ioniaBorderSakura else if (isNosus) PvZTheme.colors.crimsonSoft else AmberGold,
                 modifier = Modifier.size(13.dp)
               )
             }
             Text(
               text = when {
+                isBloodharbor -> "BOSS CẢNG · CẤP 20"
                 isIonia -> "IONIA · CẤP ${levelInfo.level}"
                 isNosus -> "NOSUS · CẤP ${levelInfo.level}"
                 levelInfo.isBoss && levelInfo.isSpecial -> "BOSS SPECIAL · CẤP ${levelInfo.level}"
@@ -315,6 +319,7 @@ private fun LevelCardItem(
               },
               style = MaterialTheme.typography.labelSmall,
               color = when {
+                isBloodharbor -> PvZTheme.colors.bloodharborJadeCyan
                 isIonia -> PvZTheme.colors.ioniaBorderSakura
                 isNosus -> PvZTheme.colors.crimsonSoft
                 levelInfo.isBoss || levelInfo.isSpecial -> AmberGold
@@ -349,11 +354,12 @@ private fun LevelCardItem(
             Icon(
               imageVector = Icons.Filled.CheckCircle,
               contentDescription = "Đã mở",
-              tint = if (isIonia) PvZTheme.colors.ioniaJadeAccent else if (isNosus) PvZTheme.colors.crimsonSoft else if (levelInfo.isSpecial) AmberGold else ToxicLime,
+              tint = if (isBloodharbor) PvZTheme.colors.bloodharborJadeCyan else if (isIonia) PvZTheme.colors.ioniaJadeAccent else if (isNosus) PvZTheme.colors.crimsonSoft else if (levelInfo.isSpecial) AmberGold else ToxicLime,
               modifier = Modifier.size(14.dp)
             )
             Text(
               text = when {
+                isBloodharbor -> "ZOMBOT ĐỒ TỂ"
                 levelInfo.isConveyor -> "BĂNG CHUYỀN"
                 levelInfo.level == 19 -> "SETT · MINI-BOSS"
                 levelInfo.level == 18 -> "MÀN 2/3 · IONIA"
@@ -367,7 +373,7 @@ private fun LevelCardItem(
                 else -> "SẴN SÀNG"
               },
               style = MaterialTheme.typography.labelSmall,
-              color = if (isIonia) PvZTheme.colors.ioniaJadeAccent else if (isNosus) PvZTheme.colors.crimsonSoft else if (levelInfo.isSpecial) AmberGold else ToxicLime
+              color = if (isBloodharbor) PvZTheme.colors.bloodharborJadeCyan else if (isIonia) PvZTheme.colors.ioniaJadeAccent else if (isNosus) PvZTheme.colors.crimsonSoft else if (levelInfo.isSpecial) AmberGold else ToxicLime
             )
           }
         }
@@ -385,7 +391,7 @@ private fun LevelCardItem(
         text = levelInfo.subtitle,
         style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.SemiBold,
-        color = if (isIonia) PvZTheme.colors.ioniaBorderSakura else if (levelInfo.isBoss || levelInfo.isSpecial || isNosus) PvZTheme.colors.bossEmber else AmberGold,
+        color = if (isBloodharbor) PvZTheme.colors.bloodharborJadeCyan else if (isIonia) PvZTheme.colors.ioniaBorderSakura else if (levelInfo.isBoss || levelInfo.isSpecial || isNosus) PvZTheme.colors.bossEmber else AmberGold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )

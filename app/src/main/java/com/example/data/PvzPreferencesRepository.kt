@@ -44,10 +44,10 @@ class PvzPreferencesRepository(private val context: Context) {
   }
 
   val persistedState: Flow<PersistedAppState> = context.pvzDataStore.data.map { prefs ->
-    val unlocked = (prefs[Keys.UNLOCKED_LEVEL] ?: 19).coerceIn(1, 19)
+    val unlocked = (prefs[Keys.UNLOCKED_LEVEL] ?: 20).coerceIn(1, 20)
     val completed = (prefs[Keys.COMPLETED_LEVELS] ?: emptySet())
       .mapNotNull { it.toIntOrNull() }
-      .filter { it in 1..19 }
+      .filter { it in 1..20 }
       .toSet()
 
     val rawDeck = prefs[Keys.SELECTED_DECK]
@@ -127,8 +127,8 @@ class PvzPreferencesRepository(private val context: Context) {
     context.pvzDataStore.edit { prefs ->
       val currentCompleted = prefs[Keys.COMPLETED_LEVELS] ?: emptySet()
       prefs[Keys.COMPLETED_LEVELS] = currentCompleted + level.toString()
-      val currentUnlocked = prefs[Keys.UNLOCKED_LEVEL] ?: 19
-      if (level < 19) {
+      val currentUnlocked = prefs[Keys.UNLOCKED_LEVEL] ?: 20
+      if (level < 20) {
         prefs[Keys.UNLOCKED_LEVEL] = maxOf(currentUnlocked, level + 1)
       }
     }
@@ -136,7 +136,7 @@ class PvzPreferencesRepository(private val context: Context) {
 
   suspend fun resetCampaignProgress() {
     context.pvzDataStore.edit { prefs ->
-      prefs[Keys.UNLOCKED_LEVEL] = 19
+      prefs[Keys.UNLOCKED_LEVEL] = 20
       prefs[Keys.COMPLETED_LEVELS] = emptySet()
     }
   }

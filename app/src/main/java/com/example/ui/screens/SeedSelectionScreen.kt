@@ -95,7 +95,19 @@ fun SeedSelectionScreen(
   val levelInfo = remember(level) {
     PvzCatalog.levels.find { it.level == level } ?: PvzCatalog.levels.first()
   }
-  var previewPlantId by remember(level) { mutableStateOf(selectedDeck.firstOrNull() ?: "peashooter") }
+  val isBloodharbor = level == 20
+  val maxDeckSize = if (isBloodharbor) 6 else 7
+  val bannedInBloodharbor = remember { setOf("sunflower", "sun_shroom") }
+  val displayDeck = remember(selectedDeck, isBloodharbor) {
+    if (isBloodharbor) {
+      selectedDeck.filterNot { it in bannedInBloodharbor }.take(6)
+    } else {
+      selectedDeck.take(7)
+    }
+  }
+  var previewPlantId by remember(level) {
+    mutableStateOf(displayDeck.firstOrNull() ?: "peashooter")
+  }
   val previewPlant = PvzCatalog.plantById[previewPlantId] ?: PvzCatalog.plants.first()
 
   val insetsModifier = if (respectCutoutInsets) {
@@ -109,6 +121,7 @@ fun SeedSelectionScreen(
       .fillMaxSize()
       .background(
         when {
+          isBloodharbor -> PvZTheme.colors.bloodharborSelectionBackdropBrush
           level in 17..19 -> PvZTheme.colors.ioniaSelectionBackdropBrush
           level in 14..16 -> PvZTheme.colors.nosusSelectionBackdropBrush
           level == 13 -> PvZTheme.colors.desertSelectionBackdropBrush
@@ -145,6 +158,7 @@ fun SeedSelectionScreen(
           Column {
             Text(
               text = when {
+                isBloodharbor -> "BẾN CẢNG TỬ THẦN · CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 level in 17..19 -> "VÙNG ĐẤT IONIA · CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 level in 14..16 -> "CHIẾN TRƯỜNG NOSUS · CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
                 level == 13 -> "SA MẠC CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
@@ -152,7 +166,7 @@ fun SeedSelectionScreen(
                 else -> "CẤP ${levelInfo.level}: ${levelInfo.title.uppercase()}"
               },
               style = MaterialTheme.typography.titleMedium,
-              color = if (level in 17..19) PvZTheme.colors.ioniaBorderSakura else if (level in 14..16) PvZTheme.colors.crimsonSoft else if (level == 13) AmberGold else if (levelInfo.isSpecial) CrimsonSoul else AmberGold,
+              color = if (isBloodharbor) PvZTheme.colors.bloodharborJadeCyan else if (level in 17..19) PvZTheme.colors.ioniaBorderSakura else if (level in 14..16) PvZTheme.colors.crimsonSoft else if (level == 13) AmberGold else if (levelInfo.isSpecial) CrimsonSoul else AmberGold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
@@ -170,7 +184,20 @@ fun SeedSelectionScreen(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          if (level == 12 || level == 13) {
+          if (isBloodharbor) {
+            Surface(
+              color = CrimsonDark.copy(alpha = 0.75f),
+              shape = RoundedCornerShape(10.dp),
+              border = BorderStroke(1.2.dp, PvZTheme.colors.bloodharborJadeCyan)
+            ) {
+              Text(
+                text = "KHÔNG SUN · CẤM CÂY SUN · XẺNG 2.5s",
+                style = MaterialTheme.typography.labelMedium,
+                color = PvZTheme.colors.bloodharborJadeCyan,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+              )
+            }
+          } else if (level == 12 || level == 13) {
             Surface(
               color = ToxicForest.copy(alpha = 0.75f),
               shape = RoundedCornerShape(10.dp),
@@ -187,12 +214,12 @@ fun SeedSelectionScreen(
           Surface(
             color = PlumSurfaceElevated,
             shape = RoundedCornerShape(10.dp),
-            border = BorderStroke(1.2.dp, if (selectedDeck.size == 7) ToxicLime else AmberGold)
+            border = BorderStroke(1.2.dp, if (displayDeck.size == maxDeckSize) ToxicLime else AmberGold)
           ) {
             Text(
-              text = "ĐỘI HÌNH: ${selectedDeck.size} / 7",
+              text = "ĐỘI HÌNH: ${displayDeck.size} / $maxDeckSize",
               style = MaterialTheme.typography.labelLarge,
-              color = if (selectedDeck.size == 7) ToxicLime else AmberGold,
+              color = if (displayDeck.size == maxDeckSize) ToxicLime else AmberGold,
               modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
             )
           }
@@ -206,7 +233,7 @@ fun SeedSelectionScreen(
           .weight(1f),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        // Pane 1 (Left): Selected 7 Deck Slots
+        // Pane 1 (Left): Selected Deck Slots
         Surface(
           modifier = Modifier
             .width(92.dp)
@@ -220,8 +247,8 @@ fun SeedSelectionScreen(
             contentPadding = PaddingValues(6.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp)
           ) {
-            items(7) { index ->
-              val plantId = selectedDeck.getOrNull(index)
+            items(maxDeckSize) { index ->
+              val plantId = displayDeck.getOrNull(index)
               val plant = plantId?.let { PvzCatalog.plantById[it] }
               if (plant != null) {
                 Box(
@@ -290,7 +317,8 @@ fun SeedSelectionScreen(
           // Showcase Banner
           PlantShowcaseStrip(
             plant = previewPlant,
-            inDeck = selectedDeck.contains(previewPlant.id),
+            inDeck = displayDeck.contains(previewPlant.id),
+            isBanned = isBloodharbor && previewPlant.id in bannedInBloodharbor,
             plantIcons = plantIcons,
             onToggleDeck = { onTogglePlant(previewPlant.id) }
           )
@@ -328,9 +356,11 @@ fun SeedSelectionScreen(
               verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
               items(PvzCatalog.plants, key = { it.id }) { plant ->
-                val inDeck = selectedDeck.contains(plant.id)
+                val isBanned = isBloodharbor && plant.id in bannedInBloodharbor
+                val inDeck = !isBanned && displayDeck.contains(plant.id)
                 val isPreview = previewPlantId == plant.id
                 val border = when {
+                  isBanned -> CrimsonSoul.copy(alpha = 0.7f)
                   isPreview -> IceCyan
                   inDeck -> ToxicLime
                   else -> BorderSubtle
@@ -341,12 +371,18 @@ fun SeedSelectionScreen(
                     .defaultMinSize(minHeight = 58.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                      if (inDeck) ToxicForest.copy(alpha = 0.35f) else PlumSurfaceElevated
+                      when {
+                        isBanned -> CrimsonDark.copy(alpha = 0.35f)
+                        inDeck -> ToxicForest.copy(alpha = 0.35f)
+                        else -> PlumSurfaceElevated
+                      }
                     )
                     .border(if (isPreview || inDeck) 1.6.dp else 1.dp, border, RoundedCornerShape(8.dp))
                     .clickable {
                       previewPlantId = plant.id
-                      onTogglePlant(plant.id)
+                      if (!isBanned) {
+                        onTogglePlant(plant.id)
+                      }
                     }
                     .padding(4.dp)
                     .testTag("pool_plant_${plant.id}")
@@ -360,14 +396,14 @@ fun SeedSelectionScreen(
                     Text(
                       text = plant.shortName,
                       style = MaterialTheme.typography.labelSmall,
-                      color = TextPrimary,
+                      color = if (isBanned) TextSecondary else TextPrimary,
                       maxLines = 1,
                       overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                      text = "${plant.cost} ☀",
+                      text = if (isBanned) "CẤM SUN" else if (isBloodharbor) "0 ☀" else "${plant.cost} ☀",
                       style = MaterialTheme.typography.labelSmall,
-                      color = AmberGold
+                      color = if (isBanned) CrimsonSoul else if (isBloodharbor) ToxicLime else AmberGold
                     )
                   }
                   if (inDeck) {
@@ -513,7 +549,7 @@ fun SeedSelectionScreen(
             Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(6.dp))
             Text(
-              text = if (selectedDeck.isEmpty()) "VÀO TRẬN! (MẶC ĐỊNH)" else "VÀO TRẬN! (${selectedDeck.size}/7)",
+              text = if (displayDeck.isEmpty()) "VÀO TRẬN! (MẶC ĐỊNH)" else "VÀO TRẬN! (${displayDeck.size}/$maxDeckSize)",
               style = MaterialTheme.typography.labelLarge
             )
           }
@@ -527,6 +563,7 @@ fun SeedSelectionScreen(
 private fun PlantShowcaseStrip(
   plant: PlantCatalogItem,
   inDeck: Boolean,
+  isBanned: Boolean = false,
   plantIcons: Map<String, ImageBitmap>,
   onToggleDeck: () -> Unit
 ) {
@@ -595,10 +632,18 @@ private fun PlantShowcaseStrip(
         modifier = Modifier
           .minimumInteractiveComponentSize()
           .clip(RoundedCornerShape(8.dp))
-          .clickable(onClick = onToggleDeck)
+          .then(if (!isBanned) Modifier.clickable(onClick = onToggleDeck) else Modifier)
           .testTag("showcase_toggle_btn"),
-        color = if (inDeck) CrimsonDark else ToxicForest,
-        border = BorderStroke(1.dp, if (inDeck) CrimsonSoul else ToxicLime),
+        color = when {
+          isBanned -> CrimsonDark.copy(alpha = 0.65f)
+          inDeck -> CrimsonDark
+          else -> ToxicForest
+        },
+        border = BorderStroke(1.dp, when {
+          isBanned -> CrimsonSoul
+          inDeck -> CrimsonSoul
+          else -> ToxicLime
+        }),
         shape = RoundedCornerShape(8.dp)
       ) {
         Row(
@@ -607,13 +652,13 @@ private fun PlantShowcaseStrip(
           horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
           Icon(
-            imageVector = if (inDeck) Icons.Filled.Close else Icons.Filled.Add,
+            imageVector = if (isBanned || inDeck) Icons.Filled.Close else Icons.Filled.Add,
             contentDescription = null,
             tint = TextPrimary,
             modifier = Modifier.size(16.dp)
           )
           Text(
-            text = if (inDeck) "Bỏ" else "Chọn",
+            text = if (isBanned) "Cấm Sun" else if (inDeck) "Bỏ" else "Chọn",
             style = MaterialTheme.typography.labelLarge,
             color = TextPrimary
           )

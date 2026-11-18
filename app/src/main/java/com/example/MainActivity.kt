@@ -197,6 +197,7 @@ fun PvzAppRoot(
             onOpenSettings = { viewModel.openSettings() },
             onToggleSandboxDrawer = { viewModel.toggleSandboxDrawer() },
             onCloseSandboxDrawer = { viewModel.closeSandboxDrawer() },
+            onStartBloodharborHorn = { viewModel.startBloodharborHorn() },
             onRestartBattle = { viewModel.restartCurrentBattle() },
             onOpenWorldMap = { viewModel.openWorldMap() },
             onReturnToMenu = { viewModel.openMainMenu() },

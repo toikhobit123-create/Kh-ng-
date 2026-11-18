@@ -144,12 +144,23 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   // Deck Builder
+  private fun isBloodharborSelection(): Boolean {
+    return (_uiState.value.currentScreen as? AppScreen.SeedSelection)?.level == 20
+  }
+
   fun togglePlantInDeck(plantId: String) {
-    val current = _uiState.value.progress.selectedDeck.toMutableList()
+    val isBloodharbor = isBloodharborSelection()
+    if (isBloodharbor && (plantId == "sunflower" || plantId == "sun_shroom")) {
+      return
+    }
+    val maxDeck = if (isBloodharbor) 6 else 7
+    val current = _uiState.value.progress.selectedDeck
+      .let { list -> if (isBloodharbor) list.filterNot { it == "sunflower" || it == "sun_shroom" } else list }
+      .toMutableList()
     if (current.contains(plantId)) {
       current.remove(plantId)
     } else {
-      if (current.size >= 7) {
+      while (current.size >= maxDeck) {
         current.removeAt(current.lastIndex)
       }
       current.add(plantId)
@@ -171,11 +182,16 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun autoPickDeck() {
-    val defaultDeck = CampaignProgress.DEFAULT_DECK
-    _uiState.update { state ->
-      state.copy(progress = state.progress.copy(selectedDeck = defaultDeck))
+    val isBloodharbor = isBloodharborSelection()
+    val pickedDeck = if (isBloodharbor) {
+      listOf("peashooter", "snow_pea", "wall_nut", "cabbage_pult", "squash", "cherry_bomb")
+    } else {
+      CampaignProgress.DEFAULT_DECK
     }
-    viewModelScope.launch { repository.saveSelectedDeck(defaultDeck) }
+    _uiState.update { state ->
+      state.copy(progress = state.progress.copy(selectedDeck = pickedDeck))
+    }
+    viewModelScope.launch { repository.saveSelectedDeck(pickedDeck) }
   }
 
   fun clearDeck() {
@@ -187,7 +203,15 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
 
   fun startBattleWithDeck(level: Int) {
     val state = _uiState.value
-    val deck = state.progress.selectedDeck.ifEmpty { CampaignProgress.DEFAULT_DECK }
+    val deck = if (level == 20) {
+      val nonSun = state.progress.selectedDeck
+        .filterNot { it == "sunflower" || it == "sun_shroom" }
+        .distinct()
+        .take(6)
+      nonSun.ifEmpty { listOf("peashooter", "snow_pea", "wall_nut", "cabbage_pult", "squash", "cherry_bomb") }
+    } else {
+      state.progress.selectedDeck.ifEmpty { CampaignProgress.DEFAULT_DECK }
+    }
     viewModelScope.launch { repository.saveSelectedDeck(deck) }
     bridge.startLevel(level, deck, state.settings.defaultSpeed)
     _uiState.update {
@@ -368,7 +392,7 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
       repository.resetCampaignProgress()
       bridge.applyProgress(
         CampaignProgress(
-          unlockedLevel = 19,
+          unlockedLevel = 20,
           completedLevels = emptySet(),
           selectedDeck = _uiState.value.progress.selectedDeck
         )
@@ -380,6 +404,7 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
   fun selectCard(plantId: String) = bridge.selectCard(plantId)
   fun toggleShovel() = bridge.toggleShovel()
   fun togglePlantFood() = bridge.togglePlantFood()
+  fun startBloodharborHorn() = bridge.startBloodharborHorn()
 
   fun toggleSpeed() {
     val next = if (_uiState.value.hud.gameSpeed == 2) 1 else 2
@@ -410,7 +435,7 @@ class PvzViewModel(application: Application) : AndroidViewModel(application) {
   fun goToNextLevelFromVictory() {
     val result = _uiState.value.matchResult ?: return
     _uiState.update { it.copy(matchResult = null) }
-    if (result.level < 19) {
+    if (result.level < 20) {
       openSeedSelection(result.level + 1)
     } else {
       openWorldMap()

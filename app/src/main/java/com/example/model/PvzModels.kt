@@ -63,7 +63,7 @@ data class GameSettings(
 )
 
 data class CampaignProgress(
-  val unlockedLevel: Int = 19,
+  val unlockedLevel: Int = 20,
   val completedLevels: Set<Int> = emptySet(),
   val selectedDeck: List<String> = DEFAULT_DECK,
   val sandboxPlants: List<String> = DEFAULT_SANDBOX_PLANTS,
@@ -128,7 +128,17 @@ data class HudSnapshot(
   val selectedDeck: List<String> = CampaignProgress.DEFAULT_DECK,
   val sandboxPlants: List<String> = CampaignProgress.DEFAULT_SANDBOX_PLANTS,
   val sandboxZombies: List<String> = CampaignProgress.DEFAULT_SANDBOX_ZOMBIES,
-  val cooldowns: Map<String, Float> = emptyMap()
+  val cooldowns: Map<String, Float> = emptyMap(),
+  val isBloodharborMode: Boolean = false,
+  val isSetupPhase: Boolean = false,
+  val bloodharborPhase: Int = 1,
+  val maxPlantsOnBoard: Int = 12,
+  val plantCountOnBoard: Int = 0,
+  val yourCutTimer: Float = 25f,
+  val recalledPlantHps: Map<String, Int> = emptyMap(),
+  val exhaustedSingleUse: Set<String> = emptySet(),
+  val pykeStuckTimer: Float = 0f,
+  val pykeVulnerableTimer: Float = 0f
 )
 
 data class MatchResult(
@@ -546,6 +556,19 @@ object PvzCatalog {
       hpText = "150 HP",
       description = "0 sát thương. Mỗi 5s buff +200 Khiên cho cây phòng thủ trước mặt 1 ô. Sau 3 lần buff thường, lần thứ 4 sẽ cường hóa Kinh Lược Hồn buff +200 Khiên cho toàn bộ cây trong phạm vi 3×3.",
       accentColor = Color(0xFF1DE9B6)
+    ),
+    PlantCatalogItem(
+      id = "squash",
+      shortName = "Bí Đè",
+      fullName = "Bí Đè (Squash)",
+      group = "Dậm Nát Tức Thời",
+      cost = 50,
+      damageText = "1800 DMG (Dùng 1 lần)",
+      rateText = "Nhảy đè 1.5 ô",
+      cooldownText = "25.0s",
+      hpText = "300 HP",
+      description = "Phát hiện zombie tới gần trong phạm vi 1.5 ô trước/sau rồi nhảy vồ lên dậm nát gây 1800 sát thương diện hẹp và biến mất.",
+      accentColor = ToxicLime
     )
   )
 
@@ -591,7 +614,12 @@ object PvzCatalog {
     ZombieCatalogItem("nosus_warlord", "Darius (Đại Tướng Nosus)", "🪓", "3.200 HP (Mini-Boss)", "6.0s / ô · Miễn Làm Chậm / Thôi Miên / Đẩy", "240 DMG/1.75s · Hành Quyết <20% · Xoay 3×3 · One-Hit", "Đại Tướng Darius miễn nhiễm Làm Chậm, Thôi Miên và Đẩy Lùi! Đòn bổ rìu 240 DMG/1.75s tự động Hành Quyết cây <20% HP. Từ ≤50% HP mỗi 5s tung Máy Chém Xoay 3×3 hồi 150–200–300 HP (máu càng ít hồi càng nhiều). Dưới 100 HP kích hoạt Bất Tử 4s (tốc đánh tăng lên 1s/đòn), ×2 tốc chạy và đòn đánh thường One-Hit cây tới khi chết!", isBoss = true),
     ZombieCatalogItem("ionia_zed", "Zed (Chúa Tể Bóng Tối)", "🥷", "250 HP", "1.5s / ô", "50 DMG/s · Dấu Ấn Tử Thần 300 DMG", "Sát thủ bóng đêm siêu tốc Ionia! Khi tụt vào máu tử, Zed kích hoạt miễn nhiễm sát thương và lao thẳng tới cây gần nhất cùng hàng; khi đáp xuống hết miễn nhiễm và gắn Dấu Ấn Tử Thần phát nổ sau 5s gây 300 DMG lên cây đó."),
     ZombieCatalogItem("ionia_yone", "Yone (Song Kiếm Linh Giới)", "⚔️", "500 HP (+200 Linh Hồn)", "5.0s / ô (Linh Hồn: 3.2s / ô)", "70 DMG/0.5s & 12% MaxHP · E Xuất Hồn · R Đoạt Mệnh", "Song kiếm đấu sĩ Ionia luân phiên đánh thường 70 DMG và cường hóa 12% Máu tối đa mỗi 0.5s. Đến cột 6 dùng Xuất Hồn (E) để lại Thể Xác (350 HP, miễn khống chế) và hóa Linh Hồn (+200 HP) lao 4.5s rồi giật về. Mỗi 8s kể từ khi tấn công, tụ 1.2s tung Đoạt Mệnh (R) lướt 2 ô hất tung & choáng 2s, gây 120 DMG/cây."),
-    ZombieCatalogItem("ionia_sett", "Sett (Đại Ca Đấu Trường)", "🥊", "3.000 HP (Mini-Boss)", "6.0s / ô", "2 Đòn 300 DMG/2s · W Gan Lì 550 · R Ném Cây", "Mini-Boss Đấu Trường Ionia (Ahri không thể thôi miên)! Mỗi 2s đấm liên hoàn 2 đòn × 300 DMG. Tích 100% sát thương thành Gan Lì (tối đa 800 hoặc mỗi mất 700 HP) tạo giáp ảo 500 HP (3s) & đấm Cuồng Thú Quyền (W) 3 ô trước mặt (±2 hàng): tâm 550 DMG, rìa 200 DMG. Gặp cây phòng thủ dùng R nhấc ném lùi 2 ô (đè nát ≤300 HP) & gây 250 DMG 3×3 (hồi 15s).", isBoss = true)
+    ZombieCatalogItem("ionia_sett", "Sett (Đại Ca Đấu Trường)", "🥊", "3.000 HP (Mini-Boss)", "6.0s / ô", "2 Đòn 300 DMG/2s · W Gan Lì 550 · R Ném Cây", "Mini-Boss Đấu Trường Ionia (Ahri không thể thôi miên)! Mỗi 2s đấm liên hoàn 2 đòn × 300 DMG. Tích 100% sát thương thành Gan Lì (tối đa 800 hoặc mỗi mất 700 HP) tạo giáp ảo 500 HP (3s) & đấm Cuồng Thú Quyền (W) 3 ô trước mặt (±2 hàng): tâm 550 DMG, rìa 200 DMG. Gặp cây phòng thủ dùng R nhấc ném lùi 2 ô (đè nát ≤300 HP) & gây 250 DMG 3×3 (hồi 15s).", isBoss = true),
+    ZombieCatalogItem("drowned_sailor", "Thủy Thủ Đắm Tàu", "⚓", "270 HP", "5.0s / ô (Trung bình)", "50 DMG / 0.5s", "Lính tiên phong Bến Cảng Tử Thần xuất hiện số lượng lớn gây áp lực đều lên cả 5 hàng."),
+    ZombieCatalogItem("anchor_bearer", "Kẻ Vác Neo", "🪨", "1.350 HP", "7.5s / ô (Chậm)", "75 DMG/0.7s · Đòn 3 Đẩy Lùi 1 Ô", "Thợ lặn biển sâu siêu trâu! Sau mỗi 3 đòn cắn sẽ vung mỏ neo đẩy lùi cây chắn về sau 1 ô nếu ô sau còn trống."),
+    ZombieCatalogItem("swimming_ghost", "Ma Bơi Lội", "🌊", "420 HP", "3.0s / ô (Nhanh · Lặn Cột 9→5)", "60 DMG / 0.5s", "Lặn ngầm dưới nước đen từ Cột 9 (né mọi đạn khi đang lặn) và trồi lên bất ngờ ngay tại Cột 5, bỏ qua hàng phòng thủ Cột 6."),
+    ZombieCatalogItem("wanted_captain", "Thuyền Trưởng Truy Nã", "💀", "950 HP", "3.2s / ô (Nhanh · Chia Phần)", "80 DMG / 0.5s", "Mang Đầu Lâu Đỏ và luôn chọn đi vào hàng có tổng sát thương thấp nhất! Tiêu diệt giúp nhận ngay 1 Thẻ Hạt Giống (ưu tiên hồi cây dùng 1 lần) và +1 giới hạn cây trên sân (tối đa 16)."),
+    ZombieCatalogItem("zombot_pyke", "TRÙM ZOMBOT ĐỒ TỂ (PYKE)", "🪝", "15.000 HP (3 Giai Đoạn)", "Di chuyển Vùng Nước Đen (Cột 7–9)", "Lao Móc (Q) · Lướt Sóng (E) · Dấu Chữ X (R)", "Trùm Map 20 Bến Cảng Tử Thần! P1 (15k→10k): 8s/chiêu Q/E/R (R chém trúng hồi 10% HP, hụt kẹt 3s). P2 (10k→5k): 6.5s/chiêu, ngập Cột 6 (tự thu hồi cây về tay), triệu hồi Kẻ Vác Neo & Ma Bơi Lội, R nhảy chém lần 2. P3 (5k→0): 5s/chiêu, sương mù cột 5–6 (-20% tầm cột 1–2), Q móc 2 hàng, R nhảy tối đa 3 lần (hụt hết kẹt 4s & chịu ×2 sát thương).", isBoss = true)
   )
 
   val zombieById: Map<String, ZombieCatalogItem> = zombies.associateBy { it.id }
@@ -758,6 +786,16 @@ object PvzCatalog {
       zombieIds = listOf("ionia_zed", "ionia_yone", "ionia_sett"),
       tacticalTip = "Ahri không thể thôi miên Sett! Khi thanh Gan Lì (800) đầy, Sett tạo giáp 500 HP & đấm sóng 550 DMG; không xếp cây máu mỏng ngay sau Wall-nut/Galio để tránh bị Sett R ném đè nát!",
       isBoss = true
+    ),
+    LevelInfo(
+      level = 20,
+      title = "Bến Cảng Tử Thần",
+      subtitle = "MÀN ĐẤU TRÙM · ZOMBOT ĐỒ TỂ 15.000 HP · KHÔNG SUN",
+      description = "Chiến đấu trên sàn gỗ Cột 1–6 đối đầu Zombot Đồ Tể tuần tra vùng nước đen Cột 7–9! Không Sun, không Máy Cắt Cỏ: chọn 6 cây (cấm cây Sun), dàn tối đa 12→16 cây, dùng Xẻng thu hồi (2.5s CD, giữ nguyên HP) để né chiêu Q/E/R và săn Zombie Truy Nã!",
+      zombieIds = listOf("zombot_pyke", "drowned_sailor", "anchor_bearer", "swimming_ghost", "wanted_captain"),
+      tacticalTip = "Dùng Xẻng thu hồi cây khỏi ô bị khóa Dấu Chữ X (R) để khiến Boss bị kẹt 3–4s (nhận ×2 sát thương ở Phase 3)! Săn Thuyền Trưởng Truy Nã mỗi 25s để hồi thẻ dùng 1 lần và tăng giới hạn cây!",
+      isBoss = true,
+      isSpecial = true
     )
   )
 }

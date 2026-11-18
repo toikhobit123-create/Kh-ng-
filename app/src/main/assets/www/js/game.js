@@ -365,6 +365,18 @@ const PLANT_SHOWCASE_DATA = {
     hp: '150 HP',
     desc: '0 sát thương. Mỗi 5s buff +200 Khiên cho cây phòng thủ đứng ngay trước mặt 1 ô. Sau 3 lần buff thường, lần thứ 4 sẽ cường hóa Kinh Lược Hồn buff +200 Khiên cho toàn bộ cây trong phạm vi 3×3!',
     svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><circle cx="22" cy="22" r="16" fill="none" stroke="#1de9b6" stroke-width="2.2"/><circle cx="22" cy="22" r="9" fill="#00bfa5" stroke="#ffd54f" stroke-width="1.5"/><polygon points="22,15 25,20 22,25 19,20" fill="#ffd54f"/></svg>`
+  },
+  squash: {
+    id: 'squash',
+    name: 'Bí Đè (Squash)',
+    group: 'Đè Nát Tức Thời',
+    cost: 50,
+    dmg: '1800 DMG (Tức Thời)',
+    rate: 'Kích hoạt khi Zombie tới gần 1.35 ô',
+    cooldown: '20.0s',
+    hp: '300 HP',
+    desc: 'Cây dùng 1 lần. Khi Zombie áp sát phạm vi 1.35 ô sẽ nhảy bật lên không trung rồi giáng mạnh nghiền nát mục tiêu với 1800 sát thương! Tại Màn 20 Bến Cảng Tử Thần, cây dùng 1 lần biến mất sau khi nổ và chỉ nhận lại qua Truy Nã.',
+    svg: `<svg viewBox="0 0 44 44" width="100%" height="100%"><path d="M12 34 Q10 14 22 10 Q34 14 32 34 Q22 38 12 34 Z" fill="#558b2f" stroke="#2e5714" stroke-width="1.5"/><path d="M22 10 Q24 5 27 6" stroke="#33691e" stroke-width="2.5" fill="none"/><polygon points="14,19 20,21 15,24" fill="#fff"/><circle cx="17" cy="22" r="1.4" fill="#000"/><polygon points="30,19 24,21 29,24" fill="#fff"/><circle cx="27" cy="22" r="1.4" fill="#000"/></svg>`
   }
 };
 
@@ -598,6 +610,37 @@ const ZOMBIE_PREVIEW_INFO = {
     avatar: '🥊',
     hpText: 'HP: 3000 (Mini-Boss) · 6.0s/ô · Liên Hoàn 2×300 DMG',
     desc: 'Mini-Boss Vùng Đất Ionia (Miễn Thôi Miên)! Mỗi 2s đấm liên tiếp 2 đòn × 300 DMG. Tích 100% sát thương thành Gan Lì (max 800 hoặc mất mỗi 700 HP) kích hoạt Cuồng Thú Quyền (W): tạo giáp ảo 500 HP (3s) & đấm sóng 3 ô trước (giữa 550 / rìa 200 DMG). Gặp cây phòng thủ sẽ nhấc ném lùi 2 ô (đè nát nếu ≤300 HP) và nổ 250 DMG lan 3×3 (15s)!'
+  },
+  drowned_sailor: {
+    name: 'Thủy Thủ Đắm Tàu',
+    avatar: '⚓',
+    hpText: 'HP: 270 · Tốc độ: 5.0s/ô (Trung bình)',
+    desc: 'Lính tiên phong đông đảo của Bến Cảng Tử Thần, gây áp lực liên tục lên cả 5 hàng sàn gỗ.'
+  },
+  anchor_bearer: {
+    name: 'Kẻ Vác Neo',
+    avatar: '⚓',
+    hpText: 'HP: 1350 · Tốc độ: 7.5s/ô (Chậm) · 75 DMG/0.7s',
+    desc: 'Sau mỗi 3 đòn cắn, vung mỏ neo khổng lồ đẩy lùi cây chắn về sau 1 ô (nếu ô sau còn trống)!'
+  },
+  swimming_ghost: {
+    name: 'Ma Bơi Lội',
+    avatar: '🌊',
+    hpText: 'HP: 420 · Lặn dưới nước cột 9 → Trồi lên cột 5',
+    desc: 'Lặn tàng hình dưới mặt nước đen từ cột 9, miễn nhiễm mọi đạn và bất ngờ trồi lên tại cột 5, bỏ qua tuyến phòng thủ cột 6!'
+  },
+  wanted_captain: {
+    name: 'Thuyền Trưởng Truy Nã',
+    avatar: '💀',
+    hpText: 'HP: 950 · Đầu Lâu Đỏ · Chia Phần (Your Cut)',
+    desc: 'Luôn chọn đi vào hàng có tổng sát thương (DPS) thấp nhất! Khi bị tiêu diệt sẽ kích hoạt Chia Phần: nhận 1 Thẻ Hạt Giống ngẫu nhiên và tăng +1 giới hạn cây trên sân (tối đa 16).'
+  },
+  zombot_pyke: {
+    name: 'BOSS Zombot Đồ Tể Pyke',
+    avatar: '🏴‍☠️',
+    hpText: 'HP: 15.000 · 3 Phase · Tuần tra cột 7–9',
+    desc: 'Trùm Bến Cảng Tử Thần! Phase 1 (15k→10k): Lao Móc (Q) kéo cây lên +2 ô, Lướt Sóng (E) trói 3 ô 4s, Dấu Chữ X (R) chém 1 lần (trúng hồi 10% HP, hụt kẹt 3s). Phase 2 (10k→5k): Ngập cột 6, R chém tối đa 2 lần. Phase 3 (<5k): Sương mù cột 5–6 giảm 20% tầm bắn cột 1–2, Q móc 2 hàng, R chém 3 lần (hụt toàn bộ kẹt 4s & nhận ×2 sát thương)!',
+    boss: true
   }
 };
 
@@ -613,11 +656,21 @@ class Game {
 
     this.currentLevel = 1;
     this.pendingLevel = 1;
-    this.unlockedLevel = 19; // Mở khóa tất cả các map (1-19)
+    this.unlockedLevel = 20; // Mở khóa tất cả các map (1-20)
     this.completedLevels = [];
     this.isSandbox = false;
     this.sandboxNoCooldown = false;
     this.isMenuActive = true;
+    this.isBloodharborMode = false;
+    this.isSetupPhase = false;
+    this.maxPlantsOnBoard = 12;
+    this.bloodharborPhase = 1;
+    this.floodedCols = [];
+    this.fogCols = [];
+    this.rootedTiles = [];
+    this.recalledPlantHpMap = {};
+    this.exhaustedSingleUse = new Set();
+    this.yourCutTimer = 25.0;
 
     // Đội hình 7 cây đã chọn vào trận (Mặc định 7 cây chuẩn PvZ cân bằng)
     this.selectedDeck = ['sunflower', 'peashooter', 'snow_pea', 'wall_nut', 'cabbage_pult', 'repeater', 'cherry_bomb'];
@@ -677,7 +730,8 @@ class Game {
       'aurora',
       'ahri',
       'irelia',
-      'karma'
+      'karma',
+      'squash'
     ];
   }
 
@@ -698,6 +752,13 @@ class Game {
     this.seedBankEl = document.getElementById('seed-bank');
     this.sunBankEl = document.getElementById('sun-bank');
     this.hudLeftEl = document.getElementById('hud-left');
+    this.bhControlsEl = document.getElementById('bloodharbor-controls');
+    this.bhPlantCapEl = document.getElementById('bh-plant-cap-badge');
+    this.bhCutBadgeEl = document.getElementById('bh-cut-badge');
+    this.bhBlowHornBtn = document.getElementById('bh-blow-horn-btn');
+    if (this.bhBlowHornBtn) {
+      this.bhBlowHornBtn.addEventListener('click', () => this.blowBloodharborHorn());
+    }
     this.defaultFlagSvg = this.flagIconEl ? this.flagIconEl.innerHTML : '';
     this.defaultZombieHeadSvg = this.zombieHeadBadgeEl ? this.zombieHeadBadgeEl.innerHTML : '';
 
@@ -806,7 +867,7 @@ class Game {
     if (this.dialogNextBtn) {
       this.dialogNextBtn.addEventListener('click', () => {
         this.dialogOverlay.classList.add('hidden');
-        if (this.currentLevel < 6) {
+        if (this.currentLevel < 20) {
           this.openSeedSelection(this.currentLevel + 1);
         } else {
           this.showWorldMap();
@@ -847,11 +908,15 @@ class Game {
   }
 
   togglePlantInDeck(plantKey) {
+    if (this.pendingLevel === 20 && (plantKey === 'sunflower' || plantKey === 'sun_shroom')) {
+      return;
+    }
+    const maxDeckSize = this.pendingLevel === 20 ? 6 : 7;
     const idx = this.selectedDeck.indexOf(plantKey);
     if (idx !== -1) {
       this.selectedDeck.splice(idx, 1);
     } else {
-      if (this.selectedDeck.length >= 7) {
+      while (this.selectedDeck.length >= maxDeckSize) {
         this.selectedDeck.pop();
       }
       this.selectedDeck.push(plantKey);
@@ -866,7 +931,11 @@ class Game {
   }
 
   autoPickDeck() {
-    this.selectedDeck = ['sunflower', 'peashooter', 'snow_pea', 'wall_nut', 'cabbage_pult', 'repeater', 'cherry_bomb'];
+    if (this.pendingLevel === 20) {
+      this.selectedDeck = ['peashooter', 'snow_pea', 'wall_nut', 'repeater', 'squash', 'cherry_bomb'];
+    } else {
+      this.selectedDeck = ['sunflower', 'peashooter', 'snow_pea', 'wall_nut', 'cabbage_pult', 'repeater', 'cherry_bomb'];
+    }
   }
 
   clearDeck() {
@@ -892,13 +961,13 @@ class Game {
   // ==========================================================================
   loadProgress() {
     try {
-      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 19/19 map theo yêu cầu)
+      // 1. Cấp độ cao nhất đã mở khóa (Mở khóa toàn bộ 20/20 map theo yêu cầu)
       const savedLevel = localStorage.getItem('pvz_unlocked_level');
       const parsedLevel = parseInt(savedLevel, 10);
-      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 19) {
-        this.unlockedLevel = Math.max(parsedLevel, 19); // Đảm bảo luôn mở khóa hết cả 19 map
+      if (!isNaN(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 20) {
+        this.unlockedLevel = Math.max(parsedLevel, 20);
       } else {
-        this.unlockedLevel = 19;
+        this.unlockedLevel = 20;
       }
 
       // 2. Danh sách các màn đã vượt qua (chiến thắng)
@@ -907,7 +976,7 @@ class Game {
         try {
           const list = JSON.parse(savedCompleted);
           if (Array.isArray(list)) {
-            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 19);
+            this.completedLevels = list.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 20);
           } else {
             this.completedLevels = [];
           }
@@ -915,19 +984,18 @@ class Game {
           this.completedLevels = [];
         }
       } else {
-        // Tự động suy luận các màn đã qua trước đó nếu chỉ có unlockedLevel
         this.completedLevels = [];
         for (let lv = 1; lv < this.unlockedLevel; lv++) {
           this.completedLevels.push(lv);
         }
       }
 
-      // 3. Bộ bài 7 cây yêu thích đã chọn
+      // 3. Bộ bài 6-7 cây yêu thích đã chọn
       const savedDeck = localStorage.getItem('pvz_selected_deck');
       if (savedDeck) {
         try {
           const deck = JSON.parse(savedDeck);
-          if (Array.isArray(deck) && deck.length === 7 && deck.every(k => this.plantKeys.includes(k))) {
+          if (Array.isArray(deck) && (deck.length === 6 || deck.length === 7) && deck.every(k => this.plantKeys.includes(k))) {
             this.selectedDeck = deck;
           }
         } catch {}
@@ -936,7 +1004,7 @@ class Game {
       console.log(`[PvZ Progress] Đã tải tiến trình: Đã mở Cấp ${this.unlockedLevel}, Đã vượt qua: [${this.completedLevels.join(', ')}]`);
     } catch (err) {
       console.warn('Lỗi đọc localStorage:', err);
-      this.unlockedLevel = 19;
+      this.unlockedLevel = 20;
       this.completedLevels = [];
     }
   }
@@ -945,7 +1013,7 @@ class Game {
     try {
       localStorage.setItem('pvz_unlocked_level', this.unlockedLevel.toString());
       localStorage.setItem('pvz_completed_levels', JSON.stringify(this.completedLevels || []));
-      if (this.selectedDeck && this.selectedDeck.length === 7) {
+      if (this.selectedDeck && (this.selectedDeck.length === 6 || this.selectedDeck.length === 7)) {
         localStorage.setItem('pvz_selected_deck', JSON.stringify(this.selectedDeck));
       }
       console.log(`[PvZ Progress] Đã lưu tiến trình thành công vào localStorage: Cấp ${this.unlockedLevel}`);
@@ -956,9 +1024,9 @@ class Game {
 
   resetProgress() {
     try {
-      this.unlockedLevel = 19; // Luôn mở khóa tất cả các map
+      this.unlockedLevel = 20;
       this.completedLevels = [];
-      localStorage.setItem('pvz_unlocked_level', '19');
+      localStorage.setItem('pvz_unlocked_level', '20');
       localStorage.setItem('pvz_completed_levels', JSON.stringify([]));
     } catch (err) {
       console.warn('Lỗi reset tiến trình:', err);
@@ -1062,7 +1130,12 @@ class Game {
       'sb-spawn-nosus-warlord': 'nosus_warlord',
       'sb-spawn-ionia-zed': 'ionia_zed',
       'sb-spawn-ionia-yone': 'ionia_yone',
-      'sb-spawn-ionia-sett': 'ionia_sett'
+      'sb-spawn-ionia-sett': 'ionia_sett',
+      'sb-spawn-drowned-sailor': 'drowned_sailor',
+      'sb-spawn-anchor-bearer': 'anchor_bearer',
+      'sb-spawn-swimming-ghost': 'swimming_ghost',
+      'sb-spawn-wanted-captain': 'wanted_captain',
+      'sb-spawn-zombot-pyke': 'zombot_pyke'
     };
 
     for (const [btnId, zType] of Object.entries(btnToType)) {
@@ -1133,7 +1206,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm', 'bloodharbor-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1142,7 +1215,7 @@ class Game {
     this.isPaused = true;
     this.isMenuActive = true;
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
-      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm');
+      document.body.classList.remove('dragon-realm', 'desert-realm', 'nosus-realm', 'ionia-realm', 'bloodharbor-realm');
     }
     if (this.audio) this.audio.playBGM('menu');
   }
@@ -1152,6 +1225,17 @@ class Game {
     this.isSandbox = false;
     this.sandboxNoCooldown = false;
     this.isMenuActive = false;
+    if (levelNumber === 20) {
+      const bannedSun = new Set(['sunflower', 'sun_shroom']);
+      const fallbackPool = ['peashooter', 'snow_pea', 'wall_nut', 'repeater', 'squash', 'cherry_bomb'];
+      const cleaned = (Array.isArray(this.selectedDeck) ? this.selectedDeck : [])
+        .filter(id => this.plantKeys.includes(id) && !bannedSun.has(id));
+      for (const defId of fallbackPool) {
+        if (cleaned.length >= 6) break;
+        if (!cleaned.includes(defId)) cleaned.push(defId);
+      }
+      this.selectedDeck = cleaned.slice(0, 6);
+    }
     if (this.audio) {
       this.audio.playBGM(levelNumber >= 5 ? 'boss' : 'battle');
     }
@@ -1263,8 +1347,12 @@ class Game {
   }
 
   reset() {
-    // Sun ban đầu 50 (Sandbox: 9999)
-    this.sun = this.isSandbox ? CONFIG.SANDBOX_SUN : CONFIG.INITIAL_SUN;
+    const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined') ? LEVEL_CONFIG[this.currentLevel] : null;
+    const isBloodharbor = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'bloodharbor') || this.currentLevel === 20);
+
+    // Sun ban đầu 50 (Sandbox: 9999; Màn 20 Bloodharbor: 0 và loại bỏ Sun hoàn toàn)
+    this.sun = this.isSandbox ? CONFIG.SANDBOX_SUN : (isBloodharbor ? 0 : CONFIG.INITIAL_SUN);
+    this.plantFood = 3;
 
     this.plants = [];
     this.zombies = [];
@@ -1278,6 +1366,11 @@ class Game {
     this.laserBeams = [];
     this.floatingTexts = [];
     this.attackEffects = []; // Hiệu ứng phạm vi & chiêu thức tấn công tầm gần
+    this.settUltAnimations = []; // Hoạt ảnh kỹ năng R của Sett (nhấc bổng, bay parabol & giáng đất)
+    this.screenShake = 0;
+    this.screenShakeX = 0;
+    this.screenShakeY = 0;
+    this.screenShakeDecay = 36;
     this.scorchedTiles = []; // Các ô bị thiêu rụi không thể trồng cây trong 10s
     this.lotusTraps = [];    // Bẫy Hoa Sen của Jhinplant (chặn trồng cây, nổ 444 DMG AoE 2x2)
     this.chemPotions = [];   // Bình thuốc Hóa Kỹ của Rồng Hóa Kỹ (chặn trồng cây, không thể phá)
@@ -1288,6 +1381,18 @@ class Game {
     this._managesDesertTimers = true;
     this.timeStopTimer = 0;  // Bộ đếm dừng thời gian (Skill 2 Galio)
 
+    // Trạng thái Bến Cảng Tử Thần (Map 20)
+    this.isBloodharborMode = isBloodharbor;
+    this.isSetupPhase = isBloodharbor;
+    this.maxPlantsOnBoard = isBloodharbor ? ((lvlCfg && lvlCfg.setupMaxPlants) || 12) : 999;
+    this.bloodharborPhase = 1;
+    this.floodedCols = [];
+    this.fogCols = [];
+    this.rootedTiles = [];
+    this.recalledPlantHpMap = {};
+    this.exhaustedSingleUse = new Set();
+    this.yourCutTimer = 25.0;
+
     // Tốc độ mặc định khi bắt đầu luôn là ×2
     this.setSpeed(2);
     this.isPaused = false;
@@ -1295,10 +1400,12 @@ class Game {
     if (this.pauseIcon) this.pauseIcon.textContent = '⏸️';
     if (this.pauseBtn) this.pauseBtn.classList.remove('active-paused');
 
-    // Khởi tạo 5 máy cắt cỏ cho 5 hàng ở mép trái
+    // Khởi tạo 5 máy cắt cỏ cho 5 hàng ở mép trái (Map 20 loại bỏ hoàn toàn Lawn Mower)
     this.lawnmowers = [];
-    for (let r = 0; r < CONFIG.ROWS; r++) {
-      this.lawnmowers.push(new Lawnmower(r));
+    if (!isBloodharbor && !(lvlCfg && lvlCfg.noLawnmowers)) {
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        this.lawnmowers.push(new Lawnmower(r));
+      }
     }
 
     this.selectedPlantType = null;
@@ -1323,7 +1430,7 @@ class Game {
       }
       const cardEl = this.cardElements ? this.cardElements[key] : null;
       if (cardEl) {
-        cardEl.classList.remove('cooldown-ready');
+        cardEl.classList.remove('cooldown-ready', 'exhausted-single-use');
       }
     }
 
@@ -1336,19 +1443,20 @@ class Game {
     this.gameDeltaTime = 0;
     this.realDeltaTime = 0;
 
-    // Thiết lập chế độ chơi: Map 6 là Conveyor Belt; Map 11-12 là Dragon Realm; Map 13 là Desert Realm; Map 14-16 là Nosus Realm; Map 17-19 là Ionia Realm
-    const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined') ? LEVEL_CONFIG[this.currentLevel] : null;
+    // Thiết lập chế độ chơi & theme sân đấu
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
       const isDesertRealm = !this.isSandbox && !!(lvlCfg && lvlCfg.theme === 'desert');
       const isNosusRealm = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'nosus') || (this.currentLevel >= 14 && this.currentLevel <= 16));
       const isIoniaRealm = !this.isSandbox && ((lvlCfg && lvlCfg.theme === 'ionia') || (this.currentLevel >= 17 && this.currentLevel <= 19));
-      const isDragonRealm = !this.isSandbox && !isDesertRealm && !isNosusRealm && !isIoniaRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
+      const isBloodharborRealm = !this.isSandbox && isBloodharbor;
+      const isDragonRealm = !this.isSandbox && !isDesertRealm && !isNosusRealm && !isIoniaRealm && !isBloodharborRealm && (this.currentLevel === 11 || !!(lvlCfg && lvlCfg.isSpecial));
       document.body.classList.toggle('desert-realm', isDesertRealm);
       document.body.classList.toggle('nosus-realm', isNosusRealm);
       document.body.classList.toggle('ionia-realm', isIoniaRealm);
+      document.body.classList.toggle('bloodharbor-realm', isBloodharborRealm);
       document.body.classList.toggle('dragon-realm', isDragonRealm);
     }
-    this.gameMode = (!this.isSandbox && (this.currentLevel === 6 || (lvlCfg && (lvlCfg.isConveyor || lvlCfg.gameMode === 'conveyor')))) ? 'conveyor' : 'normal';
+    this.gameMode = (!this.isSandbox && !isBloodharbor && (this.currentLevel === 6 || (lvlCfg && (lvlCfg.isConveyor || lvlCfg.gameMode === 'conveyor')))) ? 'conveyor' : 'normal';
 
     if (this.gameMode === 'conveyor') {
       if (this.conveyorSystem) {
@@ -1358,7 +1466,7 @@ class Game {
     } else {
       if (this.hudLeftEl) this.hudLeftEl.style.display = 'flex';
       if (this.seedBankEl) this.seedBankEl.style.display = 'flex';
-      if (this.sunBankEl) this.sunBankEl.style.display = 'flex';
+      if (this.sunBankEl) this.sunBankEl.style.display = isBloodharbor ? 'none' : 'flex';
     }
 
     // Ẩn/hiển thị thanh tiến trình Wave: trong Sandbox không có Wave nên ẩn đi
@@ -1393,7 +1501,8 @@ class Game {
           16: 'CẤP 16 · ĐẠI TƯỚNG DARIUS NOSUS',
           17: 'CẤP 17 · ĐỀN HOA ANH ĐÀO IONIA',
           18: 'CẤP 18 · SONG KIẾM LINH GIỚI',
-          19: 'CẤP 19 · ĐẤU TRƯỜNG ĐẠI CA SETT'
+          19: 'CẤP 19 · ĐẤU TRƯỜNG ĐẠI CA SETT',
+          20: 'CẤP 20 · BẾN CẢNG TỬ THẦN (BOSS)'
         };
         this.levelBadgeEl.textContent = lvlNames[this.currentLevel] || `CẤP ${this.currentLevel}`;
         this.levelBadgeEl.classList.remove('sandbox-mode-badge');
@@ -1499,13 +1608,18 @@ class Game {
       this.conveyorSystem.update(dt);
     }
 
-    // 2. Rơi Sun tự nhiên (chỉ khi không ở chế độ conveyor và không dừng thời gian)
-    if (this.gameMode !== 'conveyor' && !isTimeStopped) {
+    // 2. Rơi Sun tự nhiên (chỉ khi không ở chế độ conveyor, không ở Bến Cảng Tử Thần và không dừng thời gian)
+    if (this.gameMode !== 'conveyor' && !this.isBloodharborMode && !isTimeStopped) {
       this.naturalSunTimer += dt;
       if (this.naturalSunTimer >= CONFIG.NATURAL_SUN_INTERVAL) {
         this.naturalSunTimer = 0;
         this.spawnNaturalSun();
       }
+    }
+
+    // 2.5. Cập nhật Bến Cảng Tử Thần (ô bị trói E & bộ đếm Thuyền Trưởng Truy Nã)
+    if (!isTimeStopped) {
+      this.updateBloodharbor(dt);
     }
 
     // 3. Cập nhật cây
@@ -1531,6 +1645,8 @@ class Game {
       // 4.8. Cập nhật vùng Lão Hóa 2x2 của Thần Khuyển & hẹn giờ Wave Bão Cát 20s của Azir
       this.updateWitherZones(dt);
       this.updatePendingSandstormWaves(dt);
+      // 4.9. Cập nhật chuỗi hoạt ảnh kỹ năng R của Sett (nhấc bổng -> bay vòng cung -> giáng đất)
+      this.updateSettUltAnimations(dt);
     } else {
       // Zombie đã chết vẫn hoàn tất hoạt ảnh tan biến trong lúc dừng thời gian
       for (const zombie of this.zombies) {
@@ -1592,6 +1708,9 @@ class Game {
       }
       this.attackEffects = this.attackEffects.filter(eff => eff.timer < eff.duration);
     }
+
+    // 12.6. Rung lắc màn hình khi đòn nặng (Sett R slam...)
+    this.updateScreenShake(dt);
 
     // Kích hoạt Skill 2 của Galio nếu vừa chết trong lượt cập nhật này
     this.processGalioDeathSkills();
@@ -2177,14 +2296,250 @@ class Game {
 
   isFreePlantSunLevel() {
     if (this.isSandbox) return false;
-    if (this.currentLevel === 12 || this.currentLevel === 13) return true;
+    if (this.currentLevel === 12 || this.currentLevel === 13 || this.currentLevel === 20) return true;
     const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined') ? LEVEL_CONFIG[this.currentLevel] : null;
     return !!(lvlCfg && lvlCfg.freeSunCost);
+  }
+
+  blowBloodharborHorn() {
+    if (!this.isBloodharborMode || !this.isSetupPhase) return false;
+    this.isSetupPhase = false;
+    const hasPyke = this.zombies.some(z => z.alive && z.type === 'zombot_pyke');
+    if (!hasPyke) {
+      this.spawnZombie('zombot_pyke', 2);
+    }
+    this.yourCutTimer = 25.0;
+    if (this.audio) {
+      if (typeof this.audio.playWaveHorn === 'function') this.audio.playWaveHorn();
+      if (typeof this.audio.playBGM === 'function') this.audio.playBGM('boss');
+    }
+    this.triggerScreenShake(9, 0.28);
+    if (this.spawnFloatingText) {
+      this.spawnFloatingText(
+        CONFIG.GRID_OFFSET_X + CONFIG.CELL_WIDTH * 4.5,
+        CONFIG.GRID_OFFSET_Y + 90,
+        '🚢 CÒI TÀU VANG LÊN! ZOMBOT ĐỒ TỂ XUẤT TRẬN!',
+        '#00e5ff',
+        20
+      );
+    }
+    this.updateHUD();
+    return true;
+  }
+
+  updateBloodharbor(dt) {
+    if (Array.isArray(this.rootedTiles) && this.rootedTiles.length > 0) {
+      for (const tile of this.rootedTiles) {
+        tile.timer -= dt;
+      }
+      this.rootedTiles = this.rootedTiles.filter(t => t.timer > 0);
+    }
+
+    if (!this.isBloodharborMode || this.isSetupPhase || this.isVictory || this.isGameOver) return;
+
+    this.yourCutTimer -= dt;
+    if (this.yourCutTimer <= 0) {
+      this.yourCutTimer = 25.0;
+      const targetRow = this.pickLowestDpsRow();
+      this.spawnZombie('wanted_captain', targetRow);
+      if (this.spawnFloatingText) {
+        const ry = CONFIG.GRID_OFFSET_Y + targetRow * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+        this.spawnFloatingText(
+          CONFIG.GRID_OFFSET_X + CONFIG.CELL_WIDTH * 7.2,
+          ry - 24,
+          '💀 THUYỀN TRƯỞNG TRUY NÃ XUẤT HIỆN!',
+          '#ff1744',
+          17
+        );
+      }
+    }
+  }
+
+  addRootedTiles(row, cols, duration = 4.0) {
+    if (!Array.isArray(this.rootedTiles)) this.rootedTiles = [];
+    for (const col of (cols || [])) {
+      const existing = this.rootedTiles.find(t => t.row === row && t.col === col);
+      if (existing) {
+        existing.timer = Math.max(existing.timer, duration);
+        existing.maxDuration = Math.max(existing.maxDuration || duration, duration);
+      } else {
+        this.rootedTiles.push({ row, col, timer: duration, maxDuration: duration });
+      }
+    }
+  }
+
+  isTileRooted(row, col) {
+    if (!Array.isArray(this.rootedTiles) || this.rootedTiles.length === 0) return false;
+    return this.rootedTiles.some(t => t.row === row && t.col === col && t.timer > 0);
+  }
+
+  getEffectiveRangeFactor(plant) {
+    if (this.isBloodharborMode && this.bloodharborPhase >= 3 && plant && plant.col <= 1) {
+      return 0.8;
+    }
+    return 1.0;
+  }
+
+  markSingleUseExhausted(plantType) {
+    if (!this.isBloodharborMode || !plantType) return;
+    if (!(this.exhaustedSingleUse instanceof Set)) {
+      this.exhaustedSingleUse = new Set();
+    }
+    this.exhaustedSingleUse.add(plantType);
+    if (this.selectedPlantType === plantType) {
+      this.clearSelection();
+    }
+    this.updateHUD();
+  }
+
+  computeRowDps(row) {
+    const dpsMap = {
+      sunflower: 0, sun_shroom: 0, wall_nut: 2, infi_nut: 2,
+      potato_mine: 4, cherry_bomb: 10, stunion: 2, blover: 2, hypno_shroom: 4, squash: 12,
+      peashooter: 14, snow_pea: 14, cabbage_pult: 14, magnet_shroom: 5,
+      lightning_reed: 20, goo_peashooter: 25, repeater: 28, snapdragon: 30,
+      melon_pult: 34, aurora: 35, bonk_choy: 40, spikeweed: 40,
+      ahri: 42, irelia: 44, jhinplant: 45, lux: 45, chomper: 50,
+      kata: 50, syndra: 60, galio: 100, karma: 6
+    };
+    let total = 0;
+    for (const p of (this.plants || [])) {
+      if (!p.alive || p.row !== row) continue;
+      total += (dpsMap[p.type] !== undefined ? dpsMap[p.type] : 15);
+    }
+    return total;
+  }
+
+  pickLowestDpsRow() {
+    let minDps = Infinity;
+    let bestRows = [];
+    for (let r = 0; r < CONFIG.ROWS; r++) {
+      const dps = this.computeRowDps(r);
+      if (dps < minDps) {
+        minDps = dps;
+        bestRows = [r];
+      } else if (dps === minDps) {
+        bestRows.push(r);
+      }
+    }
+    return bestRows.length > 0 ? bestRows[Math.floor(Math.random() * bestRows.length)] : 2;
+  }
+
+  grantYourCutReward(captainZombie) {
+    if (!this.isBloodharborMode) return;
+    const deck = (Array.isArray(this.selectedDeck) && this.selectedDeck.length > 0)
+      ? this.selectedDeck
+      : this.plantKeys.slice(0, 6);
+
+    const exhaustedInDeck = deck.filter(id => this.exhaustedSingleUse && this.exhaustedSingleUse.has(id));
+    let restoredId = null;
+    if (exhaustedInDeck.length > 0) {
+      restoredId = exhaustedInDeck[Math.floor(Math.random() * exhaustedInDeck.length)];
+      this.exhaustedSingleUse.delete(restoredId);
+      this.cooldowns[restoredId] = 0;
+    } else {
+      const coolingInDeck = deck.filter(id => (this.cooldowns[id] || 0) > 0);
+      const pool = coolingInDeck.length > 0 ? coolingInDeck : deck;
+      restoredId = pool[Math.floor(Math.random() * pool.length)];
+      if (restoredId) this.cooldowns[restoredId] = 0;
+    }
+
+    this.maxPlantsOnBoard = Math.min(16, (this.maxPlantsOnBoard || 12) + 1);
+
+    const rx = captainZombie ? captainZombie.x : (CONFIG.GRID_OFFSET_X + CONFIG.CELL_WIDTH * 4);
+    const ry = captainZombie ? captainZombie.y : (CONFIG.GRID_OFFSET_Y + CONFIG.CELL_HEIGHT * 2);
+    this.spawnParticles(rx, ry - 12, '#ffd54f', 14);
+    this.spawnParticles(rx, ry - 12, '#00e5ff', 10);
+    if (this.spawnAttackEffect) {
+      this.spawnAttackEffect({
+        kind: 'your_cut_reward',
+        x: rx,
+        y: ry,
+        row: captainZombie ? captainZombie.row : 2,
+        duration: 0.75
+      });
+    }
+    const plantLabel = (restoredId && PLANT_CONFIG[restoredId]) ? PLANT_CONFIG[restoredId].name : 'Thẻ Cây';
+    if (this.spawnFloatingText) {
+      this.spawnFloatingText(
+        rx,
+        ry - 32,
+        `💰 CHIA PHẦN! +${plantLabel} & Giới hạn ${this.maxPlantsOnBoard}/16`,
+        '#ffd54f',
+        17
+      );
+    }
+    this.updateHUD();
+  }
+
+  enterBloodharborPhase(phase, boss) {
+    if (!this.isBloodharborMode && this.currentLevel !== 20) return;
+    this.bloodharborPhase = phase;
+    if (phase === 2) {
+      if (!Array.isArray(this.floodedCols)) this.floodedCols = [];
+      if (!this.floodedCols.includes(5)) this.floodedCols.push(5);
+
+      // Thu hồi toàn bộ cây trên cột 6 (index 5) về tay và bảo toàn HP
+      let recalledCount = 0;
+      for (const p of (this.plants || [])) {
+        if (!p.alive) continue;
+        const onCol6 = p.col === 5 || (p.pendingReturn && p.pendingReturn.col === 5);
+        if (onCol6) {
+          p.pendingReturn = null;
+          p.shoveled = true;
+          p.alive = false;
+          if (!this.recalledPlantHpMap[p.type]) this.recalledPlantHpMap[p.type] = [];
+          this.recalledPlantHpMap[p.type].push(Math.max(1, Math.round(p.hp)));
+          this.cooldowns[p.type] = 0;
+          recalledCount++;
+          this.spawnParticles(p.x, p.y, '#00e5ff', 10);
+        }
+      }
+      this.triggerScreenShake(9, 0.32);
+      if (this.spawnFloatingText) {
+        const msg = recalledCount > 0
+          ? `🌊 PHASE 2: THỦY TRIỀU DÂNG CỘT 6! Đã thu hồi ${recalledCount} cây về tay!`
+          : '🌊 PHASE 2: THỦY TRIỀU DÂNG! CỘT 6 NGẬP NƯỚC!';
+        this.spawnFloatingText(CONFIG.GRID_OFFSET_X + CONFIG.CELL_WIDTH * 4.5, CONFIG.GRID_OFFSET_Y + 75, msg, '#00e5ff', 18);
+      }
+    } else if (phase === 3) {
+      this.fogCols = [4, 5];
+      this.triggerScreenShake(11, 0.38);
+      if (this.spawnFloatingText) {
+        this.spawnFloatingText(
+          CONFIG.GRID_OFFSET_X + CONFIG.CELL_WIDTH * 4.5,
+          CONFIG.GRID_OFFSET_Y + 75,
+          '🌫️ PHASE 3: HUYẾT CẢNG CUỒNG NỘ! CỘT 1–2 GIẢM 20% TẦM BẮN!',
+          '#ff1744',
+          18
+        );
+      }
+    }
+    this.updateHUD();
+  }
+
+  onBloodharborBossDefeated(boss) {
+    if (this.isSandbox || this.isVictory) return;
+    for (const z of (this.zombies || [])) {
+      if (z === boss) continue;
+      z.skipEggRebirth = true;
+      z.skipChemDrop = true;
+      z.skipWaterRevive = true;
+      z.alive = false;
+      z.deathTimer = 1.0;
+    }
+    this.onLevelVictory();
   }
 
   selectCard(plantType) {
     const proto = PLANT_CONFIG[plantType];
     if (!proto) return;
+    if (this.isBloodharborMode && this.exhaustedSingleUse && this.exhaustedSingleUse.has(plantType)) {
+      if (this.spawnFloatingText) {
+        this.spawnFloatingText(CONFIG.GRID_OFFSET_X + 140, CONFIG.GRID_OFFSET_Y + 80, '💀 HẾT THẺ 1 LẦN! HẠ TRUY NÃ ĐỂ NHẬN LẠI!', '#ff5252', 16);
+      }
+      return;
+    }
     if (!this.isFreePlantSunLevel() && this.sun < proto.cost) return;
     if ((this.cooldowns[plantType] || 0) > 0) return;
 
@@ -2223,7 +2578,27 @@ class Game {
   }
 
   isCellOccupied(row, col) {
-    // 0. Kiểm tra ô có đang bị thiêu rụi bởi cầu lửa / hơi thở lửa của rồng không (không thể trồng trong 10s)
+    // 0a. Bến Cảng Tử Thần (Map 20): Cột 7–9 (index 6–8) là vùng nước đen, Cột 6 bị ngập từ Phase 2
+    if (this.isBloodharborMode) {
+      if (col >= 6) {
+        if (this.spawnFloatingText) {
+          const cx = CONFIG.GRID_OFFSET_X + col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+          const cy = CONFIG.GRID_OFFSET_Y + row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          this.spawnFloatingText(cx, cy, 'VÙNG NƯỚC ĐEN! 🌊', '#00e5ff', 15);
+        }
+        return true;
+      }
+      if (Array.isArray(this.floodedCols) && this.floodedCols.includes(col)) {
+        if (this.spawnFloatingText) {
+          const cx = CONFIG.GRID_OFFSET_X + col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+          const cy = CONFIG.GRID_OFFSET_Y + row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          this.spawnFloatingText(cx, cy, 'CỘT 6 ĐÃ NGẬP NƯỚC! 🌊', '#26c6da', 15);
+        }
+        return true;
+      }
+    }
+
+    // 0b. Kiểm tra ô có đang bị thiêu rụi bởi cầu lửa / hơi thở lửa của rồng không (không thể trồng trong 10s)
     if (this.scorchedTiles && this.scorchedTiles.some(t => t.row === row && t.col === col && t.timer > 0)) {
       if (this.spawnFloatingText) {
         const cx = CONFIG.GRID_OFFSET_X + col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
@@ -2273,20 +2648,53 @@ class Game {
     const proto = PLANT_CONFIG[plantType];
     if (!proto) return false;
 
+    if (this.isBloodharborMode) {
+      if (proto.isSunProducer || plantType === 'sunflower' || plantType === 'sun_shroom') {
+        return false;
+      }
+      if (this.exhaustedSingleUse && this.exhaustedSingleUse.has(plantType)) {
+        if (this.spawnFloatingText) {
+          const cx = CONFIG.GRID_OFFSET_X + col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+          const cy = CONFIG.GRID_OFFSET_Y + row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          this.spawnFloatingText(cx, cy, 'CẦN TRUY NÃ ĐỂ NHẬN LẠI! 💀', '#ff5252', 15);
+        }
+        return false;
+      }
+      const aliveCount = this.plants.filter(p => p.alive).length;
+      const cap = this.maxPlantsOnBoard || 12;
+      if (aliveCount >= cap) {
+        if (this.spawnFloatingText) {
+          const cx = CONFIG.GRID_OFFSET_X + col * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2;
+          const cy = CONFIG.GRID_OFFSET_Y + row * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+          this.spawnFloatingText(cx, cy, `ĐẠT GIỚI HẠN ${cap} CÂY! ⚓`, '#ffd54f', 16);
+        }
+        return false;
+      }
+    }
+
     // Trong chế độ Conveyor hoặc khi isFree = true, trồng cây hoàn toàn miễn phí, không tốn Sun và không tính cooldown
     if (!isFree && this.gameMode !== 'conveyor') {
       const isFreeSun = this.isFreePlantSunLevel();
       if (!isFreeSun && this.sun < proto.cost) return false;
       if ((this.cooldowns[plantType] || 0) > 0) return false;
 
-      // Trừ Sun (Map Boss 12/13 trồng cây không tốn Sun nhưng vẫn tính hồi chiêu)
       if (!isFreeSun) {
         this.sun -= proto.cost;
       }
-      this.cooldowns[plantType] = (this.isSandbox && this.sandboxNoCooldown) ? 0 : proto.cooldown;
+      if (this.isBloodharborMode && this.isSetupPhase) {
+        this.cooldowns[plantType] = 0;
+      } else {
+        this.cooldowns[plantType] = (this.isSandbox && this.sandboxNoCooldown) ? 0 : proto.cooldown;
+      }
     }
 
     const plant = new Plant(plantType, row, col);
+    if (this.isBloodharborMode && this.recalledPlantHpMap && Array.isArray(this.recalledPlantHpMap[plantType]) && this.recalledPlantHpMap[plantType].length > 0) {
+      const preservedHp = this.recalledPlantHpMap[plantType].shift();
+      if (typeof preservedHp === 'number' && preservedHp > 0) {
+        plant.hp = Math.min(plant.maxHp, preservedHp);
+      }
+    }
     this.plants.push(plant);
 
     if (this.audio) {
@@ -2304,10 +2712,23 @@ class Game {
       const p = this.plants[idx];
       p.shoveled = true;
       p.alive = false;
+      if (this.isBloodharborMode) {
+        if (!this.recalledPlantHpMap) this.recalledPlantHpMap = {};
+        if (!Array.isArray(this.recalledPlantHpMap[p.type])) {
+          this.recalledPlantHpMap[p.type] = [];
+        }
+        const savedHp = Math.max(1, Math.round(p.hp));
+        this.recalledPlantHpMap[p.type].push(savedHp);
+        this.cooldowns[p.type] = this.isSetupPhase ? 0 : 2.5;
+        if (this.spawnFloatingText) {
+          this.spawnFloatingText(p.x, p.y - 20, `THU HỒI (${savedHp} HP) ⛏️`, '#26c6da', 15);
+        }
+      }
       if (this.audio) {
         this.audio.playShovel();
       }
       this.spawnParticles(p.x, p.y, '#8d6e63', 6);
+      this.updateHUD();
     }
   }
 
@@ -2437,16 +2858,247 @@ class Game {
     this.gasClouds.push({ x, y, timer: 0, maxDuration: 1.2 });
   }
 
+  triggerScreenShake(intensity = 10, duration = 0.28) {
+    this.screenShake = Math.max(this.screenShake || 0, intensity);
+    this.screenShakeDecay = intensity / Math.max(0.08, duration);
+  }
+
+  updateScreenShake(dt) {
+    if ((this.screenShake || 0) > 0.05) {
+      this.screenShake = Math.max(0, this.screenShake - (this.screenShakeDecay || 36) * dt);
+      this.screenShakeX = (Math.random() - 0.5) * 2 * this.screenShake;
+      this.screenShakeY = (Math.random() - 0.5) * 2 * this.screenShake;
+    } else {
+      this.screenShake = 0;
+      this.screenShakeX = 0;
+      this.screenShakeY = 0;
+    }
+  }
+
   spawnAttackEffect(effect) {
     if (!this.attackEffects) this.attackEffects = [];
     if (this.attackEffects.length > 40) {
       this.attackEffects.shift();
     }
-    this.attackEffects.push({
+    const baseEffect = {
       timer: 0,
       duration: 0.4,
       ...effect
+    };
+    if (baseEffect.kind === 'sett_r_throw') {
+      baseEffect.duration = Math.max(0.62, baseEffect.duration || 0.62);
+      this.startSettUltAnimation(baseEffect);
+    } else if (baseEffect.kind === 'sett_r_slam') {
+      // Trì hoãn vụ nổ chạm đất trùng khít khoảnh khắc Sett giáng xuống ở t = 0.36s
+      baseEffect.timer = -0.36;
+      baseEffect.duration = Math.max(0.56, baseEffect.duration || 0.56);
+    }
+    this.attackEffects.push(baseEffect);
+  }
+
+  startSettUltAnimation(effect) {
+    if (!this.settUltAnimations) this.settUltAnimations = [];
+    const targetY = effect.endY ?? effect.y ?? 0;
+    const row = Math.max(0, Math.min(CONFIG.ROWS - 1, Math.floor((targetY - CONFIG.GRID_OFFSET_Y) / CONFIG.CELL_HEIGHT)));
+    const grabX = effect.startX ?? effect.x ?? 0;
+    const landX = effect.endX ?? effect.x ?? 0;
+
+    // Tìm Sett đang tung chiêu R cùng hàng (hoặc gần điểm nhấc nhất)
+    let caster = null;
+    let bestDist = Infinity;
+    for (const z of (this.zombies || [])) {
+      if (!z.alive || z.type !== 'ionia_sett') continue;
+      if (z.row === row || Math.abs(z.y - targetY) < CONFIG.CELL_HEIGHT * 0.7) {
+        const d = Math.abs(z.x - grabX);
+        if (d < bestDist || ((z.rSlamAnimTimer || 0) > 0.4 && d < 180)) {
+          bestDist = d;
+          caster = z;
+        }
+      }
+    }
+
+    // Tìm cây phòng thủ vừa được chuyển về ô đích để giữ chuyển động bay mượt thay vì dịch chuyển tức thì
+    let thrownPlant = null;
+    let bestPlantDist = 36;
+    for (const p of (this.plants || [])) {
+      if (!p.alive || p.row !== row) continue;
+      const d = Math.abs(p.x - landX);
+      if (d <= bestPlantDist && (!effect.plantType || p.type === effect.plantType || !thrownPlant)) {
+        bestPlantDist = d;
+        thrownPlant = p;
+      }
+    }
+
+    const totalDuration = 0.72;
+    const slamTime = 0.36;
+    const settHomeX = caster ? caster.x : (grabX + 42);
+
+    if (caster) {
+      caster.rSlamAnimTimer = Math.max(caster.rSlamAnimTimer || 0, totalDuration);
+      caster.rAnimActive = true;
+      caster.rAnimPhase = 'windup';
+      caster.rAnimProgress = 0;
+      caster.rJumpOffsetX = 0;
+      caster.rJumpOffsetY = 0;
+      caster.rBodyAngle = 0;
+      caster.rGrabPlantType = effect.plantType || (thrownPlant ? thrownPlant.type : 'wall_nut');
+    }
+
+    if (thrownPlant) {
+      thrownPlant.settThrowOffsetX = grabX - thrownPlant.x;
+      thrownPlant.settThrowLiftY = 0;
+      thrownPlant.settThrowAngle = 0;
+      thrownPlant.settThrowScaleX = 1;
+      thrownPlant.settThrowScaleY = 1;
+    }
+
+    this.settUltAnimations.push({
+      zombie: caster,
+      plant: thrownPlant,
+      settHomeX,
+      grabX,
+      landX,
+      y: targetY,
+      elapsed: 0,
+      duration: totalDuration,
+      slamTime,
+      slamTriggered: false
     });
+  }
+
+  updateSettUltAnimations(dt) {
+    if (!this.settUltAnimations || this.settUltAnimations.length === 0) return;
+    const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+    for (const anim of this.settUltAnimations) {
+      anim.elapsed += dt;
+      const tNorm = Math.min(1, anim.elapsed / anim.duration);
+      const z = anim.zombie;
+      const p = anim.plant;
+      const slamDestSettX = anim.landX + 18;
+
+      if (anim.elapsed < anim.slamTime) {
+        const u = anim.elapsed / anim.slamTime;
+        if (u < 0.18) {
+          // Pha 1a: Gồng mình lao tới ôm cây phòng thủ
+          const w = u / 0.18;
+          if (z && z.alive) {
+            const currX = anim.settHomeX + (anim.grabX + 20 - anim.settHomeX) * w;
+            z.rAnimActive = true;
+            z.rAnimPhase = 'windup';
+            z.rAnimProgress = tNorm;
+            z.rJumpOffsetX = currX - z.x;
+            z.rJumpOffsetY = 6 * Math.sin(w * Math.PI);
+            z.rBodyAngle = -0.22 * w;
+          }
+          if (p && p.alive) {
+            p.settThrowOffsetX = anim.grabX - p.x;
+            p.settThrowLiftY = 14 * w;
+            p.settThrowAngle = -0.15 * w;
+            p.settThrowScaleX = 1 + 0.08 * w;
+            p.settThrowScaleY = 1 - 0.08 * w;
+          }
+        } else {
+          // Pha 1b: Nhấc bổng bay vòng cung cao & lộn người giáng xuống
+          const arcU = (u - 0.18) / 0.82;
+          const eased = easeInOut(arcU);
+          const startSettX = anim.grabX + 20;
+          const currSettX = startSettX + (slamDestSettX - startSettX) * eased;
+          const arcHeight = Math.sin(arcU * Math.PI) * 92 + (1 - arcU) * 14;
+
+          if (z && z.alive) {
+            z.rAnimActive = true;
+            z.rAnimPhase = 'leap';
+            z.rAnimProgress = tNorm;
+            z.rJumpOffsetX = currSettX - z.x;
+            z.rJumpOffsetY = -arcHeight;
+            z.rBodyAngle = -0.22 - arcU * Math.PI * 1.12;
+          }
+          if (p && p.alive) {
+            const currPlantX = anim.grabX + (anim.landX - anim.grabX) * eased;
+            p.settThrowOffsetX = currPlantX - p.x;
+            p.settThrowLiftY = 14 + Math.sin(arcU * Math.PI) * 86;
+            p.settThrowAngle = -0.15 - arcU * Math.PI * 1.35;
+            p.settThrowScaleX = 1;
+            p.settThrowScaleY = 1;
+          }
+          if (Math.random() < 0.45 && this.spawnParticles) {
+            this.spawnParticles(currSettX, anim.y - arcHeight, Math.random() < 0.5 ? '#ffd54f' : '#ff6d00', 1);
+          }
+        }
+      } else {
+        // Khoảnh khắc chạm đất: rung lắc màn hình & bung bụi/tia lửa đấu trường
+        if (!anim.slamTriggered) {
+          anim.slamTriggered = true;
+          this.triggerScreenShake(11, 0.28);
+          if (this.spawnParticles) {
+            this.spawnParticles(anim.landX, anim.y + 8, '#ffd54f', 16);
+            this.spawnParticles(anim.landX, anim.y + 8, '#ff3d00', 12);
+          }
+        }
+
+        const v = Math.min(1, (anim.elapsed - anim.slamTime) / Math.max(0.05, anim.duration - anim.slamTime));
+        if (v < 0.26) {
+          // Pha 2a: Giữ tư thế nện găng cực mạnh xuống mặt sân
+          const hold = v / 0.26;
+          if (z && z.alive) {
+            z.rAnimActive = true;
+            z.rAnimPhase = 'slam';
+            z.rAnimProgress = tNorm;
+            z.rJumpOffsetX = slamDestSettX - z.x;
+            z.rJumpOffsetY = 6 * (1 - hold);
+            z.rBodyAngle = -0.35 * (1 - hold * 0.4);
+          }
+          if (p && p.alive) {
+            p.settThrowOffsetX = 0;
+            p.settThrowLiftY = 0;
+            p.settThrowAngle = 0;
+            const sq = Math.sin(hold * Math.PI);
+            p.settThrowScaleX = 1 + 0.26 * sq;
+            p.settThrowScaleY = 1 - 0.24 * sq;
+          }
+        } else {
+          // Pha 2b: Bật nhảy gọn về vị trí chiến đấu
+          const ret = (v - 0.26) / 0.74;
+          const retEase = easeInOut(ret);
+          if (z && z.alive) {
+            z.rAnimActive = true;
+            z.rAnimPhase = 'recover';
+            z.rAnimProgress = tNorm;
+            z.rJumpOffsetX = (slamDestSettX - z.x) * (1 - retEase);
+            z.rJumpOffsetY = -Math.sin(ret * Math.PI) * 32;
+            z.rBodyAngle = -0.21 * (1 - retEase);
+          }
+          if (p && p.alive) {
+            p.settThrowOffsetX = 0;
+            p.settThrowLiftY = 0;
+            p.settThrowAngle = 0;
+            p.settThrowScaleX = 1;
+            p.settThrowScaleY = 1;
+          }
+        }
+      }
+
+      if (anim.elapsed >= anim.duration) {
+        if (z) {
+          z.rAnimActive = false;
+          z.rAnimPhase = null;
+          z.rAnimProgress = 0;
+          z.rJumpOffsetX = 0;
+          z.rJumpOffsetY = 0;
+          z.rBodyAngle = 0;
+        }
+        if (p) {
+          p.settThrowOffsetX = 0;
+          p.settThrowLiftY = 0;
+          p.settThrowAngle = 0;
+          p.settThrowScaleX = 1;
+          p.settThrowScaleY = 1;
+        }
+      }
+    }
+
+    this.settUltAnimations = this.settUltAnimations.filter(anim => anim.elapsed < anim.duration);
   }
 
   spawnLaserBeam(fromX, fromY, toX, toY, row) {
@@ -2460,6 +3112,10 @@ class Game {
       z.skipWaterRevive = true;
       z.luxDeathProcessed = true;
       z.quanChuaDeathProcessed = true;
+      z.rAnimActive = false;
+      z.rJumpOffsetX = 0;
+      z.rJumpOffsetY = 0;
+      z.rBodyAngle = 0;
       if (z.luxAttackers) z.luxAttackers.clear();
       if (z.type === 'thresh' && typeof z.releaseThreshHook === 'function') {
         z.releaseThreshHook();
@@ -2467,6 +3123,17 @@ class Game {
       z.alive = false;
       z.deathTimer = 1.0;
     }
+    for (const p of (this.plants || [])) {
+      p.settThrowOffsetX = 0;
+      p.settThrowLiftY = 0;
+      p.settThrowAngle = 0;
+      p.settThrowScaleX = 1;
+      p.settThrowScaleY = 1;
+    }
+    this.settUltAnimations = [];
+    this.screenShake = 0;
+    this.screenShakeX = 0;
+    this.screenShakeY = 0;
     this.flyingImps = [];
     this.aniviaIceSpikes = [];
     this.updateHUD();
@@ -2545,8 +3212,8 @@ class Game {
       this.completedLevels.push(this.currentLevel);
     }
 
-    // Mở khóa màn tiếp theo (tối đa cấp 19)
-    if (this.currentLevel < 19) {
+    // Mở khóa màn tiếp theo (tối đa cấp 20)
+    if (this.currentLevel < 20) {
       this.unlockedLevel = Math.max(this.unlockedLevel, this.currentLevel + 1);
     }
 
@@ -2554,7 +3221,9 @@ class Game {
     this.saveProgress();
 
     if (this.dialogTitle) {
-      if (this.currentLevel === 19) {
+      if (this.currentLevel === 20) {
+        this.dialogTitle.textContent = 'VICTORY! HẠ GỤC ZOMBOT ĐỒ TỂ BẾN CẢNG TỬ THẦN!';
+      } else if (this.currentLevel === 19) {
         this.dialogTitle.textContent = 'VICTORY! CHINH PHỤC VÙNG ĐẤT IONIA!';
       } else if (this.currentLevel === 18) {
         this.dialogTitle.textContent = 'VICTORY! PHÁ VỠ SONG KIẾM LINH GIỚI IONIA!';
@@ -2584,8 +3253,10 @@ class Game {
       this.dialogTitle.className = 'win';
     }
     if (this.dialogMessage) {
-      if (this.currentLevel === 19) {
-        this.dialogMessage.textContent = 'ĐỆ NHẤT TÔNG SƯ IONIA! Bạn đã đánh bại song Mini-Boss Sett, hóa giải Dấu Ấn Zed & Xuất Hồn Yone và chinh phục hoàn toàn Vùng Đất Ionia!';
+      if (this.currentLevel === 20) {
+        this.dialogMessage.textContent = 'CHÚA TỂ BẾN CẢNG TỬ THẦN! Bạn đã đọc vị hoàn hảo Q/E/R của Zombot Đồ Tể Pyke (15.000 HP), đảo đội hình bằng Xẻng và săn Thuyền Trưởng Truy Nã để chiến thắng Màn 20!';
+      } else if (this.currentLevel === 19) {
+        this.dialogMessage.textContent = 'ĐỆ NHẤT TÔNG SƯ IONIA! Bạn đã đánh bại song Mini-Boss Sett, hóa giải Dấu Ấn Zed & Xuất Hồn Yone! Màn Trùm Cấp 20: Bến Cảng Tử Thần đã sẵn sàng!';
       } else if (this.currentLevel === 18) {
         this.dialogMessage.textContent = 'TUYỆT ĐỈNH PHÒNG THỦ! Bạn đã ngăn cản Yone Xuất Hồn - Đoạt Mệnh và hạ gục Sett mở đường tới trận cuối Cấp 19!';
       } else if (this.currentLevel === 17) {
@@ -2605,7 +3276,7 @@ class Game {
       } else if (this.currentLevel === 10) {
         this.dialogMessage.textContent = 'HUYỀN THOẠI BÁ KHÍ! Bạn đã vượt qua Đêm Tận Thế Hắc Ám ở Cấp 10! Hãy thử sức ngay với Map Special Vương Quốc Long Tộc!';
       } else if (this.currentLevel === 6) {
-        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–19 đã sẵn sàng!';
+        this.dialogMessage.textContent = 'CHIẾN CÔNG VĨ ĐẠI! Bạn đã đánh bại Zombot Dark Dragon 27.000 HP! Các màn thử thách Cấp 7–20 đã sẵn sàng!';
       } else if (this.currentLevel === 5) {
         this.dialogMessage.textContent = 'Xuất sắc! Bạn đã đánh bại BOSS Gargantuar! Hãy chuẩn bị tiến vào CẤP 6 đối đầu Zombot Dark Dragon!';
       } else {
@@ -2614,7 +3285,7 @@ class Game {
     }
     if (this.dialogNextBtn) {
       this.dialogNextBtn.classList.remove('hidden');
-      this.dialogNextBtn.textContent = this.currentLevel < 19 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
+      this.dialogNextBtn.textContent = this.currentLevel < 20 ? `Chơi Level ${this.currentLevel + 1} →` : 'Xem Bản Đồ 🗺️';
     }
     if (this.dialogOverlay) this.dialogOverlay.classList.remove('hidden');
   }
@@ -2694,7 +3365,9 @@ class Game {
           this._lastCdActive[key] = isCooling;
           this._lastCdDeg[key] = revealedDeg;
         }
-        const canAfford = (isFreeSun || this.sun >= proto.cost) && (cdRemaining <= 0);
+        const isExhausted = this.isBloodharborMode && this.exhaustedSingleUse && this.exhaustedSingleUse.has(key);
+        cardEl.classList.toggle('exhausted-single-use', !!isExhausted);
+        const canAfford = !isExhausted && (isFreeSun || this.sun >= proto.cost) && (cdRemaining <= 0);
         const isDisabled = !canAfford;
         if (this._lastCardDisabled[key] !== isDisabled) {
           this._lastCardDisabled[key] = isDisabled;
@@ -2703,30 +3376,58 @@ class Game {
       }
     }
 
+    // 3.5. Cập nhật HUD Bến Cảng Tử Thần (Map 20)
+    if (this.bhControlsEl) {
+      this.bhControlsEl.classList.toggle('hidden', !this.isBloodharborMode);
+    }
+    if (this.isBloodharborMode) {
+      const aliveCount = this.plants ? this.plants.filter(p => p.alive).length : 0;
+      const cap = this.maxPlantsOnBoard || 12;
+      if (this.bhPlantCapEl) {
+        this.bhPlantCapEl.textContent = `🌱 ${aliveCount}/${cap}`;
+      }
+      if (this.bhCutBadgeEl) {
+        this.bhCutBadgeEl.textContent = this.isSetupPhase
+          ? `⚓ DÀN TRẬN`
+          : `💀 ${Math.max(0, Math.ceil(this.yourCutTimer || 0))}s`;
+      }
+      if (this.bhBlowHornBtn) {
+        this.bhBlowHornBtn.classList.toggle('hidden', !this.isSetupPhase);
+      }
+    }
+
     // 4. Thanh tiến trình / Thanh máu Boss
-    const isBossLevel = (this.currentLevel === 6 || this.currentLevel === 12 || this.currentLevel === 13);
-    const activeBossType = this.currentLevel === 13
-      ? 'azir_desert_emperor'
-      : (this.currentLevel === 12 ? 'ancient_dragon_boss' : 'zombot_dark_dragon');
+    const isBossLevel = (this.currentLevel === 6 || this.currentLevel === 12 || this.currentLevel === 13 || this.currentLevel === 20);
+    const activeBossType = this.currentLevel === 20
+      ? 'zombot_pyke'
+      : (this.currentLevel === 13
+          ? 'azir_desert_emperor'
+          : (this.currentLevel === 12 ? 'ancient_dragon_boss' : 'zombot_dark_dragon'));
     if (this._lastHudMode !== isBossLevel || this._lastBossLevelType !== activeBossType) {
       this._lastHudMode = isBossLevel;
       this._lastBossLevelType = activeBossType;
       if (isBossLevel) {
         if (this.waveMeterEl) {
           this.waveMeterEl.classList.add('boss-hp-bar-mode');
-          this.waveMeterEl.title = this.currentLevel === 13
-            ? 'Thanh Máu Boss Azir Hoàng Đế Sa Mạc'
-            : (this.currentLevel === 12 ? 'Thanh Máu Boss Rồng Ngàn Tuổi' : 'Thanh Máu Trùm Zombot Dark Dragon');
+          this.waveMeterEl.title = this.currentLevel === 20
+            ? 'Thanh Máu Boss Zombot Đồ Tể Pyke'
+            : (this.currentLevel === 13
+                ? 'Thanh Máu Boss Azir Hoàng Đế Sa Mạc'
+                : (this.currentLevel === 12 ? 'Thanh Máu Boss Rồng Ngàn Tuổi' : 'Thanh Máu Trùm Zombot Dark Dragon'));
         }
         if (this.flagIconEl) {
-          this.flagIconEl.innerHTML = activeBossType === 'azir_desert_emperor'
-            ? '<span class="boss-flag-dragon">🦅</span>'
-            : '<span class="boss-flag-dragon">🐲</span>';
+          this.flagIconEl.innerHTML = activeBossType === 'zombot_pyke'
+            ? '<span class="boss-flag-dragon">🏴‍☠️</span>'
+            : (activeBossType === 'azir_desert_emperor'
+                ? '<span class="boss-flag-dragon">🦅</span>'
+                : '<span class="boss-flag-dragon">🐲</span>');
         }
         if (this.zombieHeadBadgeEl) {
-          this.zombieHeadBadgeEl.innerHTML = activeBossType === 'azir_desert_emperor'
-            ? '<span style="font-size: 15px; line-height: 1;">☀️</span>'
-            : '<span style="font-size: 15px; line-height: 1;">🔥</span>';
+          this.zombieHeadBadgeEl.innerHTML = activeBossType === 'zombot_pyke'
+            ? '<span style="font-size: 15px; line-height: 1;">⚓</span>'
+            : (activeBossType === 'azir_desert_emperor'
+                ? '<span style="font-size: 15px; line-height: 1;">☀️</span>'
+                : '<span style="font-size: 15px; line-height: 1;">🔥</span>');
         }
       } else {
         if (this.waveMeterEl) {
@@ -2744,9 +3445,13 @@ class Game {
 
     if (isBossLevel) {
       const boss = this.zombies.find(z => z.alive && z.type === activeBossType);
-      const defaultMaxHp = activeBossType === 'azir_desert_emperor' ? 20000 : (activeBossType === 'ancient_dragon_boss' ? 10000 : 27000);
+      const defaultMaxHp = activeBossType === 'zombot_pyke'
+        ? 15000
+        : (activeBossType === 'azir_desert_emperor' ? 20000 : (activeBossType === 'ancient_dragon_boss' ? 10000 : 27000));
       const maxHp = boss ? boss.maxHp : (CONFIG.ZOMBIES && CONFIG.ZOMBIES[activeBossType] ? CONFIG.ZOMBIES[activeBossType].hp : defaultMaxHp);
-      const hasBossSpawnedYet = !this.waveManager || this.waveManager.state !== 'initial_delay';
+      const hasBossSpawnedYet = activeBossType === 'zombot_pyke'
+        ? !this.isSetupPhase
+        : (!this.waveManager || this.waveManager.state !== 'initial_delay');
       const currentHp = boss ? Math.max(0, boss.hp) : ((this.isVictory || hasBossSpawnedYet) ? 0 : maxHp);
       const ratio = Math.max(0, Math.min(1.0, currentHp / maxHp));
       const percentStr = `${(ratio * 100).toFixed(1)}%`;
@@ -2761,14 +3466,19 @@ class Game {
         this.zombieHeadBadgeEl.style.right = rightStr;
       }
       if (this.bossHpLabelEl) {
-        const bossTitle = activeBossType === 'azir_desert_emperor'
-          ? 'HOÀNG ĐẾ AZIR'
-          : (activeBossType === 'ancient_dragon_boss' ? 'RỒNG NGÀN TUỔI' : 'RỒNG');
-        const bossIcon = activeBossType === 'azir_desert_emperor' ? '☀️' : '🐲';
+        const bossTitle = activeBossType === 'zombot_pyke'
+          ? 'ZOMBOT ĐỒ TỂ'
+          : (activeBossType === 'azir_desert_emperor'
+              ? 'HOÀNG ĐẾ AZIR'
+              : (activeBossType === 'ancient_dragon_boss' ? 'RỒNG NGÀN TUỔI' : 'RỒNG'));
+        const bossIcon = activeBossType === 'zombot_pyke' ? '🏴‍☠️' : (activeBossType === 'azir_desert_emperor' ? '☀️' : '🐲');
         const shieldTxt = (boss && boss.bossAllShieldHp > 0) ? ` (+${Math.ceil(boss.bossAllShieldHp).toLocaleString()} 🛡️)` : '';
+        const statusTxt = (boss && boss.type === 'zombot_pyke' && boss.pykeStuckTimer > 0)
+          ? (boss.pykeVulnerableTimer > 0 ? ' [KẸT ×2 DMG!]' : ' [KẸT!]')
+          : '';
         const text = (currentHp <= 0 || this.isVictory)
           ? `${bossIcon} ${bossTitle} ĐÃ BỊ HẠ GỤC! (0 / ${maxHp.toLocaleString()} HP)`
-          : `${bossIcon} ${bossTitle}: ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP${shieldTxt}`;
+          : `${bossIcon} ${bossTitle}: ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP${shieldTxt}${statusTxt}`;
         if (this._lastBossHpText !== text) {
           this._lastBossHpText = text;
           this.bossHpLabelEl.textContent = text;
@@ -3004,7 +3714,17 @@ class Game {
                         ? '70 DMG / 0.5s · Luân Phiên 12% HP · E Xuất Hồn · R Lướt 3 Ô (120 DMG)'
                         : key === 'ionia_sett'
                           ? '2×300 DMG / 2s · W Giáp 500 + Sóng 550/200 · R Ném Lùi 2 Ô + 250 Lan 3×3'
-                          : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
+                          : key === 'drowned_sailor'
+                            ? '50 DMG / 0.5s (100 DPS)'
+                            : key === 'anchor_bearer'
+                              ? '75 DMG / 0.7s · Đòn 3 đẩy lùi cây 1 ô'
+                              : key === 'swimming_ghost'
+                                ? '50 DMG / 0.5s · Lặn cột 9 → Trồi cột 5'
+                                : key === 'wanted_captain'
+                                  ? '65 DMG / 0.5s · Đi hàng DPS thấp nhất'
+                                  : key === 'zombot_pyke'
+                                    ? 'Q Kéo +2 ô · E Trói 4s · R 1800 DMG (+10% HP / Kẹt 3-4s ×2)'
+                                    : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
     if (this.almanacStatsEl) {
       this.almanacStatsEl.innerHTML = `
         <div class="almanac-stat-chip" style="grid-column: span 2;"><span class="stat-label">SỨC CHỊU ĐỰNG & GIÁP:</span><span class="stat-val">${z.hpText}</span></div>

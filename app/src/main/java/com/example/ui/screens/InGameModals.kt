@@ -222,7 +222,8 @@ fun MatchResultModal(
         Text(
           text = if (result.victory) {
             when {
-              result.level >= 19 -> "HUYỀN THOẠI VÙNG ĐẤT IONIA! Bạn đã đánh bại Zed, Yone và Đại Ca Sett, chinh phục hoàn toàn Đấu Trường Ionia Cấp 19!"
+              result.level >= 20 -> "CHỦ BẾN CẢNG TỬ THẦN! Bạn đã hạ gục Zombot Đồ Tể (Pyke) ở Cấp 20 và làm chủ hoàn toàn Bloodharbor Pier!"
+              result.level == 19 -> "HUYỀN THOẠI VÙNG ĐẤT IONIA! Bạn đã đánh bại Zed, Yone và Đại Ca Sett! Màn Đấu Trùm Cấp 20: Bến Cảng Tử Thần (Zombot Pyke) đã mở!"
               result.level == 18 -> "XUẤT SẮC! Bạn đã phá vỡ Linh Giới của Yone (Cấp 18)! Trận quyết chiến Đại Ca Đấu Trường Sett (Cấp 19) đang chờ đón!"
               result.level == 17 -> "CHIẾN THẮNG ĐỀN ANH ĐÀO! Bạn đã sống sót trước Dấu Ấn Tử Thần của Zed (Cấp 17)! Tiến vào Linh Giới Yone ở Cấp 18!"
               result.level == 16 -> "BÁ CHỦ CHIẾN TRƯỜNG NOSUS! Bạn đã hạ gục song Đại Tướng Darius và mở ra Vùng Đất Ionia (Cấp 17–19)!"
@@ -232,7 +233,7 @@ fun MatchResultModal(
               result.level == 12 -> "ĐỈNH CAO HUYỀN THOẠI! Bạn đã tiêu diệt Boss Rồng Ngàn Tuổi (Cấp 12)! Đấu Trường Sa Mạc Cấp 13: Boss Azir đang chờ đón!"
               result.level == 11 -> "Xuất sắc! Bạn đã chinh phục Vương Quốc Long Tộc (Cấp 11)! Thử thách tối thượng Boss Rồng Ngàn Tuổi (Cấp 12) đang chờ đón!"
               result.level == 10 -> "Xuất sắc! Bạn đã chinh phục Đêm Tận Thế Hắc Ám (Cấp 10)! Map Special Vương Quốc Long Tộc (Cấp 11) đang chờ đón!"
-              result.level == 6 -> "Chúc mừng! Bạn đã đánh bại Zombot Dark Dragon! Các màn thử thách Cấp 7–19 đang chờ đón!"
+              result.level == 6 -> "Chúc mừng! Bạn đã đánh bại Zombot Dark Dragon! Các màn thử thách Cấp 7–20 đang chờ đón!"
               else -> "Tuyệt vời! Bạn đã đẩy lùi toàn bộ đợt tấn công ở Cấp ${result.level}."
             }
           } else {
@@ -243,7 +244,7 @@ fun MatchResultModal(
           textAlign = TextAlign.Center
         )
 
-        if (result.victory && result.level < 19) {
+        if (result.victory && result.level < 20) {
           GothicActionButton(
             onClick = onNextLevel,
             modifier = Modifier.fillMaxWidth().testTag("result_next_level_btn"),
@@ -254,6 +255,7 @@ fun MatchResultModal(
             Spacer(Modifier.width(6.dp))
             Text(
               when (result.level + 1) {
+                20 -> "Tiến Vào Bến Cảng Tử Thần (Boss Cấp 20)"
                 19 -> "Quyết Chiến Đại Ca Sett Ionia"
                 18 -> "Thách Đấu Song Kiếm Yone"
                 17 -> "Vào Thế Giới Mới: Vùng Đất Ionia"

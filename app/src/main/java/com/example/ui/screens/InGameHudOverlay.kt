@@ -37,6 +37,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.DirectionsBoat
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Settings
@@ -69,6 +71,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -81,6 +84,9 @@ import com.example.ui.components.HudIconChip
 import com.example.ui.components.PlantIconView
 import com.example.ui.theme.AmberDeep
 import com.example.ui.theme.AmberGold
+import com.example.ui.theme.BloodharborCardTop
+import com.example.ui.theme.BloodharborCrimson
+import com.example.ui.theme.BloodharborJadeCyan
 import com.example.ui.theme.BorderMauve
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.CrimsonDark
@@ -109,6 +115,7 @@ fun InGameHudOverlay(
   onOpenSettings: () -> Unit,
   onToggleSandboxDrawer: () -> Unit,
   onCloseSandboxDrawer: () -> Unit,
+  onStartBloodharborHorn: () -> Unit,
   onRestartBattle: () -> Unit,
   onOpenWorldMap: () -> Unit,
   onReturnToMenu: () -> Unit,
@@ -189,6 +196,7 @@ fun InGameHudOverlay(
         onOpenAlmanac = onOpenAlmanac,
         onOpenSettings = onOpenSettings,
         onTogglePause = onTogglePause,
+        onStartBloodharborHorn = onStartBloodharborHorn,
         modifier = Modifier
           .align(Alignment.TopCenter)
           .fillMaxWidth()
@@ -275,7 +283,11 @@ private fun VerticalSeedRail(
     hud.selectedDeck.mapNotNull { PvzCatalog.plantById[it] }
   }
 
-  val isFreeSun = hud.isFreePlantSun || (!hud.isSandbox && (hud.currentLevel == 12 || hud.currentLevel == 13))
+  val isBloodharbor = hud.isBloodharborMode
+  val isFreeSun = isBloodharbor || hud.isFreePlantSun || (!hud.isSandbox && (hud.currentLevel == 12 || hud.currentLevel == 13))
+  val singleUseIds = remember {
+    setOf("squash", "cherry_bomb", "potato_mine", "stunion", "blover", "hypno_shroom")
+  }
 
   Surface(
     modifier = modifier
@@ -283,7 +295,7 @@ private fun VerticalSeedRail(
       .fillMaxHeight(),
     shape = RoundedCornerShape(14.dp),
     color = PlumSurface.copy(alpha = 0.88f),
-    border = BorderStroke(1.3.dp, BorderMauve),
+    border = BorderStroke(1.3.dp, if (isBloodharbor) BloodharborJadeCyan.copy(alpha = 0.7f) else BorderMauve),
     shadowElevation = 8.dp
   ) {
     Column(
@@ -293,33 +305,62 @@ private fun VerticalSeedRail(
       verticalArrangement = Arrangement.spacedBy(5.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      // Sun / Soul Counter Pill
-      Surface(
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("hud_sun_counter"),
-        shape = RoundedCornerShape(9.dp),
-        color = if (isFreeSun) ToxicForest.copy(alpha = 0.9f) else AmberDeep.copy(alpha = 0.9f),
-        border = BorderStroke(1.dp, if (isFreeSun) ToxicLime else AmberGold)
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.Center
+      // Sun / Soul Counter Pill — replaced by Board Cap counter in Level 20 Bloodharbor (No Sun)
+      if (isBloodharbor) {
+        Surface(
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("hud_bloodharbor_cap"),
+          shape = RoundedCornerShape(9.dp),
+          color = BloodharborCardTop.copy(alpha = 0.95f),
+          border = BorderStroke(1.2.dp, if (hud.plantCountOnBoard >= hud.maxPlantsOnBoard) AmberGold else BloodharborJadeCyan)
         ) {
-          Icon(
-            imageVector = Icons.Filled.WbSunny,
-            contentDescription = "Mặt Trời",
-            tint = if (isFreeSun) ToxicLime else AmberGold,
-            modifier = Modifier.size(15.dp)
-          )
-          Spacer(Modifier.width(3.dp))
-          Text(
-            text = if (isFreeSun) "0 SUN" else "${hud.sun}",
-            style = PvZTheme.gothicTypography.hudCounter,
-            color = if (isFreeSun) ToxicLime else TextPrimary,
-            maxLines = 1
-          )
+          Column(
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+          ) {
+            Text(
+              text = "⚓ ${hud.plantCountOnBoard}/${hud.maxPlantsOnBoard}",
+              style = PvZTheme.gothicTypography.hudCounter,
+              color = if (hud.plantCountOnBoard >= hud.maxPlantsOnBoard) AmberGold else BloodharborJadeCyan,
+              maxLines = 1
+            )
+            Text(
+              text = if (hud.isSetupPhase) "DÀN TRẬN" else "TỐI ĐA CÂY",
+              style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+              color = TextSecondary,
+              maxLines = 1
+            )
+          }
+        }
+      } else {
+        Surface(
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("hud_sun_counter"),
+          shape = RoundedCornerShape(9.dp),
+          color = if (isFreeSun) ToxicForest.copy(alpha = 0.9f) else AmberDeep.copy(alpha = 0.9f),
+          border = BorderStroke(1.dp, if (isFreeSun) ToxicLime else AmberGold)
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+          ) {
+            Icon(
+              imageVector = Icons.Filled.WbSunny,
+              contentDescription = "Mặt Trời",
+              tint = if (isFreeSun) ToxicLime else AmberGold,
+              modifier = Modifier.size(15.dp)
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+              text = if (isFreeSun) "0 SUN" else "${hud.sun}",
+              style = PvZTheme.gothicTypography.hudCounter,
+              color = if (isFreeSun) ToxicLime else TextPrimary,
+              maxLines = 1
+            )
+          }
         }
       }
 
@@ -333,14 +374,34 @@ private fun VerticalSeedRail(
       ) {
         items(cardItems, key = { it.id }) { plant ->
           val cdFraction = (hud.cooldowns[plant.id] ?: 0f).coerceIn(0f, 1f)
-          val canAfford = isFreeSun || hud.sun >= plant.cost
+          val isSingleUse = plant.id in singleUseIds
+          val isExhausted = isBloodharbor && hud.exhaustedSingleUse.contains(plant.id)
+          val preservedHp = if (isBloodharbor) hud.recalledPlantHps[plant.id] else null
+          val canAfford = !isExhausted && (isFreeSun || hud.sun >= plant.cost)
           val isSelected = hud.selectedPlantType == plant.id
           val isReady = cdFraction <= 0.001f && canAfford
 
           val borderColor = when {
+            isExhausted -> BloodharborCrimson
             isSelected -> ToxicLime
-            isReady -> BorderMauve
+            preservedHp != null && preservedHp > 0 -> AmberGold
+            isReady -> if (isBloodharbor) BloodharborJadeCyan.copy(alpha = 0.7f) else BorderMauve
             else -> BorderSubtle
+          }
+
+          val badgeText = when {
+            isExhausted -> "HẾT"
+            preservedHp != null && preservedHp > 0 -> "♥$preservedHp"
+            isBloodharbor && isSingleUse -> "1 LẦN"
+            isFreeSun -> "0"
+            else -> "${plant.cost}"
+          }
+          val badgeColor = when {
+            isExhausted -> BloodharborCrimson
+            preservedHp != null && preservedHp > 0 -> AmberGold
+            isBloodharbor && isSingleUse -> BloodharborJadeCyan
+            isFreeSun -> ToxicLime
+            else -> AmberGold
           }
 
           Box(
@@ -351,7 +412,7 @@ private fun VerticalSeedRail(
               .background(if (isSelected) ToxicForest.copy(alpha = 0.65f) else PlumSurfaceCard)
               .border(if (isSelected) 2.dp else 1.dp, borderColor, RoundedCornerShape(9.dp))
               .alpha(if (canAfford) 1f else 0.48f)
-              .clickable { onSelectCard(plant.id) }
+              .clickable(enabled = !isExhausted) { onSelectCard(plant.id) }
               .testTag("hud_card_${plant.id}")
           ) {
             Row(
@@ -367,9 +428,10 @@ private fun VerticalSeedRail(
                 verticalArrangement = Arrangement.Center
               ) {
                 Text(
-                  text = if (isFreeSun) "0" else "${plant.cost}",
+                  text = badgeText,
                   style = PvZTheme.gothicTypography.cardCost,
-                  color = if (isFreeSun) ToxicLime else AmberGold
+                  color = badgeColor,
+                  maxLines = 1
                 )
                 Text(
                   text = plant.shortName,
@@ -387,6 +449,31 @@ private fun VerticalSeedRail(
               cdFraction = cdFraction,
               modifier = Modifier.fillMaxSize()
             )
+
+            // Exhausted single-use lock overlay (Level 20 Bloodharbor — restored by Your Cut)
+            if (isExhausted) {
+              Box(
+                modifier = Modifier
+                  .fillMaxSize()
+                  .background(ObsidianBg.copy(alpha = 0.78f)),
+                contentAlignment = Alignment.Center
+              ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                  Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Cần hạ Zombie Truy Nã để nhận lại",
+                    tint = BloodharborCrimson,
+                    modifier = Modifier.size(14.dp)
+                  )
+                  Text(
+                    text = "TRUY NÃ",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                    fontWeight = FontWeight.ExtraBold,
+                    color = BloodharborCrimson
+                  )
+                }
+              }
+            }
           }
         }
       }
@@ -466,6 +553,7 @@ private fun TopGutterBar(
   onOpenAlmanac: () -> Unit,
   onOpenSettings: () -> Unit,
   onTogglePause: () -> Unit,
+  onStartBloodharborHorn: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   Row(
@@ -514,6 +602,12 @@ private fun TopGutterBar(
               Column {
                 Text(
                   text = when (hud.currentLevel) {
+                    20 -> buildString {
+                      append("ZOMBOT ĐỒ TỂ P${hud.bloodharborPhase}: ${hud.bossHp}/${hud.bossMaxHp}")
+                      if (hud.pykeStuckTimer > 0f || hud.pykeVulnerableTimer > 0f) {
+                        append(" 💥KẸT ×2")
+                      }
+                    }
                     13 -> "AZIR SA MẠC: ${hud.bossHp} / ${hud.bossMaxHp}"
                     12 -> "RỒNG NGÀN TUỔI: ${hud.bossHp} / ${hud.bossMaxHp}"
                     else -> if (compactBossBar) {
@@ -558,6 +652,59 @@ private fun TopGutterBar(
                 trackColor = ObsidianBg
               )
             }
+          }
+        }
+      }
+
+      if (hud.isBloodharborMode) {
+        if (hud.isSetupPhase) {
+          Surface(
+            modifier = Modifier
+              .minimumInteractiveComponentSize()
+              .clip(RoundedCornerShape(10.dp))
+              .clickable(onClick = onStartBloodharborHorn)
+              .testTag("btn_blow_bloodharbor_horn"),
+            shape = RoundedCornerShape(10.dp),
+            color = BloodharborCardTop,
+            border = BorderStroke(1.5.dp, BloodharborJadeCyan),
+            shadowElevation = 6.dp
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+              Icon(
+                imageVector = Icons.Filled.DirectionsBoat,
+                contentDescription = "Kéo Còi Tàu bắt đầu chiến đấu",
+                tint = BloodharborJadeCyan,
+                modifier = Modifier.size(16.dp)
+              )
+              Text(
+                text = "KÉO CÒI TÀU",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = BloodharborJadeCyan,
+                maxLines = 1
+              )
+            }
+          }
+        } else {
+          val cutSec = ceil(hud.yourCutTimer.toDouble()).toInt().coerceAtLeast(0)
+          Surface(
+            modifier = Modifier.testTag("hud_bloodharbor_your_cut"),
+            shape = RoundedCornerShape(10.dp),
+            color = BloodharborCardTop.copy(alpha = 0.92f),
+            border = BorderStroke(1.2.dp, BloodharborCrimson.copy(alpha = 0.85f))
+          ) {
+            Text(
+              text = "💀 Truy Nã: ${cutSec}s",
+              style = MaterialTheme.typography.labelSmall,
+              fontWeight = FontWeight.Bold,
+              color = AmberGold,
+              maxLines = 1,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+            )
           }
         }
       }

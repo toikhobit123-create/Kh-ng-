@@ -317,7 +317,12 @@ fun SandboxDrawer(
                 "nosus_warlord" to "DR",
                 "ionia_zed" to "ZD",
                 "ionia_yone" to "YN",
-                "ionia_sett" to "ST"
+                "ionia_sett" to "ST",
+                "drowned_sailor" to "DS",
+                "anchor_bearer" to "AB",
+                "swimming_ghost" to "SG",
+                "wanted_captain" to "WC",
+                "zombot_pyke" to "PK"
               )
             }
 

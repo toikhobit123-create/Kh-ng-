@@ -24,7 +24,7 @@ class CollisionSystem {
 
       const lawnRight = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
       for (const z of zombies) {
-        if (!z.alive || z.isHypnotized || z.x > lawnRight) continue;
+        if (!z.alive || z.isHypnotized || z.isSubmerged || z.x > lawnRight) continue;
         if (z.row !== p.row) continue;
 
         if (p.x >= z.x - 25 && p.x <= z.x + 30) {
@@ -236,8 +236,8 @@ class WaveManager {
   }
 
   update(dt, gameState) {
-    // 0. Chế độ Sandbox: Hoàn toàn KHÔNG tự động sinh zombie
-    if (gameState && gameState.isSandbox) {
+    // 0. Chế độ Sandbox hoặc Giai đoạn Dàn Trận Bloodharbor: KHÔNG chạy timer / sinh zombie
+    if (gameState && (gameState.isSandbox || gameState.isSetupPhase)) {
       return;
     }
 
@@ -335,7 +335,9 @@ class WaveManager {
       const flyingImps = gameState.flyingImps ? gameState.flyingImps.length : 0;
       const pendingWaves = gameState.pendingSandstormWaves ? gameState.pendingSandstormWaves.length : 0;
 
-      if (activeEnemies === 0 && flyingImps === 0 && pendingWaves === 0) {
+      const pykeAlive = this.level === 20 && gameState.zombies.some(z => z.alive && z.type === 'zombot_pyke');
+
+      if (activeEnemies === 0 && flyingImps === 0 && pendingWaves === 0 && !pykeAlive) {
         if (this.currentWave >= this.totalWaves) {
           this.state = 'all_cleared';
           gameState.onLevelVictory();
@@ -364,6 +366,16 @@ class WaveManager {
   getStatusText(gameState) {
     if (gameState && gameState.isSandbox) return null;
 
+    if (gameState && gameState.isSetupPhase) {
+      const cap = gameState.maxPlantsOnBoard || 12;
+      const count = gameState.plants ? gameState.plants.length : 0;
+      return {
+        title: `⚓ DÀN TRẬN BẾN CẢNG (${count}/${cap})`,
+        sub: 'Đặt tối đa 12 cây (cột 1-6) rồi bấm Kéo Còi Tàu!',
+        color: '#26c6da'
+      };
+    }
+
     if (this.state === 'initial_delay') {
       return {
         title: '⏳ CHUẨN BỊ CHIẾN ĐẤU',
@@ -382,11 +394,16 @@ class WaveManager {
       const remaining = gameState ? gameState.zombies.filter(z => z.alive && !z.isObstacle && !z.isHypnotized && z.type !== 'yone_body').length : 0;
       const bossAlive = gameState && this.level === 12 && gameState.zombies.some(z => z.alive && z.type === 'ancient_dragon_boss');
       const azirAlive = gameState && this.level === 13 && gameState.zombies.some(z => z.alive && z.type === 'azir_desert_emperor');
+      const pykeAlive = gameState && this.level === 20 && gameState.zombies.some(z => z.alive && z.type === 'zombot_pyke');
       const pendingStorm = (gameState && gameState.pendingSandstormWaves && gameState.pendingSandstormWaves.length > 0)
         ? gameState.pendingSandstormWaves[0]
         : null;
       return {
-        title: this.level === 13
+        title: this.level === 20
+          ? (pykeAlive
+              ? `⚓ ZOMBOT ĐỒ TỂ · PHASE ${gameState.bloodharborPhase || 1} (${remaining})`
+              : `⚔️ HẠ GỤC TÀN QUÂN BẾN CẢNG (${remaining})`)
+          : this.level === 13
           ? (azirAlive
               ? `☀️ HẠ HOÀNG ĐẾ AZIR & QUÂN SA MẠC (${remaining})`
               : (pendingStorm
@@ -395,13 +412,24 @@ class WaveManager {
           : this.level === 12
           ? (bossAlive ? `🐉 HẠ BOSS RỒNG NGÀN TUỔI & HẾT QUÂN (${remaining})` : `⚔️ DIỆT SẠCH ZOMBIE & RỒNG CÒN LẠI (${remaining})`)
           : `⚔️ TIÊU DIỆT HẾT ZOMBIE CÒN LẠI (${remaining})`,
-        sub: this.level === 13
+        sub: this.level === 20
+          ? 'Đọc chiêu Q/E/R, dùng Xẻng đảo đội hình và săn Thuyền Trưởng Truy Nã!'
+          : this.level === 13
           ? 'Phải hạ Azir, Thần Cá Sấu - Khuyển và toàn bộ Wave Bão Cát mới thắng!'
           : (this.level === 12 ? 'Phải diệt Boss và toàn bộ Zombie/Rồng mới thắng!' : 'Phải diệt sạch 100% để qua Wave!'),
-        color: this.level === 13 ? '#ffb300' : '#ff7043'
+        color: this.level === 20 ? '#ff5252' : (this.level === 13 ? '#ffb300' : '#ff7043')
       };
     }
     if (this.state === 'spawning' && (this.isFinalWave || this.currentWave === 5)) {
+      if (this.level === 20) {
+        const phase = (gameState && gameState.bloodharborPhase) || 1;
+        const cutTimer = (gameState && typeof gameState.yourCutTimer === 'number') ? Math.ceil(gameState.yourCutTimer) : 25;
+        return {
+          title: `⚓ PHASE ${phase}: ${phase === 1 ? 'THĂM DÒ' : phase === 2 ? 'THỦY TRIỀU DÂNG' : 'HUYẾT CẢNG CUỒNG NỘ'}`,
+          sub: `💀 Truy Nã tiếp theo: ${cutTimer}s · Hạ Zombot Đồ Tể để thắng!`,
+          color: phase === 3 ? '#ff1744' : (phase === 2 ? '#00e5ff' : '#ffb300')
+        };
+      }
       return {
         title: `🚨 ĐỢT TẤN CÔNG CUỐI CÙNG (${this.waveName.toUpperCase()})!`,
         sub: 'Toàn bộ Zombie đang ồ ạt tràn vào!',
@@ -900,6 +928,11 @@ class InputHandler {
     bindSpawn('sb-spawn-ionia-zed', 'ionia_zed');
     bindSpawn('sb-spawn-ionia-yone', 'ionia_yone');
     bindSpawn('sb-spawn-ionia-sett', 'ionia_sett');
+    bindSpawn('sb-spawn-drowned-sailor', 'drowned_sailor');
+    bindSpawn('sb-spawn-anchor-bearer', 'anchor_bearer');
+    bindSpawn('sb-spawn-swimming-ghost', 'swimming_ghost');
+    bindSpawn('sb-spawn-wanted-captain', 'wanted_captain');
+    bindSpawn('sb-spawn-zombot-pyke', 'zombot_pyke');
 
     const resetCdBtn = document.getElementById('sb-reset-cooldowns');
     if (resetCdBtn) {

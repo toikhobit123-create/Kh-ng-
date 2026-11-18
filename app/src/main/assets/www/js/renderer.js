@@ -82,6 +82,15 @@ class GameRenderer {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Áp dụng rung lắc màn hình cho lớp thế giới (giữ HUD phía trên ổn định)
+    const shakeX = gameState.screenShakeX || 0;
+    const shakeY = gameState.screenShakeY || 0;
+    const hasShake = Math.abs(shakeX) > 0.05 || Math.abs(shakeY) > 0.05;
+    if (hasShake) {
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+    }
+
     // 1. Vẽ nền sân cỏ và bối cảnh 5x9 (Sân Long Tộc cho Map Special 11)
     this.drawLawn(ctx, gameState);
 
@@ -105,6 +114,11 @@ class GameRenderer {
       this.drawWitherZones(ctx, gameState.witherZones);
     }
 
+    // 1.9. Cảnh báo chiêu thức Zombot Đồ Tể Pyke (Lao Móc Q, Lướt Sóng E, Dấu Chữ X R)
+    if (gameState.isBloodharborMode) {
+      this.drawPykeTelegraphs(ctx, gameState);
+    }
+
     // 2. Vẽ ô đánh dấu hover / preview trồng cây
     this.drawPlacementPreview(ctx, gameState, inputHandler);
 
@@ -124,7 +138,7 @@ class GameRenderer {
     // 5. Vẽ Cây (Plants)
     for (const plant of gameState.plants) {
       if (plant.alive) {
-        this.drawPlant(ctx, plant);
+        this.drawPlant(ctx, plant, gameState);
       }
     }
 
@@ -138,8 +152,8 @@ class GameRenderer {
       this.drawGasClouds(ctx, gameState.gasClouds);
     }
 
-    // 8. Vẽ Zombie (sắp xếp theo y để hiển thị đúng độ sâu lớp)
-    const sortedZombies = [...gameState.zombies].sort((a, b) => a.y - b.y);
+    // 8. Vẽ Zombie (sắp xếp theo y để hiển thị đúng độ sâu lớp; Sett đang bay R được ưu tiên nổi lên trên)
+    const sortedZombies = [...gameState.zombies].sort((a, b) => (a.y + (a.rAnimActive ? 1000 : 0)) - (b.y + (b.rAnimActive ? 1000 : 0)));
     for (const zombie of sortedZombies) {
       this.drawZombie(ctx, zombie);
     }
@@ -215,9 +229,13 @@ class GameRenderer {
       ctx.restore();
     }
 
+    if (hasShake) {
+      ctx.restore();
+    }
+
     // 13. UI Thanh Máu Trùm Persistent (Đỉnh Canvas) hoặc Banner Wave thông thường
-    const isBossHudLevel = (gameState.currentLevel === 6 || gameState.currentLevel === 12 || gameState.currentLevel === 13) ||
-      (gameState.zombies && gameState.zombies.some(z => z.alive && (z.type === 'zombot_dark_dragon' || z.type === 'ancient_dragon_boss' || z.type === 'azir_desert_emperor')));
+    const isBossHudLevel = (gameState.currentLevel === 6 || gameState.currentLevel === 12 || gameState.currentLevel === 13 || gameState.currentLevel === 20) ||
+      (gameState.zombies && gameState.zombies.some(z => z.alive && (z.type === 'zombot_dark_dragon' || z.type === 'ancient_dragon_boss' || z.type === 'azir_desert_emperor' || z.type === 'zombot_pyke')));
 
     if (isBossHudLevel && !gameState.isSandbox) {
       this.drawBossHealthBar(ctx, gameState);
@@ -278,17 +296,23 @@ class GameRenderer {
     if (typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('native-compose-hud')) {
       return;
     }
-    const isDesertMap = gameState.currentLevel === 13 ||
-      (gameState.zombies && gameState.zombies.some(z => z.type === 'azir_desert_emperor'));
-    const isAncientMap = !isDesertMap && (gameState.currentLevel === 12 ||
+    const isBloodharborMap = gameState.currentLevel === 20 ||
+      (gameState.zombies && gameState.zombies.some(z => z.type === 'zombot_pyke'));
+    const isDesertMap = !isBloodharborMap && (gameState.currentLevel === 13 ||
+      (gameState.zombies && gameState.zombies.some(z => z.type === 'azir_desert_emperor')));
+    const isAncientMap = !isBloodharborMap && !isDesertMap && (gameState.currentLevel === 12 ||
       (gameState.zombies && gameState.zombies.some(z => z.type === 'ancient_dragon_boss')));
-    const targetBossType = isDesertMap ? 'azir_desert_emperor' : (isAncientMap ? 'ancient_dragon_boss' : 'zombot_dark_dragon');
+    const targetBossType = isBloodharborMap
+      ? 'zombot_pyke'
+      : (isDesertMap ? 'azir_desert_emperor' : (isAncientMap ? 'ancient_dragon_boss' : 'zombot_dark_dragon'));
     const boss = (gameState.zombies && gameState.zombies.length > 0)
       ? gameState.zombies.find(z => z.type === targetBossType)
       : null;
-    const maxHp = isDesertMap ? 20000 : (isAncientMap ? 10000 : 27000);
-    const hasSpawnedYet = !gameState.waveManager || gameState.waveManager.state !== 'initial_delay';
-    const currentHp = boss ? Math.max(0, boss.hp) : ((gameState.isVictory || hasSpawnedYet) ? 0 : maxHp);
+    const maxHp = isBloodharborMap ? 15000 : (isDesertMap ? 20000 : (isAncientMap ? 10000 : 27000));
+    const hasSpawnedYet = isBloodharborMap
+      ? !gameState.isSetupPhase
+      : (!gameState.waveManager || gameState.waveManager.state !== 'initial_delay');
+    const currentHp = boss ? Math.max(0, boss.hp) : ((gameState.isVictory || (hasSpawnedYet && !isBloodharborMap)) ? 0 : maxHp);
     const shieldHp = (boss && boss.bossAllShieldHp > 0) ? Math.ceil(boss.bossAllShieldHp) : 0;
     const hpRatio = Math.max(0, Math.min(1.0, currentHp / maxHp));
 
@@ -306,7 +330,7 @@ class GameRenderer {
 
     ctx.save();
 
-    const isConveyorBoss = (gameState.currentLevel === 6 || gameState.gameMode === 'conveyor') && !isDesertMap && !isAncientMap;
+    const isConveyorBoss = (gameState.currentLevel === 6 || gameState.gameMode === 'conveyor') && !isDesertMap && !isAncientMap && !isBloodharborMap;
     const barW = isConveyorBoss ? 300 : 540;
     const barH = isConveyorBoss ? 20 : 26;
     const cx = isConveyorBoss ? 500 : (CONFIG.CANVAS_WIDTH / 2);
@@ -315,10 +339,14 @@ class GameRenderer {
     const r = isConveyorBoss ? 5 : 6;
 
     // 1. Khung nền kim loại phát sáng
-    ctx.fillStyle = isDesertMap ? 'rgba(26, 17, 6, 0.95)' : 'rgba(10, 12, 18, 0.95)';
-    ctx.strokeStyle = isDesertMap
-      ? ((hpRatio <= 0.35 && currentHp > 0) ? '#ff6d00' : '#ffca28')
-      : ((hpRatio < 0.30 && currentHp > 0) ? '#ff1744' : '#ffd700');
+    ctx.fillStyle = isBloodharborMap
+      ? 'rgba(7, 22, 28, 0.96)'
+      : (isDesertMap ? 'rgba(26, 17, 6, 0.95)' : 'rgba(10, 12, 18, 0.95)');
+    ctx.strokeStyle = isBloodharborMap
+      ? ((boss && (boss.pykeStuckTimer > 0 || boss.pykeVulnerableTimer > 0)) ? '#ffd54f' : (hpRatio <= 0.334 ? '#ff1744' : '#00e5ff'))
+      : (isDesertMap
+        ? ((hpRatio <= 0.35 && currentHp > 0) ? '#ff6d00' : '#ffca28')
+        : ((hpRatio < 0.30 && currentHp > 0) ? '#ff1744' : '#ffd700'));
     ctx.lineWidth = isConveyorBoss ? 1.6 : 2.0;
 
     ctx.beginPath();
@@ -337,13 +365,13 @@ class GameRenderer {
     const innerW = barW - pad * 2;
     const innerH = barH - pad * 2;
 
-    ctx.fillStyle = isDesertMap ? '#1f1306' : '#140d12';
+    ctx.fillStyle = isBloodharborMap ? '#081820' : (isDesertMap ? '#1f1306' : '#140d12');
     ctx.fillRect(innerX, innerY, innerW, innerH);
 
     // 3. Thanh bóng ma tổn thương (Trailing ghost damage bar)
     if (trailingRatio > hpRatio) {
       const trailWidth = innerW * trailingRatio;
-      ctx.fillStyle = isDesertMap ? '#ffe082' : '#ffb300';
+      ctx.fillStyle = isBloodharborMap ? '#4dd0e1' : (isDesertMap ? '#ffe082' : '#ffb300');
       ctx.fillRect(innerX, innerY, trailWidth, innerH);
     }
 
@@ -352,7 +380,18 @@ class GameRenderer {
       const fillWidth = innerW * hpRatio;
       const grad = ctx.createLinearGradient(innerX, innerY, innerX + fillWidth, innerY + innerH);
 
-      if (isDesertMap) {
+      if (isBloodharborMap) {
+        if (hpRatio > 0.667) {
+          grad.addColorStop(0, '#00838f');
+          grad.addColorStop(1, '#00e5ff');
+        } else if (hpRatio > 0.334) {
+          grad.addColorStop(0, '#ef6c00');
+          grad.addColorStop(1, '#26c6da');
+        } else {
+          grad.addColorStop(0, '#b71c1c');
+          grad.addColorStop(1, '#ff1744');
+        }
+      } else if (isDesertMap) {
         if (hpRatio > 0.75) {
           grad.addColorStop(0, '#ffb300');
           grad.addColorStop(1, '#ffe082');
@@ -384,8 +423,8 @@ class GameRenderer {
 
     // 5. Vạch phân mốc giai đoạn
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    const m1 = isDesertMap ? 0.75 : 0.65;
-    const m2 = isDesertMap ? 0.35 : 0.30;
+    const m1 = isBloodharborMap ? (10000 / 15000) : (isDesertMap ? 0.75 : 0.65);
+    const m2 = isBloodharborMap ? (5000 / 15000) : (isDesertMap ? 0.35 : 0.30);
     ctx.fillRect(innerX + innerW * m1 - 1, innerY, 2, innerH);
     ctx.fillRect(innerX + innerW * m2 - 1, innerY, 2, innerH);
 
@@ -393,11 +432,26 @@ class GameRenderer {
     ctx.font = isConveyorBoss ? '13px sans-serif' : '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(isDesertMap ? '🦅' : '🐲', x - (isConveyorBoss ? 12 : 14), y + barH / 2);
+    ctx.fillText(isBloodharborMap ? '🪝' : (isDesertMap ? '🦅' : '🐲'), x - (isConveyorBoss ? 12 : 14), y + barH / 2);
 
     // 7. Huy hiệu trạng thái / Giai đoạn
     let phaseText = '';
-    if (!boss && !gameState.isVictory && !hasSpawnedYet) {
+    if (isBloodharborMap) {
+      if (gameState.isSetupPhase) {
+        phaseText = '⏳ DÀN TRẬN · KÉO CÒI ĐỂ BẮT ĐẦU';
+      } else if (currentHp <= 0 || gameState.isVictory) {
+        phaseText = 'ĐÃ HẠ GỤC!';
+      } else if (boss && (boss.pykeStuckTimer > 0 || boss.pykeVulnerableTimer > 0)) {
+        const t = Math.max(boss.pykeStuckTimer || 0, boss.pykeVulnerableTimer || 0);
+        phaseText = `💥 BỊ KẸT · ×2 DMG (${t.toFixed(1)}s)`;
+      } else if (currentHp > 10000) {
+        phaseText = 'P1: THĂM DÒ (8s/chiêu)';
+      } else if (currentHp > 5000) {
+        phaseText = 'P2: THỦY TRIỀU DÂNG (NGẬP CỘT 6)';
+      } else {
+        phaseText = 'P3: HUYẾT CẢNG CUỒNG NỘ! 🔥';
+      }
+    } else if (!boss && !gameState.isVictory && !hasSpawnedYet) {
       phaseText = isConveyorBoss ? 'SẮP RA' : '⏳ ĐANG GIÁNG LÂM...';
     } else if (isDesertMap) {
       if (currentHp <= 0) {
@@ -436,9 +490,11 @@ class GameRenderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const bossTitle = isDesertMap
-      ? 'HOÀNG ĐẾ SA MẠC AZIR'
-      : (isAncientMap ? 'BOSS RỒNG NGÀN TUỔI' : (isConveyorBoss ? 'RỒNG ĐEN' : 'ZOMBOT DARK DRAGON'));
+    const bossTitle = isBloodharborMap
+      ? 'ZOMBOT ĐỒ TỂ · BẾN CẢNG TỬ THẦN'
+      : (isDesertMap
+        ? 'HOÀNG ĐẾ SA MẠC AZIR'
+        : (isAncientMap ? 'BOSS RỒNG NGÀN TUỔI' : (isConveyorBoss ? 'RỒNG ĐEN' : 'ZOMBOT DARK DRAGON')));
     let hpLabel = '';
     if (currentHp <= 0 || gameState.isVictory) {
       hpLabel = isConveyorBoss
@@ -463,6 +519,11 @@ class GameRenderer {
   drawLawn(ctx, gameState = null) {
     const lvl = gameState ? gameState.currentLevel : 0;
     const lvlCfg = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[lvl]) ? LEVEL_CONFIG[lvl] : null;
+    const isBloodharborRealm = !!(gameState && !gameState.isSandbox && (lvl === 20 || gameState.isBloodharborMode || (lvlCfg && lvlCfg.theme === 'bloodharbor')));
+    if (isBloodharborRealm) {
+      this.drawBloodharborLawn(ctx, gameState);
+      return;
+    }
     const isIoniaRealm = !!(gameState && !gameState.isSandbox && ((lvl >= 17 && lvl <= 19) || (lvlCfg && lvlCfg.theme === 'ionia')));
     if (isIoniaRealm) {
       this.drawIoniaLawn(ctx, gameState);
@@ -1529,6 +1590,372 @@ class GameRenderer {
     ctx.restore();
   }
 
+  // ============================================================================
+  // MAP 20: BẾN CẢNG TỬ THẦN (BLOODHARBOR PIER)
+  // Cột 1-6: Sàn gỗ trồng cây (Phase 2 ngập cột 6, Phase 3 sương mù cột 5-6)
+  // Cột 7-9: Vùng nước đen nơi Boss Zombot Đồ Tể Pyke di chuyển
+  // ============================================================================
+  drawBloodharborLawn(ctx, gameState) {
+    const t = this.getFrameTimeSec();
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const patioWidth = CONFIG.GRID_OFFSET_X;
+    const lawnStartY = CONFIG.GRID_OFFSET_Y;
+    const lawnEndY = CONFIG.GRID_OFFSET_Y + CONFIG.ROWS * CONFIG.CELL_HEIGHT;
+    const pierEndX = CONFIG.GRID_OFFSET_X + 6 * CONFIG.CELL_WIDTH;
+    const lawnEndX = CONFIG.GRID_OFFSET_X + CONFIG.COLS * CONFIG.CELL_WIDTH;
+
+    this.drawCachedBg(ctx, 'bloodharbor', w, h, (bCtx) => {
+      // 1. Nền đêm bão tố Bến Cảng Tử Thần
+      const skyGrad = bCtx.createLinearGradient(0, 0, 0, h);
+      skyGrad.addColorStop(0, '#040c12');
+      skyGrad.addColorStop(0.55, '#071720');
+      skyGrad.addColorStop(1, '#03080d');
+      bCtx.fillStyle = skyGrad;
+      bCtx.fillRect(0, 0, w, h);
+
+      // 2. Cầu cảng phòng thủ bên trái (CẤM VƯỢT CỘT 1 - Không có Máy Cắt Cỏ!)
+      const patioGrad = bCtx.createLinearGradient(0, 0, patioWidth, 0);
+      patioGrad.addColorStop(0, '#101418');
+      patioGrad.addColorStop(1, '#1c242b');
+      bCtx.fillStyle = patioGrad;
+      bCtx.fillRect(0, 0, patioWidth, h);
+
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        const y = lawnStartY + r * CONFIG.CELL_HEIGHT;
+        bCtx.fillStyle = '#221712';
+        bCtx.fillRect(8, y + 6, patioWidth - 18, CONFIG.CELL_HEIGHT - 12);
+        bCtx.strokeStyle = 'rgba(255, 82, 82, 0.55)';
+        bCtx.lineWidth = 1.4;
+        bCtx.strokeRect(8, y + 6, patioWidth - 18, CONFIG.CELL_HEIGHT - 12);
+
+        bCtx.fillStyle = '#ff5252';
+        bCtx.font = 'bold 12px sans-serif';
+        bCtx.textAlign = 'center';
+        bCtx.textBaseline = 'middle';
+        bCtx.fillText('☠️', patioWidth / 2 - 2, y + CONFIG.CELL_HEIGHT / 2);
+      }
+
+      // Cọc chắn cảnh báo ranh giới Cột 1
+      bCtx.fillStyle = '#7f0000';
+      bCtx.fillRect(patioWidth - 8, 0, 8, h);
+
+      // 3. Cột 1-6 (col 0..5): Sàn gỗ Bến Cảng đóng đinh thép
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        for (let c = 0; c < 6; c++) {
+          const x = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH;
+          const y = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT;
+          const isAlt = (r + c) % 2 === 0;
+
+          bCtx.fillStyle = isAlt ? '#4e342e' : '#3e2723';
+          bCtx.fillRect(x, y, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
+
+          // Các thanh ván gỗ ngang và đinh tán
+          bCtx.strokeStyle = 'rgba(20, 10, 6, 0.55)';
+          bCtx.lineWidth = 1.4;
+          for (let p = 1; p <= 3; p++) {
+            const py = y + (CONFIG.CELL_HEIGHT / 4) * p;
+            bCtx.beginPath();
+            bCtx.moveTo(x, py);
+            bCtx.lineTo(x + CONFIG.CELL_WIDTH, py);
+            bCtx.stroke();
+          }
+
+          bCtx.fillStyle = '#78909c';
+          bCtx.beginPath();
+          bCtx.arc(x + 8, y + 8, 1.8, 0, Math.PI * 2);
+          bCtx.arc(x + CONFIG.CELL_WIDTH - 8, y + 8, 1.8, 0, Math.PI * 2);
+          bCtx.arc(x + 8, y + CONFIG.CELL_HEIGHT - 8, 1.8, 0, Math.PI * 2);
+          bCtx.arc(x + CONFIG.CELL_WIDTH - 8, y + CONFIG.CELL_HEIGHT - 8, 1.8, 0, Math.PI * 2);
+          bCtx.fill();
+
+          bCtx.strokeStyle = 'rgba(128, 222, 234, 0.22)';
+          bCtx.lineWidth = 1.1;
+          bCtx.strokeRect(x, y, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
+        }
+      }
+
+      // 4. Cột 7-9 (col 6..8): Vùng nước đen sâu thẳm của Zombot Đồ Tể
+      const waterGrad = bCtx.createLinearGradient(pierEndX, 0, w, 0);
+      waterGrad.addColorStop(0, '#071b24');
+      waterGrad.addColorStop(0.5, '#041219');
+      waterGrad.addColorStop(1, '#02090e');
+      bCtx.fillStyle = waterGrad;
+      bCtx.fillRect(pierEndX, lawnStartY, w - pierEndX, lawnEndY - lawnStartY);
+
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        for (let c = 6; c < CONFIG.COLS; c++) {
+          const x = CONFIG.GRID_OFFSET_X + c * CONFIG.CELL_WIDTH;
+          const y = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT;
+          bCtx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
+          bCtx.lineWidth = 1.0;
+          bCtx.strokeRect(x, y, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
+        }
+      }
+
+      // Ranh giới gỗ & xích sắt ngăn cách Cột 6 (Sàn) và Cột 7 (Nước đen)
+      bCtx.fillStyle = '#1b110d';
+      bCtx.fillRect(pierEndX - 4, lawnStartY, 8, lawnEndY - lawnStartY);
+      bCtx.strokeStyle = '#00e5ff';
+      bCtx.lineWidth = 1.6;
+      bCtx.beginPath();
+      bCtx.moveTo(pierEndX, lawnStartY);
+      bCtx.lineTo(pierEndX, lawnEndY);
+      bCtx.stroke();
+
+      // Số cột 1-6 rõ ràng phía dưới sàn
+      bCtx.font = 'bold 10px sans-serif';
+      bCtx.textAlign = 'center';
+      bCtx.fillStyle = 'rgba(178, 235, 242, 0.72)';
+      for (let c = 0; c < 6; c++) {
+        bCtx.fillText(`C${c + 1}`, CONFIG.GRID_OFFSET_X + (c + 0.5) * CONFIG.CELL_WIDTH, lawnEndY + 12);
+      }
+      bCtx.fillStyle = 'rgba(0, 229, 255, 0.65)';
+      bCtx.fillText('🌊 VÙNG NƯỚC ĐEN (BOSS)', pierEndX + 1.5 * CONFIG.CELL_WIDTH, lawnEndY + 12);
+    });
+
+    // --- Lớp động: Sóng nước đen, Ngập cột 6 (Phase 2), Sương mù (Phase 3), Ô bị trói E ---
+    ctx.save();
+
+    // Sóng nước đen chuyển động tại cột 7-9
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.24)';
+    ctx.lineWidth = 1.6;
+    for (let r = 0; r < CONFIG.ROWS; r++) {
+      const wy = lawnStartY + r * CONFIG.CELL_HEIGHT + 28;
+      for (let k = 0; k < 3; k++) {
+        const wx = pierEndX + 16 + k * 78 + Math.sin(t * 2.2 + r + k) * 10;
+        ctx.beginPath();
+        ctx.moveTo(wx, wy);
+        ctx.quadraticCurveTo(wx + 20, wy - 5, wx + 40, wy);
+        ctx.stroke();
+      }
+    }
+
+    // Giai đoạn Dàn Trận (Setup Phase): Khung hướng dẫn nổi bật
+    if (gameState && gameState.isSetupPhase) {
+      const pulse = 0.55 + Math.sin(t * 4.0) * 0.25;
+      ctx.strokeStyle = `rgba(0, 229, 255, ${pulse})`;
+      ctx.lineWidth = 3.0;
+      ctx.setLineDash([10, 6]);
+      ctx.strokeRect(CONFIG.GRID_OFFSET_X + 2, lawnStartY + 2, 6 * CONFIG.CELL_WIDTH - 4, lawnEndY - lawnStartY - 4);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(6, 20, 28, 0.85)';
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.roundRect(pierEndX + 14, lawnStartY + 140, 212, 118, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#00e5ff';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚓ GIAI ĐOẠN DÀN TRẬN', pierEndX + 120, lawnStartY + 166);
+      ctx.fillStyle = '#e0f7fa';
+      ctx.font = '11.5px sans-serif';
+      ctx.fillText('• Đặt tối đa 12 cây (Cột 1–6)', pierEndX + 120, lawnStartY + 190);
+      ctx.fillText('• Hồi chiêu 0s · Đổi vị trí tự do', pierEndX + 120, lawnStartY + 210);
+      ctx.fillStyle = '#ffd54f';
+      ctx.font = 'bold 11.5px sans-serif';
+      ctx.fillText('Bấm "🚢 KÉO CÒI TÀU" để đánh!', pierEndX + 120, lawnStartY + 236);
+    }
+
+    // Phase 2+: Nước đen tràn ngập cột 6 (col === 5)
+    if (gameState && Array.isArray(gameState.floodedCols) && gameState.floodedCols.includes(5)) {
+      const fx = CONFIG.GRID_OFFSET_X + 5 * CONFIG.CELL_WIDTH;
+      const floodGrad = ctx.createLinearGradient(fx, lawnStartY, fx + CONFIG.CELL_WIDTH, lawnStartY);
+      floodGrad.addColorStop(0, 'rgba(0, 77, 64, 0.62)');
+      floodGrad.addColorStop(0.5, 'rgba(4, 24, 34, 0.85)');
+      floodGrad.addColorStop(1, 'rgba(2, 14, 20, 0.92)');
+      ctx.fillStyle = floodGrad;
+      ctx.fillRect(fx, lawnStartY, CONFIG.CELL_WIDTH, lawnEndY - lawnStartY);
+
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.65)';
+      ctx.lineWidth = 2.0;
+      ctx.strokeRect(fx + 1, lawnStartY + 1, CONFIG.CELL_WIDTH - 2, lawnEndY - lawnStartY - 2);
+
+      for (let r = 0; r < CONFIG.ROWS; r++) {
+        const cy = lawnStartY + r * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
+        const waveShift = Math.sin(t * 3.5 + r) * 6;
+        ctx.strokeStyle = 'rgba(128, 222, 234, 0.45)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(fx + 10, cy + waveShift);
+        ctx.quadraticCurveTo(fx + CONFIG.CELL_WIDTH / 2, cy - 10 + waveShift, fx + CONFIG.CELL_WIDTH - 10, cy + waveShift);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 138, 128, 0.85)';
+        ctx.font = 'bold 9.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⛔ NGẬP NƯỚC', fx + CONFIG.CELL_WIDTH / 2, cy + 20);
+      }
+    }
+
+    // Phase 3: Sương mù phủ cột 5-6 & Cảnh báo -20% tầm bắn cột 1-2
+    if (gameState && gameState.bloodharborPhase >= 3) {
+      const fogX = CONFIG.GRID_OFFSET_X + 4 * CONFIG.CELL_WIDTH;
+      const fogW = 2 * CONFIG.CELL_WIDTH;
+      const fogAlpha = 0.34 + Math.sin(t * 2.5) * 0.08;
+      const fogGrad = ctx.createLinearGradient(fogX, lawnStartY, fogX + fogW, lawnEndY);
+      fogGrad.addColorStop(0, `rgba(136, 14, 79, ${fogAlpha * 0.85})`);
+      fogGrad.addColorStop(0.5, `rgba(18, 32, 42, ${fogAlpha * 1.15})`);
+      fogGrad.addColorStop(1, `rgba(183, 28, 28, ${fogAlpha * 0.9})`);
+      ctx.fillStyle = fogGrad;
+      ctx.fillRect(fogX, lawnStartY, fogW, lawnEndY - lawnStartY);
+
+      ctx.strokeStyle = 'rgba(255, 82, 82, 0.72)';
+      ctx.lineWidth = 2.0;
+      ctx.setLineDash([8, 5]);
+      ctx.strokeRect(fogX + 2, lawnStartY + 2, fogW - 4, lawnEndY - lawnStartY - 4);
+      ctx.setLineDash([]);
+
+      // Luồng sương cuộn
+      for (let i = 0; i < 6; i++) {
+        const fx = fogX + 20 + ((i * 37 + t * 28) % (fogW - 40));
+        const fy = lawnStartY + 35 + i * 74;
+        ctx.fillStyle = 'rgba(255, 138, 128, 0.16)';
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, 36, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = 'rgba(20, 8, 12, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(fogX + 12, lawnStartY + 8, fogW - 24, 22, 6);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a80';
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🌫️ SƯƠNG MÙ · CỘT 1–2 GIẢM 20% TẦM', fogX + fogW / 2, lawnStartY + 22);
+
+      // Viền cảnh báo giảm 20% tầm ở cột 1-2
+      ctx.strokeStyle = 'rgba(255, 171, 64, 0.55)';
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(CONFIG.GRID_OFFSET_X + 2, lawnStartY + 2, 2 * CONFIG.CELL_WIDTH - 4, lawnEndY - lawnStartY - 4);
+    }
+
+    // Các ô đang bị trói bởi Lướt Sóng (E) của Zombot Pyke
+    if (gameState && Array.isArray(gameState.rootedTiles)) {
+      for (const rt of gameState.rootedTiles) {
+        const rx = CONFIG.GRID_OFFSET_X + rt.col * CONFIG.CELL_WIDTH;
+        const ry = CONFIG.GRID_OFFSET_Y + rt.row * CONFIG.CELL_HEIGHT;
+        const pulse = 0.65 + Math.sin(t * 7) * 0.25;
+        ctx.fillStyle = `rgba(0, 229, 255, ${0.22 * pulse})`;
+        ctx.fillRect(rx + 2, ry + 2, CONFIG.CELL_WIDTH - 4, CONFIG.CELL_HEIGHT - 4);
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.9 * pulse})`;
+        ctx.lineWidth = 2.4;
+        ctx.strokeRect(rx + 2, ry + 2, CONFIG.CELL_WIDTH - 4, CONFIG.CELL_HEIGHT - 4);
+
+        ctx.fillStyle = '#80deea';
+        ctx.font = 'bold 9.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`⛓️ ${rt.timer.toFixed(1)}s`, rx + CONFIG.CELL_WIDTH / 2, ry + CONFIG.CELL_HEIGHT - 9);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // Cảnh báo chiêu thức rõ ràng (Q / E / R) của Zombot Đồ Tể Pyke trước khi đánh
+  drawPykeTelegraphs(ctx, gameState) {
+    if (!gameState || !Array.isArray(gameState.zombies)) return;
+    const boss = gameState.zombies.find(z => z.alive && z.type === 'zombot_pyke');
+    if (!boss || !boss.pykeTelegraph) return;
+
+    const tel = boss.pykeTelegraph;
+    const t = this.getFrameTimeSec();
+    const dur = Math.max(0.2, tel.duration || 2.0);
+    const prog = Math.max(0, Math.min(1, 1 - (tel.remaining || 0) / dur));
+    const pulse = 0.65 + Math.sin(t * 14) * 0.3;
+
+    ctx.save();
+    if (tel.kind === 'Q' && Array.isArray(tel.rows)) {
+      const startX = CONFIG.GRID_OFFSET_X;
+      const endX = boss.x - 16;
+      for (const r of tel.rows) {
+        const yTop = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT + 6;
+        const yMid = yTop + (CONFIG.CELL_HEIGHT - 12) / 2;
+        const h = CONFIG.CELL_HEIGHT - 12;
+
+        ctx.fillStyle = `rgba(0, 229, 255, ${0.14 + 0.14 * prog})`;
+        ctx.fillRect(startX, yTop, endX - startX, h);
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.85 * pulse})`;
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([10, 6]);
+        ctx.strokeRect(startX, yTop, endX - startX, h);
+        ctx.setLineDash([]);
+
+        // Mũi tên cảnh báo Lao Móc chạy dọc theo hàng
+        ctx.strokeStyle = '#ffd54f';
+        ctx.lineWidth = 2.6;
+        const shift = (t * 180) % 60;
+        for (let ax = endX - 24 - shift; ax > startX + 20; ax -= 60) {
+          ctx.beginPath();
+          ctx.moveTo(ax + 8, yMid - 8);
+          ctx.lineTo(ax, yMid);
+          ctx.lineTo(ax + 8, yMid + 8);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`🪝 LAO MÓC (Q) ${tel.remaining.toFixed(1)}s`, startX + 8, yTop + 14);
+      }
+    } else if (tel.kind === 'E' && Array.isArray(tel.cols) && tel.cols.length > 0) {
+      const startCol = tel.cols[0];
+      const endCol = tel.cols[tel.cols.length - 1];
+      const zx = CONFIG.GRID_OFFSET_X + startCol * CONFIG.CELL_WIDTH;
+      const zw = (endCol - startCol + 1) * CONFIG.CELL_WIDTH;
+      const zy = CONFIG.GRID_OFFSET_Y + tel.row * CONFIG.CELL_HEIGHT + 4;
+      const zh = CONFIG.CELL_HEIGHT - 8;
+
+      ctx.fillStyle = `rgba(38, 198, 218, ${0.20 + 0.18 * prog})`;
+      ctx.fillRect(zx, zy, zw, zh);
+      ctx.strokeStyle = `rgba(0, 229, 255, ${pulse})`;
+      ctx.lineWidth = 3.0;
+      ctx.strokeRect(zx, zy, zw, zh);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🌊 LƯỚT SÓNG TRÓI ${tel.remaining.toFixed(1)}s`, zx + zw / 2, zy + zh / 2 + 4);
+    } else if (tel.kind === 'R') {
+      const tx = tel.targetX || (CONFIG.GRID_OFFSET_X + (tel.targetCol || 0) * CONFIG.CELL_WIDTH + CONFIG.CELL_WIDTH / 2);
+      const ty = tel.targetY || (CONFIG.GRID_OFFSET_Y + (tel.targetRow || 0) * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2);
+      const cellX = CONFIG.GRID_OFFSET_X + (tel.targetCol || 0) * CONFIG.CELL_WIDTH;
+      const cellY = CONFIG.GRID_OFFSET_Y + (tel.targetRow || 0) * CONFIG.CELL_HEIGHT;
+
+      ctx.fillStyle = `rgba(255, 23, 68, ${0.22 + 0.18 * prog})`;
+      ctx.fillRect(cellX + 2, cellY + 2, CONFIG.CELL_WIDTH - 4, CONFIG.CELL_HEIGHT - 4);
+
+      // Vòng ngắm thu nhỏ & chữ X Đồ Tể
+      const ringR = 44 - 16 * prog;
+      ctx.strokeStyle = `rgba(255, 213, 79, ${pulse})`;
+      ctx.lineWidth = 2.8;
+      ctx.beginPath();
+      ctx.arc(tx, ty, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ff1744';
+      ctx.lineWidth = 4.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tx - 24, ty - 24);
+      ctx.lineTo(tx + 24, ty + 24);
+      ctx.moveTo(tx + 24, ty - 24);
+      ctx.lineTo(tx - 24, ty + 24);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffd54f';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`☠️ CHÉM X (${tel.remaining.toFixed(1)}s)`, tx, cellY - 4);
+    }
+    ctx.restore();
+  }
+
   drawPlacementPreview(ctx, gameState, input) {
     if (!input.isPointerOnCanvas) return;
     const r = input.hoverRow;
@@ -1539,10 +1966,15 @@ class GameRenderer {
     const cellY = CONFIG.GRID_OFFSET_Y + r * CONFIG.CELL_HEIGHT;
 
     const isOccupied = gameState.isCellOccupied(r, c);
+    const isBloodharborBlocked = !!(gameState.isBloodharborMode && (
+      c >= 6 ||
+      (Array.isArray(gameState.floodedCols) && gameState.floodedCols.includes(c)) ||
+      (typeof gameState.getAliveBoardPlantCount === 'function' && gameState.getAliveBoardPlantCount() >= (gameState.maxPlantsOnBoard || 12))
+    ));
 
     if (gameState.selectedPlantType) {
-      if (isOccupied) {
-        // Ô đã có quái vật -> Highlight đỏ sẫm cảnh báo
+      if (isOccupied || isBloodharborBlocked) {
+        // Ô không hợp lệ -> Highlight đỏ sẫm cảnh báo
         ctx.fillStyle = 'rgba(213, 0, 0, 0.45)';
         ctx.fillRect(cellX, cellY, CONFIG.CELL_WIDTH, CONFIG.CELL_HEIGHT);
         ctx.strokeStyle = '#ff1744';
@@ -1671,22 +2103,37 @@ class GameRenderer {
     });
   }
 
-  drawPlant(ctx, plant) {
-    const airborneLift = (plant.airborneTimer > 0 && !plant.isIcon)
-      ? Math.sin(Math.min(1, plant.airborneTimer / (plant.airborneDuration || 0.7)) * Math.PI) * 28
-      : 0;
+  drawPlant(ctx, plant, gameState = null) {
+    const throwOffsetX = !plant.isIcon ? (plant.settThrowOffsetX || 0) : 0;
+    const throwLiftY = !plant.isIcon ? (plant.settThrowLiftY || 0) : 0;
+    const throwAngle = !plant.isIcon ? (plant.settThrowAngle || 0) : 0;
+    const throwScaleX = !plant.isIcon && plant.settThrowScaleX ? plant.settThrowScaleX : 1;
+    const throwScaleY = !plant.isIcon && plant.settThrowScaleY ? plant.settThrowScaleY : 1;
+    const airborneLift = throwLiftY > 0
+      ? throwLiftY
+      : ((plant.airborneTimer > 0 && !plant.isIcon)
+        ? Math.sin(Math.min(1, plant.airborneTimer / (plant.airborneDuration || 0.7)) * Math.PI) * 28
+        : 0);
+    const drawX = plant.x + throwOffsetX;
 
-    // 1. Bóng tự nhiên dịu mát dưới gốc thực vật
+    // 1. Bóng tự nhiên dịu mát dưới gốc thực vật (di chuyển & thu nhỏ khi bị Sett R nhấc bổng)
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    const shadowScale = Math.max(0.45, 1 - airborneLift / 140);
     ctx.beginPath();
-    ctx.ellipse(plant.x, plant.y + 24, airborneLift > 2 ? 15 : 20, airborneLift > 2 ? 5 : 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(drawX, plant.y + 24, 20 * shadowScale, 7 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // 2. Vẽ thực vật (nhấc bổng theo airborneLift khi bị Yone R hất tung hoặc Sett R ném)
+    // 2. Vẽ thực vật (nhấc bổng & xoay theo quỹ đạo ném khi bị Yone R hất tung hoặc Sett R ném)
     ctx.save();
-    ctx.translate(plant.x, plant.y - airborneLift);
+    ctx.translate(drawX, plant.y - airborneLift);
+    if (throwAngle !== 0) {
+      ctx.rotate(throwAngle);
+    }
+    if (throwScaleX !== 1 || throwScaleY !== 1) {
+      ctx.scale(throwScaleX, throwScaleY);
+    }
 
     this.drawPlantBody(ctx, plant);
 
@@ -1941,6 +2388,34 @@ class GameRenderer {
       ctx.fillStyle = rem <= 1.2 ? '#ffd54f' : '#ff5252';
       ctx.fillText(markText, 0, -44);
       ctx.restore();
+    }
+
+    // Hiệu ứng Bến Cảng Tử Thần: Bị Trói Sóng (E) & Giảm 20% tầm bắn trong Sương Mù Phase 3
+    if (gameState && gameState.isBloodharborMode && !plant.isIcon) {
+      if (typeof gameState.isTileRooted === 'function' && gameState.isTileRooted(plant.row, plant.col)) {
+        ctx.save();
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.ellipse(0, 8, 24, 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = 'bold 9.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⛓️ BỊ TRÓI', 0, -40);
+        ctx.restore();
+      } else if (gameState.bloodharborPhase >= 3 && plant.col <= 1) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(20, 8, 12, 0.78)';
+        ctx.beginPath();
+        ctx.roundRect(-24, 24, 48, 12, 4);
+        ctx.fill();
+        ctx.fillStyle = '#ffab91';
+        ctx.font = 'bold 8.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('-20% TẦM', 0, 33);
+        ctx.restore();
+      }
     }
 
     ctx.restore();
@@ -4273,6 +4748,16 @@ class GameRenderer {
       this.drawYoneBody(ctx, zombie);
     } else if (zombie.type === 'ionia_sett') {
       this.drawIoniaSett(ctx, zombie);
+    } else if (zombie.type === 'drowned_sailor') {
+      this.drawDrownedSailor(ctx, zombie);
+    } else if (zombie.type === 'anchor_bearer') {
+      this.drawAnchorBearer(ctx, zombie);
+    } else if (zombie.type === 'swimming_ghost') {
+      this.drawSwimmingGhost(ctx, zombie);
+    } else if (zombie.type === 'wanted_captain') {
+      this.drawWantedCaptain(ctx, zombie);
+    } else if (zombie.type === 'zombot_pyke') {
+      this.drawZombotPyke(ctx, zombie);
     } else {
       this.drawRegularZombie(ctx, zombie);
     }
@@ -6255,16 +6740,27 @@ class GameRenderer {
     ctx.restore();
   }
 
-  // 4. Sett - Mini-Boss Đấu Trường Ionia (Tụ W hình thang vàng rực như LMHT, găng rực lửa, Gan Lì 800, Giáp W 500)
+  // 4. Sett - Mini-Boss Đấu Trường Ionia (Tụ W hình thang vàng rực như LMHT, hoạt ảnh R nhấc bổng lộn nhào giáng đất, găng rực lửa)
   drawIoniaSett(ctx, zombie) {
     const time = this.getFrameTimeSec();
     const isPunching = (zombie.punchAnimTimer || 0) > 0;
     const isChargingW = !!zombie.isChargingW;
     const isCastingW = (zombie.wCastAnimTimer || 0) > 0;
-    const isCastingR = (zombie.rSlamAnimTimer || 0) > 0;
+    const isCastingR = (zombie.rSlamAnimTimer || 0) > 0 || !!zombie.rAnimActive;
     const hasShield = zombie.settShieldTimer > 0 && zombie.settShieldHp > 0;
     const gritRatio = Math.max(0, Math.min(1, (zombie.grit || 0) / (zombie.maxGrit || 800)));
     const walkY = (zombie.isEating || isChargingW || isCastingW || isCastingR) ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 3;
+
+    // Tính vị trí nhảy, xoay & pha hoạt ảnh kỹ năng R (Hủy Diệt Đấu Trường)
+    let rJumpX = zombie.rJumpOffsetX || 0;
+    let rJumpY = zombie.rJumpOffsetY || 0;
+    let rBodyAngle = zombie.rBodyAngle || 0;
+    const rPhase = zombie.rAnimPhase || (isCastingR ? 'slam' : null);
+    if (isCastingR && !zombie.rAnimActive) {
+      const rProg = 1 - Math.max(0, Math.min(1, (zombie.rSlamAnimTimer || 0) / 0.65));
+      rJumpY = -Math.sin(rProg * Math.PI) * 58;
+      rBodyAngle = -Math.sin(rProg * Math.PI) * 0.85;
+    }
 
     // Báo trước Cuồng Thú Quyền (W) trên mặt đất — Hình thang vàng cam với làn giữa rực lửa như ảnh LMHT
     if (isChargingW) {
@@ -6294,21 +6790,56 @@ class GameRenderer {
       });
     }
 
-    this.drawHorrorShadow(ctx, zombie.x, zombie.y, 28, 10, zombie.animTime, zombie.isEating, false);
-    ctx.save();
-    ctx.translate(zombie.x, zombie.y);
+    // Bóng đổ co giãn theo độ cao nhảy R của Sett
+    const airFactor = Math.max(0, Math.min(1, Math.abs(rJumpY) / 100));
+    this.drawHorrorShadow(ctx, zombie.x + rJumpX, zombie.y, 28 * (1 - 0.38 * airFactor), 10 * (1 - 0.38 * airFactor), zombie.animTime, zombie.isEating, false);
 
-    // Khói lửa vàng-cam sau lưng khi gồng W hoặc Gan Lì cao
-    if (isChargingW || isCastingW || gritRatio >= 0.45) {
-      const auraAlpha = isChargingW ? 0.55 : (0.20 + gritRatio * 0.35);
-      const fireGrad = ctx.createRadialGradient(14, -12 + walkY, 4, 16, -12 + walkY, 42);
+    // Dư ảnh vàng-đỏ kéo vệt sau lưng khi Sett đang bay nhảy kỹ năng R
+    if (isCastingR && Math.abs(rJumpY) > 10) {
+      for (let g = 1; g <= 2; g++) {
+        ctx.save();
+        ctx.translate(zombie.x + rJumpX + g * 15, zombie.y + rJumpY + g * 12);
+        ctx.rotate(rBodyAngle + g * 0.16);
+        ctx.globalAlpha = 0.26 / g;
+        ctx.fillStyle = g === 1 ? '#ffd54f' : '#ff5722';
+        ctx.beginPath();
+        ctx.roundRect(-18, -20, 36, 38, 10);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    ctx.save();
+    ctx.translate(zombie.x + rJumpX, zombie.y + rJumpY);
+
+    // Xoay thân Sett theo tư thế nhào lộn/giáng đòn R (giữ HUD máu bên ngoài không bị xoay)
+    ctx.save();
+    if (rBodyAngle !== 0) {
+      ctx.rotate(rBodyAngle);
+    }
+
+    // Hào quang đấu trường khi gồng W, tung R hoặc Gan Lì cao
+    if (isChargingW || isCastingW || isCastingR || gritRatio >= 0.45) {
+      const auraAlpha = isCastingR ? 0.68 : (isChargingW ? 0.55 : (0.20 + gritRatio * 0.35));
+      const fireGrad = ctx.createRadialGradient(isCastingR ? 0 : 14, -12 + walkY, 4, isCastingR ? 0 : 16, -12 + walkY, isCastingR ? 52 : 42);
       fireGrad.addColorStop(0, `rgba(255, 224, 130, ${auraAlpha})`);
-      fireGrad.addColorStop(0.55, `rgba(255, 143, 0, ${auraAlpha * 0.75})`);
-      fireGrad.addColorStop(1, 'rgba(255, 87, 34, 0)');
+      fireGrad.addColorStop(0.55, `rgba(255, 111, 0, ${auraAlpha * 0.78})`);
+      fireGrad.addColorStop(1, 'rgba(255, 61, 0, 0)');
       ctx.fillStyle = fireGrad;
       ctx.beginPath();
-      ctx.arc(14, -12 + walkY, 42, 0, Math.PI * 2);
+      ctx.arc(isCastingR ? 0 : 14, -12 + walkY, isCastingR ? 52 : 42, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Vòng năng lượng Showstopper xoáy quanh người khi đang thi triển R
+    if (isCastingR) {
+      ctx.strokeStyle = rPhase === 'slam' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 193, 7, 0.85)';
+      ctx.lineWidth = 2.6;
+      ctx.setLineDash([10, 6]);
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 39, 44, 0, time * 8, time * 8 + Math.PI * 1.55);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     // Hào quang Giáp Ảo W (500 HP) sắc nét dạng khiên lục giác vàng rực
@@ -6348,21 +6879,21 @@ class GameRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Chân đấu sĩ lực lưỡng
-    const legAng = (zombie.isEating || isChargingW) ? 0 : Math.sin(zombie.walkCycle || 0) * 0.22;
+    // Chân đấu sĩ lực lưỡng (co gối khi bay R, đạp trụ khi giáng xuống)
+    const legAng = (zombie.isEating || isChargingW) ? 0 : (isCastingR ? (rPhase === 'slam' ? -0.35 : 0.45) : Math.sin(zombie.walkCycle || 0) * 0.22);
     for (const [lx, ang] of [[-8, legAng], [8, -legAng]]) {
       ctx.save();
       ctx.translate(lx, 14 + walkY);
       ctx.rotate(ang);
       ctx.fillStyle = '#263238';
-      ctx.fillRect(-5.5, 0, 11, 16);
+      ctx.fillRect(-5.5, 0, 11, isCastingR && rPhase === 'leap' ? 12 : 16);
       ctx.restore();
     }
 
     // Thân hình đô con cơ bắp & đai lưng vàng đấu trường
-    const leanX = isChargingW ? 6 : (isCastingW ? -8 : 0);
-    ctx.fillStyle = (isChargingW || isCastingW) ? '#ff8f00' : '#4a1c1c';
-    ctx.strokeStyle = (isChargingW || hasShield) ? '#ffe082' : '#ff6d00';
+    const leanX = isChargingW ? 6 : (isCastingW ? -8 : (isCastingR ? -6 : 0));
+    ctx.fillStyle = (isChargingW || isCastingW || isCastingR) ? '#ff8f00' : '#4a1c1c';
+    ctx.strokeStyle = (isChargingW || hasShield || isCastingR) ? '#ffe082' : '#ff6d00';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
     ctx.roundRect(-17 + leanX, -17 + walkY, 34, 32, 7);
@@ -6390,26 +6921,39 @@ class GameRenderer {
     ctx.fillRect(-7 + leanX, -30 + walkY, 4.5, 2.8);
     ctx.fillRect(-1 + leanX, -30 + walkY, 4.5, 2.8);
 
-    // Đôi găng thép khổng lồ (Gồng tụ lửa vàng khi W, hoặc đấm lao trái/phải)
+    // Đôi găng thép khổng lồ (Gồng tụ lửa vàng khi W, vươn tay ôm & nện đất khi R, hoặc đấm lao trái/phải)
     const punchOffset = isPunching ? -18 : (isChargingW ? 12 : (isCastingW ? -20 : 0));
     const punchHand = zombie.punchHand || 0;
     for (let h = 0; h < 2; h++) {
-      const hy = (h === 0 ? -7 : 5) + walkY;
-      const hx = -16 + leanX + ((isChargingW || isCastingW || (isPunching && punchHand === h)) ? punchOffset : 0);
-      if (isChargingW || isCastingW || gritRatio >= 0.65) {
-        ctx.fillStyle = 'rgba(255, 213, 79, 0.35)';
+      let hy = (h === 0 ? -7 : 5) + walkY;
+      let hx = -16 + leanX + ((isChargingW || isCastingW || (isPunching && punchHand === h)) ? punchOffset : 0);
+      if (isCastingR) {
+        if (rPhase === 'windup' || rPhase === 'leap') {
+          // Hai tay vươn lên trước ôm chặt mục tiêu đang nhấc bổng
+          hx = -23 + leanX;
+          hy = (h === 0 ? -22 : -8);
+        } else if (rPhase === 'slam') {
+          // Hai găng giáng thẳng xuống mặt sân
+          hx = -18 + (h === 0 ? -7 : 9);
+          hy = 18;
+        }
+      }
+      if (isChargingW || isCastingW || isCastingR || gritRatio >= 0.65) {
+        ctx.fillStyle = isCastingR ? 'rgba(255, 235, 59, 0.5)' : 'rgba(255, 213, 79, 0.35)';
         ctx.beginPath();
-        ctx.arc(hx - 2, hy, 12, 0, Math.PI * 2);
+        ctx.arc(hx - 2, hy, isCastingR ? 15 : 12, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.fillStyle = (isChargingW || isCastingW) ? '#ffe082' : '#ffb300';
-      ctx.strokeStyle = (isChargingW || isCastingW) ? '#ffffff' : '#ff3d00';
+      ctx.fillStyle = (isChargingW || isCastingW || isCastingR) ? '#ffe082' : '#ffb300';
+      ctx.strokeStyle = (isChargingW || isCastingW || isCastingR) ? '#ffffff' : '#ff3d00';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.roundRect(hx - 10, hy - 6, 15, 12, 4);
+      ctx.roundRect(hx - 10, hy - 6, isCastingR ? 17 : 15, isCastingR ? 14 : 12, 4);
       ctx.fill();
       ctx.stroke();
     }
+
+    ctx.restore(); // Kết thúc phần thân xoay theo rBodyAngle
 
     // Nhãn & thanh Giáp Ảo + Thanh Gan Lì (Grit 0..800) + Thanh Máu (3000 HP)
     if (hasShield) {
@@ -6422,6 +6966,359 @@ class GameRenderer {
     this.drawHealthBar(ctx, -27, -45, 54, 4.0, gritRatio, '#ffb300');
     this.drawZombieStatus(ctx, zombie, walkY, -70, -53);
     this.drawHealthBar(ctx, -27, -53, 54, 5.8, zombie.hp / zombie.maxHp, '#ff5252');
+    ctx.restore();
+  }
+
+  // ============================================================================
+  // MAP 20: CÁC KẺ ĐỊCH & BOSS BẾN CẢNG TỬ THẦN (BLOODHARBOR PIER)
+  // ============================================================================
+  drawDrownedSailor(ctx, zombie) {
+    const t = this.getFrameTimeSec();
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 3.2;
+
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y - walkY);
+
+    // Bóng & vũng nước chân
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(0, 26, 18, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Áo thủy thủ mục nát ngấm nước biển
+    ctx.fillStyle = '#1d3b42';
+    ctx.strokeStyle = '#091519';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.roundRect(-12, -10, 24, 30, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Đai lưng da & dao găm rỉ
+    ctx.fillStyle = '#5d4037';
+    ctx.fillRect(-12, 4, 24, 5);
+    ctx.strokeStyle = '#b0bec5';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(-12, 2);
+    ctx.lineTo(-24, -5 + Math.sin(t * 7) * 2);
+    ctx.stroke();
+
+    // Đầu xanh xám bọt biển & khăn trùm hải tặc
+    ctx.fillStyle = '#4f6d6b';
+    ctx.beginPath();
+    ctx.arc(0, -21, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#0d47a1';
+    ctx.beginPath();
+    ctx.arc(0, -25, 12, Math.PI, Math.PI * 2);
+    ctx.fill();
+
+    // Mắt phát sáng bọt biển
+    ctx.fillStyle = '#00e5ff';
+    ctx.beginPath();
+    ctx.arc(-5, -21, 2.2, 0, Math.PI * 2);
+    ctx.arc(2, -21, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    this.drawZombieStatus(ctx, zombie, walkY, -46, -38);
+    if (zombie.hp < zombie.maxHp) {
+      this.drawHealthBar(ctx, -18, -40, 36, 4.5, zombie.hp / zombie.maxHp, '#00e5ff');
+    }
+    ctx.restore();
+  }
+
+  drawAnchorBearer(ctx, zombie) {
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 2.4;
+    const slamSwing = zombie.anchorSlamAnimTimer > 0 ? Math.sin((zombie.anchorSlamAnimTimer / 0.45) * Math.PI) : 0;
+    const bites = zombie.anchorBiteCount || 0;
+
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y - walkY);
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 28, 25, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Thân hộ pháp thợ lặn biển sâu
+    ctx.fillStyle = '#263238';
+    ctx.strokeStyle = '#0b1014';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.roundRect(-18, -18, 36, 42, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Mũ lặn đồng rỉ sét có kính tròn phát sáng cam
+    ctx.fillStyle = '#5d4037';
+    ctx.beginPath();
+    ctx.arc(0, -28, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffab00';
+    ctx.beginPath();
+    ctx.arc(-4, -28, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mỏ neo sắt khổng lồ (vung mạnh ở cú cắn thứ 3)
+    ctx.save();
+    ctx.translate(-18, -4);
+    ctx.rotate(-0.3 - slamSwing * 1.15);
+    ctx.strokeStyle = '#90a4ae';
+    ctx.lineWidth = 4.2;
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(0, 18);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 16, 12, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+
+    // 3 chấm tích lũy Đẩy Lùi mỏ neo
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = i < bites ? '#ffab00' : 'rgba(255,255,255,0.22)';
+      ctx.beginPath();
+      ctx.arc(-8 + i * 8, -48, 2.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    this.drawZombieStatus(ctx, zombie, walkY, -62, -54);
+    this.drawHealthBar(ctx, -22, -55, 44, 5.2, zombie.hp / zombie.maxHp, '#ffab00');
+    ctx.restore();
+  }
+
+  drawSwimmingGhost(ctx, zombie) {
+    const t = this.getFrameTimeSec();
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y);
+
+    if (zombie.isSubmerged) {
+      // Đang lặn ngầm: Vòng sóng nước + vây linh hồn xanh ngọc
+      ctx.fillStyle = 'rgba(0, 229, 255, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(0, 14, 24, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.ellipse(0, 14, 18 + Math.sin(t * 8) * 3, 6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = '#00bcd4';
+      ctx.beginPath();
+      ctx.moveTo(-6, 12);
+      ctx.lineTo(-14, -10);
+      ctx.lineTo(8, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#80deea';
+      ctx.font = 'bold 9.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🌊 LẶN NGẦM', 0, -16);
+    } else {
+      // Đã trồi lên ở Cột 5
+      const floatY = Math.sin(t * 5) * 3;
+      ctx.translate(0, floatY);
+      ctx.globalAlpha = 0.88;
+
+      ctx.fillStyle = '#00838f';
+      ctx.strokeStyle = '#80deea';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-12, 22);
+      ctx.quadraticCurveTo(-15, -10, 0, -24);
+      ctx.quadraticCurveTo(15, -10, 12, 22);
+      ctx.lineTo(4, 16);
+      ctx.lineTo(-4, 22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#e0f7fa';
+      ctx.beginPath();
+      ctx.arc(-4, -11, 2.4, 0, Math.PI * 2);
+      ctx.arc(4, -11, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+      this.drawZombieStatus(ctx, zombie, 0, -38, -32);
+      this.drawHealthBar(ctx, -18, -33, 36, 4.5, zombie.hp / zombie.maxHp, '#26c6da');
+    }
+    ctx.restore();
+  }
+
+  drawWantedCaptain(ctx, zombie) {
+    const t = this.getFrameTimeSec();
+    const walkY = zombie.isEating ? 0 : Math.abs(Math.sin(zombie.walkCycle || 0)) * 3.5;
+
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y - walkY);
+
+    // Hào quang ĐẦU LÂU ĐỎ dưới chân
+    ctx.strokeStyle = `rgba(255, 23, 68, ${0.65 + Math.sin(t * 7) * 0.28})`;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.ellipse(0, 26, 22, 8, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Áo choàng Thuyền Trưởng đỏ thẫm viền vàng
+    ctx.fillStyle = '#7f0000';
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.roundRect(-14, -14, 28, 36, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Mũ thuyền trưởng 3 góc & đầu lâu vàng
+    ctx.fillStyle = '#3e2723';
+    ctx.beginPath();
+    ctx.arc(0, -24, 11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#212121';
+    ctx.beginPath();
+    ctx.moveTo(-20, -28);
+    ctx.lineTo(0, -42);
+    ctx.lineTo(20, -28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#ffd54f';
+    ctx.stroke();
+
+    // Biểu tượng ĐẦU LÂU ĐỎ TRUY NÃ nổi bật trên đầu
+    const skullBob = Math.sin(t * 6) * 3;
+    ctx.fillStyle = 'rgba(18, 4, 8, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(-34, -72 + skullBob, 68, 16, 5);
+    ctx.fill();
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.fillStyle = '#ff5252';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('💀 TRUY NÃ', 0, -61 + skullBob);
+
+    this.drawZombieStatus(ctx, zombie, walkY, -52, -46);
+    this.drawHealthBar(ctx, -20, -49, 40, 5.2, zombie.hp / zombie.maxHp, '#ff1744');
+    ctx.restore();
+  }
+
+  drawZombotPyke(ctx, zombie) {
+    const t = this.getFrameTimeSec();
+    const phase = zombie.pykePhase || 1;
+    const isStuck = (zombie.pykeStuckTimer || 0) > 0;
+    const isVuln = (zombie.pykeVulnerableTimer || 0) > 0;
+    const phaseColor = phase >= 3 ? '#ff1744' : (phase === 2 ? '#ffab00' : '#00e5ff');
+    const bob = isStuck ? 0 : Math.sin(t * 2.8) * 3.5;
+
+    ctx.save();
+    ctx.translate(zombie.x, zombie.y + bob);
+
+    // Bóng & xoáy nước khổng lồ dưới chân Boss
+    ctx.fillStyle = 'rgba(0, 12, 18, 0.72)';
+    ctx.beginPath();
+    ctx.ellipse(0, 44, 52, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = isVuln ? '#ffd54f' : phaseColor;
+    ctx.lineWidth = isVuln ? 3.2 : 2.2;
+    ctx.stroke();
+
+    // Thân Zombot Đồ Tể giáp thép Bilgewater
+    const bodyGrad = ctx.createLinearGradient(-34, -46, 34, 34);
+    bodyGrad.addColorStop(0, '#1c313a');
+    bodyGrad.addColorStop(0.5, '#0d1b22');
+    bodyGrad.addColorStop(1, '#261419');
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = phaseColor;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.roundRect(-34, -42, 68, 72, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // Gai vai hàm cá mập
+    ctx.fillStyle = '#455a64';
+    ctx.beginPath();
+    ctx.moveTo(-36, -34); ctx.lineTo(-54, -54); ctx.lineTo(-22, -44); ctx.closePath();
+    ctx.moveTo(36, -34); ctx.lineTo(54, -54); ctx.lineTo(22, -44); ctx.closePath();
+    ctx.fill();
+
+    // Lõi năng lượng trước ngực (đổi màu theo Phase)
+    ctx.fillStyle = phaseColor;
+    ctx.beginPath();
+    ctx.arc(0, -10, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(0, -10, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Đầu trùm khăn bịt mặt & mắt rực sáng
+    ctx.fillStyle = '#102027';
+    ctx.beginPath();
+    ctx.arc(0, -56, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = phaseColor;
+    ctx.lineWidth = 2.0;
+    ctx.stroke();
+
+    // Khăn bịt mặt Đồ Tể đỏ/ngọc
+    ctx.fillStyle = phase >= 3 ? '#b71c1c' : '#006064';
+    ctx.beginPath();
+    ctx.roundRect(-18, -56, 36, 18, 6);
+    ctx.fill();
+
+    ctx.fillStyle = '#00e5ff';
+    ctx.beginPath();
+    ctx.ellipse(-7, -61, 4, 2.4, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(7, -61, 4, 2.4, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Móc câu Bone Skewer khổng lồ bên tay trái hướng về phía đội hình cây
+    ctx.save();
+    ctx.translate(-38, -8);
+    ctx.rotate(zombie.pykeTelegraph ? Math.sin(t * 14) * 0.18 : Math.sin(t * 2.4) * 0.08);
+    ctx.strokeStyle = '#cfd8dc';
+    ctx.lineWidth = 5.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-34, -8);
+    ctx.lineTo(-48, -22);
+    ctx.arc(-42, -8, 14, -Math.PI * 0.7, Math.PI * 0.5);
+    ctx.stroke();
+    ctx.strokeStyle = phaseColor;
+    ctx.lineWidth = 2.0;
+    ctx.stroke();
+    ctx.restore();
+
+    // Trạng thái bị KẸT ×2 SÁT THƯƠNG
+    if (isStuck || isVuln) {
+      const rem = Math.max(zombie.pykeStuckTimer || 0, zombie.pykeVulnerableTimer || 0);
+      ctx.fillStyle = 'rgba(20, 10, 0, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(-58, -104, 116, 18, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#ffd54f';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.fillStyle = '#ffd54f';
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`💥 KẸT ×2 DMG (${rem.toFixed(1)}s)`, 0, -92);
+    }
+
+    this.drawZombieStatus(ctx, zombie, 0, -90, -80);
+    this.drawHealthBar(ctx, -42, -84, 84, 7.0, zombie.hp / zombie.maxHp, phaseColor);
     ctx.restore();
   }
 
@@ -9021,10 +9918,45 @@ class GameRenderer {
   // Vẽ vùng đánh dấu phạm vi tấn công gọn, sắc nét trên mặt cỏ (không che khuất cây/zombie)
   drawAttackRangeZones(ctx, effects) {
     for (const eff of effects) {
+      const rawTimer = eff.timer || 0;
       const duration = Math.max(0.05, eff.duration || 0.35);
-      const progress = Math.min(1, Math.max(0, (eff.timer || 0) / duration));
+
+      // Trong lúc Sett đang bay kỹ năng R (timer < 0), vẽ vòng ngắm cảnh báo ô đích 3×3 trước khi giáng đất
+      if (rawTimer < 0) {
+        if (eff.kind === 'sett_r_slam') {
+          const minRow = Math.max(0, eff.minRow !== undefined ? eff.minRow : eff.row);
+          const maxRow = Math.min(CONFIG.ROWS - 1, eff.maxRow !== undefined ? eff.maxRow : eff.row);
+          const topY = CONFIG.GRID_OFFSET_Y + minRow * CONFIG.CELL_HEIGHT + 4;
+          const bottomY = CONFIG.GRID_OFFSET_Y + (maxRow + 1) * CONFIG.CELL_HEIGHT - 4;
+          const zoneX = eff.startX;
+          const zoneW = Math.max(12, eff.endX - eff.startX);
+          const zoneH = Math.max(12, bottomY - topY);
+          const prep = Math.max(0, Math.min(1, 1 + rawTimer / 0.36));
+
+          ctx.save();
+          ctx.fillStyle = `rgba(255, 111, 0, ${0.12 + 0.16 * prep})`;
+          ctx.strokeStyle = `rgba(255, 213, 79, ${0.55 + 0.4 * prep})`;
+          ctx.lineWidth = 2.0;
+          ctx.setLineDash([8, 5]);
+          ctx.beginPath();
+          ctx.roundRect(zoneX, topY, zoneW, zoneH, 6);
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.beginPath();
+          ctx.ellipse(eff.x, eff.y + 8, 36 * (1 - 0.35 * prep), 16 * (1 - 0.35 * prep), 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+        continue;
+      }
+
+      const progress = Math.min(1, Math.max(0, rawTimer / duration));
       const alpha = Math.pow(1 - progress, 0.85);
       if (alpha <= 0.02) continue;
+      if (eff.startX === undefined || eff.endX === undefined) continue;
+      if (eff.kind === 'pyke_q_hook' || eff.kind === 'anchor_slam') continue;
 
       const minRow = Math.max(0, eff.minRow !== undefined ? eff.minRow : eff.row);
       const maxRow = Math.min(CONFIG.ROWS - 1, eff.maxRow !== undefined ? eff.maxRow : eff.row);
@@ -9058,6 +9990,12 @@ class GameRenderer {
       } else if (eff.kind === 'shen_spirit_ult') {
         fillCol = 'rgba(156, 39, 176, 0.18)';
         borderCol = 'rgba(128, 222, 234, 0.85)';
+      } else if (eff.kind === 'sett_r_slam') {
+        fillCol = 'rgba(255, 109, 0, 0.22)';
+        borderCol = 'rgba(255, 213, 79, 0.9)';
+      } else if (eff.kind === 'pyke_e_surge') {
+        fillCol = 'rgba(0, 229, 255, 0.22)';
+        borderCol = 'rgba(38, 198, 218, 0.9)';
       } else if (eff.kind === 'blast_3x3') {
         fillCol = 'rgba(255, 23, 68, 0.20)';
         borderCol = eff.color || 'rgba(255, 82, 82, 0.8)';
@@ -9089,6 +10027,7 @@ class GameRenderer {
   // Vẽ hiệu ứng đòn đánh gọn gàng, rõ hướng và đúng ranh giới tầm đánh
   drawAttackEffectVfx(ctx, effects) {
     for (const eff of effects) {
+      if ((eff.timer || 0) < 0) continue;
       const duration = Math.max(0.05, eff.duration || 0.35);
       const p = Math.min(1, Math.max(0, (eff.timer || 0) / duration));
       const fade = Math.pow(1 - p, 0.85);
@@ -10141,32 +11080,39 @@ class GameRenderer {
         const sy = eff.startY ?? eff.y;
         const ey = eff.endY ?? eff.y;
         const cx = (sx + ex) / 2;
-        const cy = Math.min(sy, ey) - 82;
-        ctx.strokeStyle = `rgba(255, 171, 0, ${0.95 * alpha})`;
-        ctx.lineWidth = 5;
-        ctx.setLineDash([7, 4]);
+        const cy = Math.min(sy, ey) - 96;
+
+        // Vòng sóng khởi phát ngay tại vị trí Sett túm lấy cây phòng thủ
+        if (p < 0.55) {
+          const gp = p / 0.55;
+          ctx.strokeStyle = `rgba(255, 213, 79, ${(1 - gp) * 0.9})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.ellipse(sx, sy + 12, 16 + gp * 26, 8 + gp * 14, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Dải quỹ đạo vồng cao Showstopper rực lửa vàng-đỏ
+        const ribbonGrad = ctx.createLinearGradient(sx, sy, ex, ey);
+        ribbonGrad.addColorStop(0, `rgba(255, 235, 59, ${0.85 * alpha})`);
+        ribbonGrad.addColorStop(0.5, `rgba(255, 145, 0, ${0.95 * alpha})`);
+        ribbonGrad.addColorStop(1, `rgba(255, 61, 0, ${0.85 * alpha})`);
+        ctx.strokeStyle = ribbonGrad;
+        ctx.lineWidth = 8 * (1 - p * 0.45);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(cx, cy, ex, ey);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.75 * alpha})`;
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([8, 6]);
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.quadraticCurveTo(cx, cy, ex, ey);
         ctx.stroke();
         ctx.setLineDash([]);
-
-        // Vẽ bóng cây đang bị nhấc bổng ném bay theo quỹ đạo parabol
-        const t = Math.min(1, p * 1.15);
-        const inv = 1 - t;
-        const bx = inv * inv * sx + 2 * inv * t * cx + t * t * ex;
-        const by = inv * inv * sy + 2 * inv * t * cy + t * t * ey;
-        ctx.save();
-        ctx.translate(bx, by);
-        ctx.rotate(t * Math.PI * 1.6);
-        ctx.fillStyle = `rgba(255, 213, 79, ${0.42 * alpha})`;
-        ctx.strokeStyle = `rgba(255, 82, 82, ${0.95 * alpha})`;
-        ctx.lineWidth = 2.6;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 18, 22, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
       } else if (eff.kind === 'sett_r_slam') {
         const alpha = 1 - p;
         const tY = CONFIG.GRID_OFFSET_Y + (eff.minRow ?? 0) * CONFIG.CELL_HEIGHT + 6;
@@ -10175,29 +11121,58 @@ class GameRenderer {
         const ex = eff.endX ?? (eff.x + 110);
 
         // Vùng nổ 3×3 cam-vàng rực lửa
-        ctx.fillStyle = `rgba(255, 109, 0, ${0.28 * alpha})`;
-        ctx.strokeStyle = `rgba(255, 213, 79, ${0.88 * alpha})`;
-        ctx.lineWidth = 2.6;
+        ctx.fillStyle = `rgba(255, 109, 0, ${0.30 * alpha})`;
+        ctx.strokeStyle = `rgba(255, 213, 79, ${0.92 * alpha})`;
+        ctx.lineWidth = 2.8;
         ctx.fillRect(sx, tY, Math.max(20, ex - sx), bY - tY);
         ctx.strokeRect(sx, tY, Math.max(20, ex - sx), bY - tY);
 
-        // 8 tia nứt mặt đấu trường tỏa từ tâm
-        ctx.strokeStyle = `rgba(255, 224, 130, ${0.95 * alpha})`;
-        ctx.lineWidth = 3;
-        for (let k = 0; k < 8; k++) {
-          const ang = (k * Math.PI) / 4;
-          const len = 18 + p * 68;
+        // Hố va chạm sẫm màu tại tâm giáng đòn
+        ctx.fillStyle = `rgba(46, 14, 5, ${0.55 * alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y + 8, 34 + p * 22, 16 + p * 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 10 tia nứt mặt đấu trường tỏa mạnh từ tâm
+        ctx.strokeStyle = `rgba(255, 224, 130, ${0.96 * alpha})`;
+        ctx.lineWidth = 3.2;
+        for (let k = 0; k < 10; k++) {
+          const ang = (k * Math.PI) / 5 + 0.15;
+          const len = 22 + p * 78;
           ctx.beginPath();
-          ctx.moveTo(eff.x + Math.cos(ang) * 12, eff.y + Math.sin(ang) * 8);
-          ctx.lineTo(eff.x + Math.cos(ang) * len, eff.y + Math.sin(ang) * (len * 0.7));
+          ctx.moveTo(eff.x + Math.cos(ang) * 10, eff.y + 6 + Math.sin(ang) * 6);
+          ctx.lineTo(eff.x + Math.cos(ang) * len, eff.y + 6 + Math.sin(ang) * (len * 0.68));
           ctx.stroke();
         }
 
-        // Vòng sóng xung kích kép
-        ctx.strokeStyle = `rgba(255, 255, 255, ${0.92 * alpha})`;
-        ctx.lineWidth = 3.5;
+        // Cột sáng bùng nổ thẳng đứng lúc chạm đất
+        if (p < 0.45) {
+          const colA = (1 - p / 0.45) * 0.72;
+          const colGrad = ctx.createLinearGradient(eff.x, eff.y + 10, eff.x, eff.y - 110);
+          colGrad.addColorStop(0, `rgba(255, 245, 157, ${colA})`);
+          colGrad.addColorStop(0.6, `rgba(255, 145, 0, ${colA * 0.6})`);
+          colGrad.addColorStop(1, 'rgba(255, 61, 0, 0)');
+          ctx.fillStyle = colGrad;
+          ctx.beginPath();
+          ctx.moveTo(eff.x - 32, eff.y + 10);
+          ctx.lineTo(eff.x - 16, eff.y - 108);
+          ctx.lineTo(eff.x + 16, eff.y - 108);
+          ctx.lineTo(eff.x + 32, eff.y + 10);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Hai vòng sóng xung kích kép (vàng cam + trắng chói)
+        ctx.strokeStyle = `rgba(255, 171, 0, ${0.9 * alpha})`;
+        ctx.lineWidth = 4.2;
         ctx.beginPath();
-        ctx.ellipse(eff.x, eff.y, 24 + p * 82, 16 + p * 56, 0, 0, Math.PI * 2);
+        ctx.ellipse(eff.x, eff.y + 4, 30 + p * 98, 20 + p * 68, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.95 * alpha})`;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y + 4, 18 + p * 74, 12 + p * 50, 0, 0, Math.PI * 2);
         ctx.stroke();
       } else if (eff.kind === 'melee_bite') {
         const alpha = 1 - p;
@@ -10206,6 +11181,138 @@ class GameRenderer {
         ctx.lineWidth = 2.6;
         ctx.beginPath();
         ctx.arc(eff.x, eff.y, 10 + p * 10, Math.PI * 0.65, Math.PI * 1.45);
+        ctx.stroke();
+      } else if (eff.kind === 'pyke_q_hook') {
+        const alpha = 1 - p * 0.7;
+        const reach = Math.min(1, p * 2.2);
+        const sx = eff.startX ?? eff.x;
+        const ex = eff.endX ?? sx;
+        const curX = sx + (ex - sx) * reach;
+        const y = eff.y;
+
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.9 * alpha})`;
+        ctx.lineWidth = 3.2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(sx, y);
+        ctx.lineTo(curX, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Đầu móc lao rực sáng
+        ctx.fillStyle = `rgba(255, 213, 79, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(curX - 16, y);
+        ctx.lineTo(curX + 6, y - 9);
+        ctx.lineTo(curX + 2, y);
+        ctx.lineTo(curX + 6, y + 9);
+        ctx.closePath();
+        ctx.fill();
+      } else if (eff.kind === 'pyke_e_surge') {
+        const alpha = 1 - p;
+        const sx = eff.startX ?? eff.x;
+        const ex = eff.endX ?? eff.x;
+        const y = eff.y;
+        const surgeX = ex - (ex - sx) * Math.min(1, p * 1.5);
+
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.95 * alpha})`;
+        ctx.lineWidth = 4.2;
+        ctx.beginPath();
+        ctx.moveTo(ex, y - 16);
+        ctx.lineTo(surgeX, y);
+        ctx.lineTo(ex, y + 16);
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(38, 198, 218, ${0.42 * alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(surgeX, y, 24, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (eff.kind === 'pyke_r_x_mark') {
+        const pulse = 0.7 + Math.sin(p * Math.PI * 6) * 0.3;
+        const r = 34 - p * 12;
+        ctx.strokeStyle = `rgba(255, 23, 68, ${pulse})`;
+        ctx.lineWidth = 3.4;
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, Math.max(12, r), 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#ffd54f';
+        ctx.lineWidth = 3.6;
+        ctx.beginPath();
+        ctx.moveTo(eff.x - 18, eff.y - 18); ctx.lineTo(eff.x + 18, eff.y + 18);
+        ctx.moveTo(eff.x + 18, eff.y - 18); ctx.lineTo(eff.x - 18, eff.y + 18);
+        ctx.stroke();
+      } else if (eff.kind === 'pyke_r_exec') {
+        const alpha = 1 - p;
+        const spread = 18 + p * 36;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = eff.hit ? `rgba(255, 23, 68, ${alpha})` : `rgba(255, 171, 64, ${alpha})`;
+        ctx.lineWidth = 7 * (1 - p * 0.45);
+        ctx.beginPath();
+        ctx.moveTo(eff.x - spread, eff.y - spread); ctx.lineTo(eff.x + spread, eff.y + spread);
+        ctx.moveTo(eff.x + spread, eff.y - spread); ctx.lineTo(eff.x - spread, eff.y + spread);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+
+        if (eff.hit) {
+          ctx.strokeStyle = `rgba(0, 230, 118, ${alpha})`;
+          ctx.lineWidth = 3.0;
+          ctx.beginPath();
+          ctx.arc(eff.x, eff.y, 16 + p * 44, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else if (eff.kind === 'anchor_slam') {
+        const alpha = 1 - p;
+        const sx = eff.startX ?? eff.x;
+        const ex = eff.endX ?? eff.x;
+        ctx.strokeStyle = `rgba(255, 171, 0, ${alpha})`;
+        ctx.lineWidth = 4.0;
+        ctx.beginPath();
+        ctx.moveTo(sx, eff.y);
+        ctx.quadraticCurveTo((sx + ex) / 2, eff.y - 36, ex, eff.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(176, 190, 197, ${alpha})`;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.ellipse(ex, eff.y + 10, 14 + p * 28, 7 + p * 14, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (eff.kind === 'swimmer_surface') {
+        const alpha = 1 - p;
+        ctx.strokeStyle = `rgba(0, 229, 255, ${alpha})`;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y + 12, 16 + p * 36, 8 + p * 16, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(128, 222, 234, ${0.35 * alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(eff.x - 18, eff.y + 12);
+        ctx.lineTo(eff.x, eff.y - 38 * (1 - p * 0.4));
+        ctx.lineTo(eff.x + 18, eff.y + 12);
+        ctx.closePath();
+        ctx.fill();
+      } else if (eff.kind === 'your_cut_reward') {
+        const alpha = 1 - p;
+        ctx.strokeStyle = `rgba(255, 213, 79, ${alpha})`;
+        ctx.lineWidth = 3.4;
+        ctx.beginPath();
+        ctx.arc(eff.x, eff.y, 14 + p * 46, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(255, 235, 59, ${0.28 * alpha})`;
+        ctx.fill();
+      } else if (eff.kind === 'squash_slam') {
+        const alpha = 1 - p;
+        ctx.fillStyle = `rgba(118, 255, 3, ${0.32 * alpha})`;
+        ctx.strokeStyle = `rgba(178, 255, 89, ${0.95 * alpha})`;
+        ctx.lineWidth = 3.4;
+        ctx.beginPath();
+        ctx.ellipse(eff.x, eff.y + 12, 24 + p * 34, 12 + p * 16, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.stroke();
       }
 
@@ -13856,10 +14963,20 @@ class GameRenderer {
 
   // 8. Bí Đè (Squash) — Nhảy đè nát zombie
   drawSquashGraphics(ctx, plant) {
-    const jumpOffset = plant.isSquashing ? -Math.sin((plant.squashTimer || 0) * Math.PI) * 28 : 0;
+    const jumpProgress = plant.isJumping
+      ? Math.max(0, Math.min(1, (plant.jumpTimer || 0) / (plant.jumpDuration || 0.42)))
+      : 0;
+    const jumpOffset = plant.isSquashing
+      ? -Math.sin((plant.squashTimer || 0) * Math.PI) * 28
+      : 0;
+    const stretchY = plant.isJumping ? (1 + Math.sin(jumpProgress * Math.PI) * 0.24) : 1;
+    const stretchX = plant.isJumping ? (1 - Math.sin(jumpProgress * Math.PI) * 0.14) : 1;
+    const leanAngle = plant.isJumping ? Math.sin(jumpProgress * Math.PI) * 0.18 : 0;
 
     ctx.save();
     ctx.translate(0, jumpOffset);
+    ctx.rotate(leanAngle);
+    ctx.scale(stretchX, stretchY);
 
     // Thân bí xanh khổng lồ bạnh gân guốc
     const squashGrad = ctx.createLinearGradient(-18, -25, 18, 22);

@@ -103,6 +103,25 @@ class PvzWebBridge(
         }
       }
 
+      val recalledHpMap = mutableMapOf<String, Int>()
+      val recalledObj = obj.optJSONObject("recalledPlantHps")
+      if (recalledObj != null) {
+        val keys = recalledObj.keys()
+        while (keys.hasNext()) {
+          val k = keys.next()
+          recalledHpMap[k] = recalledObj.optInt(k, 0)
+        }
+      }
+
+      val exhaustedSet = mutableSetOf<String>()
+      val exArr = obj.optJSONArray("exhaustedSingleUse")
+      if (exArr != null) {
+        for (i in 0 until exArr.length()) {
+          val id = exArr.optString(i, "")
+          if (id.isNotEmpty()) exhaustedSet.add(id)
+        }
+      }
+
       val snapshot = HudSnapshot(
         sun = obj.optInt("sun", 50),
         plantFood = obj.optInt("plantFood", 3),
@@ -127,7 +146,17 @@ class PvzWebBridge(
         selectedDeck = deckList.ifEmpty { CampaignProgress.DEFAULT_DECK },
         sandboxPlants = sandboxPlantList.ifEmpty { CampaignProgress.DEFAULT_SANDBOX_PLANTS },
         sandboxZombies = if (szArr != null) sandboxZombieList else CampaignProgress.DEFAULT_SANDBOX_ZOMBIES,
-        cooldowns = cdMap
+        cooldowns = cdMap,
+        isBloodharborMode = obj.optBoolean("isBloodharborMode", false),
+        isSetupPhase = obj.optBoolean("isSetupPhase", false),
+        bloodharborPhase = obj.optInt("bloodharborPhase", 1),
+        maxPlantsOnBoard = obj.optInt("maxPlantsOnBoard", 12),
+        plantCountOnBoard = obj.optInt("plantCountOnBoard", 0),
+        yourCutTimer = obj.optDouble("yourCutTimer", 25.0).toFloat(),
+        recalledPlantHps = recalledHpMap,
+        exhaustedSingleUse = exhaustedSet,
+        pykeStuckTimer = obj.optDouble("pykeStuckTimer", 0.0).toFloat(),
+        pykeVulnerableTimer = obj.optDouble("pykeVulnerableTimer", 0.0).toFloat()
       )
       mainHandler.post { onHudSnapshotCallback(snapshot) }
     } catch (_: Exception) {
@@ -250,5 +279,9 @@ class PvzWebBridge(
   fun setSandboxZombies(zombies: List<String>) {
     val zombiesArr = JSONArray(zombies).toString()
     eval("window.pvzBridge && window.pvzBridge.setSandboxZombies(${JSONObject.quote(zombiesArr)});")
+  }
+
+  fun startBloodharborHorn() {
+    eval("window.pvzBridge && window.pvzBridge.startBloodharborHorn();")
   }
 }

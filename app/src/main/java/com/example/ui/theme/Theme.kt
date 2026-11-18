@@ -84,7 +84,12 @@ data class PvZColorPalette(
   val ioniaCardTop: Color = IoniaCardTop,
   val ioniaCardBottom: Color = IoniaCardBottom,
   val ioniaBorderSakura: Color = IoniaBorderSakura,
-  val ioniaJadeAccent: Color = IoniaJadeAccent
+  val ioniaJadeAccent: Color = IoniaJadeAccent,
+  val bloodharborSeaTop: Color = BloodharborSeaTop,
+  val bloodharborCardTop: Color = BloodharborCardTop,
+  val bloodharborCardBottom: Color = BloodharborCardBottom,
+  val bloodharborJadeCyan: Color = BloodharborJadeCyan,
+  val bloodharborCrimson: Color = BloodharborCrimson
 ) {
   val worldMapBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(midnightPlum, obsidianBg))
@@ -104,6 +109,9 @@ data class PvZColorPalette(
   val ioniaSelectionBackdropBrush: Brush
     get() = Brush.verticalGradient(listOf(ioniaTealTop, obsidianBg))
 
+  val bloodharborSelectionBackdropBrush: Brush
+    get() = Brush.verticalGradient(listOf(bloodharborSeaTop, obsidianBg))
+
   val gothicCardBrush: Brush
     get() = Brush.verticalGradient(listOf(plumSurfaceCard, plumSurfaceElevated))
 
@@ -121,6 +129,9 @@ data class PvZColorPalette(
 
   val ioniaCardBrush: Brush
     get() = Brush.verticalGradient(listOf(ioniaCardTop, ioniaCardBottom))
+
+  val bloodharborCardBrush: Brush
+    get() = Brush.verticalGradient(listOf(bloodharborCardTop, bloodharborCardBottom))
 
   val rusticWoodBrush: Brush
     get() = Brush.verticalGradient(listOf(rusticWoodTop, rusticWoodBottom))

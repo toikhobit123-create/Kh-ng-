@@ -96,6 +96,13 @@ val IoniaCardBottom = Color(0xFF091C1E)
 val IoniaBorderSakura = Color(0xFFF48FB1)
 val IoniaJadeAccent = Color(0xFF64FFDA)
 
+// Ben Cang Tu Than (Map 20 - Bloodharbor Pier)
+val BloodharborSeaTop = Color(0xFF04141B)
+val BloodharborCardTop = Color(0xFF0A242E)
+val BloodharborCardBottom = Color(0xFF040F14)
+val BloodharborJadeCyan = Color(0xFF00E5FF)
+val BloodharborCrimson = Color(0xFFFF1744)
+
 // Typography & Borders
 val TextPrimary = Color(0xFFF3EFFA)
 val CssSlateText = Color(0xFFE2E8F0)        // CSS body color

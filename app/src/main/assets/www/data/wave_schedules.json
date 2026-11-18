@@ -1276,6 +1276,28 @@
           ]
         }
       ]
+    },
+    "20": {
+      "initialDelay": 1.5,
+      "restDelay": 0.0,
+      "waves": [
+        {
+          "wave": 1,
+          "name": "Huyết Cảng Tử Thần",
+          "duration": 220.0,
+          "isFinal": true,
+          "bgm": "boss",
+          "segments": [
+            { "type": "drowned_sailor", "startOffset": 0.0, "interval": 4.2, "duration": 42.0, "count": 11, "jitter": 0.3 },
+            { "type": "drowned_sailor", "startOffset": 45.0, "interval": 3.4, "duration": 54.4, "count": 17, "jitter": 0.3 },
+            { "type": "swimming_ghost", "startOffset": 48.0, "interval": 8.5, "duration": 68.0, "count": 9, "jitter": 0.4 },
+            { "type": "anchor_bearer", "startOffset": 52.0, "interval": 11.5, "duration": 69.0, "count": 7, "jitter": 0.3 },
+            { "type": "drowned_sailor", "startOffset": 102.0, "interval": 2.8, "duration": 112.0, "count": 41, "jitter": 0.25 },
+            { "type": "swimming_ghost", "startOffset": 120.0, "interval": 7.0, "duration": 98.0, "count": 15, "jitter": 0.3 },
+            { "type": "anchor_bearer", "startOffset": 125.0, "interval": 10.0, "duration": 90.0, "count": 10, "jitter": 0.3 }
+          ]
+        }
+      ]
     }
   }
 }
