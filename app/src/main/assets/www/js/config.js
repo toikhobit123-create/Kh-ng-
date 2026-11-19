@@ -913,8 +913,16 @@ const ZOMBIE_COMBAT_STATS = {
       phase2Interval: 6.5,
       phase3Interval: 5.0,
       telegraphDuration: 2.0,
-      rDamage: 1800,
-      rHealRatio: 0.10
+      rCooldownP1: 16.0,
+      rCooldownP2: 14.0,
+      rCooldownP3: 12.0,
+      rWarnFirst: 2.2,
+      rWarnChain: 1.8,
+      rStuckDuration: 4.0,
+      rVulnerableMult: 1.5,
+      greyHealthRatio: 0.4,
+      maxGreyHealth: 800,
+      rDamage: 1800
     }
   }
 };
@@ -2170,8 +2178,8 @@ const LEVEL_CONFIG = {
   20: {
     level: 20,
     title: 'Level 20: Bến Cảng Tử Thần (Bloodharbor Pier)',
-    subtitle: 'Boss Zombot Đồ Tể 15.000 HP · 0 Sun · Dàn Trận & Chia Phần',
-    description: 'Bản đồ 5×9: Cột 1–6 sàn gỗ, cột 7–9 vùng nước đen của Zombot Đồ Tể. Không Sun, không Máy Cắt Cỏ! Chọn 6 cây (cấm Sun), đặt miễn phí tối đa 12 cây, dùng Xẻng đảo vị trí (giữ máu, hồi 2.5s) để né chiêu và hạ Truy Nã Chia Phần!',
+    subtitle: 'Boss Zombot Đồ Tể 15.000 HP · 0 Sun · Máu Xám & Chia Phần',
+    description: 'Bản đồ 5×9: Cột 1–6 sàn gỗ, cột 7–9 vùng nước đen của Zombot Đồ Tể. Không Sun, không Máy Cắt Cỏ! Chọn 6 cây (cấm Sun), đặt miễn phí tối đa 12 cây, dùng Xẻng đảo vị trí (giữ máu, hồi 1.2s) để né chiêu Q/E/R và săn Truy Nã mỗi 20s!',
     theme: 'bloodharbor',
     worldName: 'Bến Cảng Tử Thần',
     zombiePool: ['drowned_sailor', 'anchor_bearer', 'swimming_ghost', 'wanted_captain', 'zombot_pyke'],
@@ -2186,6 +2194,8 @@ const LEVEL_CONFIG = {
     deckSize: 6,
     setupMaxPlants: 12,
     maxPlantsCap: 16,
+    shovelRecallCooldown: 1.2,
+    yourCutInterval: 20.0,
     bossType: 'zombot_pyke',
     waves: 1
   }

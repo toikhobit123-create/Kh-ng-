@@ -421,6 +421,25 @@ class GameRenderer {
       ctx.fillRect(innerX, innerY, fillWidth, innerH / 2);
     }
 
+    // 4b. Thanh Máu Xám (Grey Health) của Zombot Đồ Tể Pyke (bên phải thanh máu thực, khóa theo trần Phase)
+    if (isBloodharborMap && boss && boss.pykeGreyHealth > 0 && currentHp > 0) {
+      const phaseCap = (boss.pykePhase >= 3) ? 5000 : (boss.pykePhase === 2 ? 10000 : maxHp);
+      const greyEndHp = Math.min(phaseCap, currentHp + Math.round(boss.pykeGreyHealth));
+      if (greyEndHp > currentHp) {
+        const startX = innerX + innerW * (currentHp / maxHp);
+        const endX = innerX + innerW * (greyEndHp / maxHp);
+        const greyW = Math.max(0, endX - startX);
+        if (greyW > 0.5) {
+          ctx.fillStyle = 'rgba(176, 190, 197, 0.85)';
+          ctx.fillRect(startX, innerY, greyW, innerH);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.fillRect(startX, innerY, greyW, innerH * 0.4);
+          ctx.fillStyle = '#eceff1';
+          ctx.fillRect(startX + greyW - 1.5, innerY, 1.5, innerH);
+        }
+      }
+    }
+
     // 5. Vạch phân mốc giai đoạn
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     const m1 = isBloodharborMap ? (10000 / 15000) : (isDesertMap ? 0.75 : 0.65);
@@ -443,9 +462,9 @@ class GameRenderer {
         phaseText = 'ĐÃ HẠ GỤC!';
       } else if (boss && (boss.pykeStuckTimer > 0 || boss.pykeVulnerableTimer > 0)) {
         const t = Math.max(boss.pykeStuckTimer || 0, boss.pykeVulnerableTimer || 0);
-        phaseText = `💥 BỊ KẸT · ×2 DMG (${t.toFixed(1)}s)`;
+        phaseText = `💥 BỊ KẸT · ×1.5 DMG (${t.toFixed(1)}s)`;
       } else if (currentHp > 10000) {
-        phaseText = 'P1: THĂM DÒ (8s/chiêu)';
+        phaseText = 'P1: THĂM DÒ (8s Q/E · 16s R)';
       } else if (currentHp > 5000) {
         phaseText = 'P2: THỦY TRIỀU DÂNG (NGẬP CỘT 6)';
       } else {
@@ -1948,10 +1967,13 @@ class GameRenderer {
       ctx.lineTo(tx - 24, ty + 24);
       ctx.stroke();
 
+      const slashLbl = (tel.maxSlashes && tel.maxSlashes > 1)
+        ? `☠️ CHÉM X ${tel.slashNumber || 1}/${tel.maxSlashes} (${tel.remaining.toFixed(1)}s)`
+        : `☠️ CHÉM X (${tel.remaining.toFixed(1)}s)`;
       ctx.fillStyle = '#ffd54f';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`☠️ CHÉM X (${tel.remaining.toFixed(1)}s)`, tx, cellY - 4);
+      ctx.fillText(slashLbl, tx, cellY - 4);
     }
     ctx.restore();
   }
@@ -7301,12 +7323,12 @@ class GameRenderer {
     ctx.stroke();
     ctx.restore();
 
-    // Trạng thái bị KẸT ×2 SÁT THƯƠNG
+    // Trạng thái bị KẸT ×1.5 SÁT THƯƠNG
     if (isStuck || isVuln) {
       const rem = Math.max(zombie.pykeStuckTimer || 0, zombie.pykeVulnerableTimer || 0);
       ctx.fillStyle = 'rgba(20, 10, 0, 0.9)';
       ctx.beginPath();
-      ctx.roundRect(-58, -104, 116, 18, 6);
+      ctx.roundRect(-62, -104, 124, 18, 6);
       ctx.fill();
       ctx.strokeStyle = '#ffd54f';
       ctx.lineWidth = 1.6;
@@ -7314,11 +7336,34 @@ class GameRenderer {
       ctx.fillStyle = '#ffd54f';
       ctx.font = 'bold 10.5px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`💥 KẸT ×2 DMG (${rem.toFixed(1)}s)`, 0, -92);
+      ctx.fillText(`💥 KẸT ×1.5 DMG (${rem.toFixed(1)}s)`, 0, -92);
     }
 
     this.drawZombieStatus(ctx, zombie, 0, -90, -80);
     this.drawHealthBar(ctx, -42, -84, 84, 7.0, zombie.hp / zombie.maxHp, phaseColor);
+
+    // Vẽ thanh Máu Xám mờ trực tiếp trên thanh máu của Zombot Pyke
+    if ((zombie.pykeGreyHealth || 0) > 0 && zombie.hp > 0) {
+      const barX = -42;
+      const barY = -84;
+      const barW = 84;
+      const barH = 7.0;
+      const phaseCap = phase >= 3 ? 5000 : (phase === 2 ? 10000 : zombie.maxHp);
+      const hpRatio = Math.max(0, Math.min(1, zombie.hp / zombie.maxHp));
+      const greyEndRatio = Math.max(hpRatio, Math.min(1, Math.min(phaseCap, zombie.hp + zombie.pykeGreyHealth) / zombie.maxHp));
+      const gx = barX + barW * hpRatio;
+      const gw = barW * (greyEndRatio - hpRatio);
+      if (gw > 0.5) {
+        ctx.fillStyle = 'rgba(176, 190, 197, 0.88)';
+        ctx.fillRect(gx, barY, gw, barH);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(gx + gw - 1, barY, 1, barH);
+      }
+      ctx.fillStyle = '#cfd8dc';
+      ctx.font = 'bold 9.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Máu Xám: +${Math.round(zombie.pykeGreyHealth)}`, 0, -69);
+    }
     ctx.restore();
   }
 

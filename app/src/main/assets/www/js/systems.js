@@ -423,7 +423,7 @@ class WaveManager {
     if (this.state === 'spawning' && (this.isFinalWave || this.currentWave === 5)) {
       if (this.level === 20) {
         const phase = (gameState && gameState.bloodharborPhase) || 1;
-        const cutTimer = (gameState && typeof gameState.yourCutTimer === 'number') ? Math.ceil(gameState.yourCutTimer) : 25;
+        const cutTimer = (gameState && typeof gameState.yourCutTimer === 'number') ? Math.ceil(gameState.yourCutTimer) : 20;
         return {
           title: `⚓ PHASE ${phase}: ${phase === 1 ? 'THĂM DÒ' : phase === 2 ? 'THỦY TRIỀU DÂNG' : 'HUYẾT CẢNG CUỒNG NỘ'}`,
           sub: `💀 Truy Nã tiếp theo: ${cutTimer}s · Hạ Zombot Đồ Tể để thắng!`,

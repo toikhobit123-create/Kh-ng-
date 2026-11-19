@@ -3473,7 +3473,8 @@ class Zombie {
       this.y = CONFIG.GRID_OFFSET_Y + 2 * CONFIG.CELL_HEIGHT + CONFIG.CELL_HEIGHT / 2;
       this.pykePhase = 1;
       this.pykeSkillTimer = 3.5;
-      this.pykeSkillIndex = 0; // 0: Q (Lao Móc), 1: E (Lướt Sóng), 2: R (Dấu Chữ X)
+      this.pykeQEToggle = 0; // 0: Q (Lao Móc), 1: E (Lướt Sóng) — tách R sang bộ đếm riêng
+      this.pykeRCdTimer = proto.rCooldownP1 || 16.0;
       this.pykeTelegraph = null;
       this.pykeStuckTimer = 0;
       this.pykeVulnerableTimer = 0;
@@ -3482,8 +3483,10 @@ class Zombie {
       this.pykeMinionTimer = 8.0;
       this.pykeSlashAnimTimer = 0;
       this.pykeChainSlashesRemaining = 0;
-      this.pykeChainDelay = 0;
-      this.pykeAllMissed = true;
+      this.pykePendingRTarget = null;
+      this.pykeRCastHealAvailable = false;
+      this.pykeGreyHealth = 0;
+      this.pykeMaxGreyHealth = proto.maxGreyHealth || 800;
     }
 
     this.maxHp = proto.hp;
@@ -6417,7 +6420,7 @@ class Zombie {
 
     this.flashTimer = 0.12;
     if (this.type === 'zombot_pyke' && this.pykeVulnerableTimer > 0 && amount > 0 && amount < 99999) {
-      amount = Math.round(amount * (this.pykeVulnerableMult || 2.0));
+      amount = Math.round(amount * (this.pykeVulnerableMult || 1.5));
     }
     const prevHp = this.hp;
 
@@ -6462,9 +6465,19 @@ class Zombie {
       this.checkAzirHpTriggers(this.gameState);
     }
 
-    // Kiểm tra các mốc Phase 2 (<= 10.000 HP) & Phase 3 (<= 5.000 HP) của Zombot Đồ Tể Pyke
-    if (this.type === 'zombot_pyke' && typeof this.checkPykePhaseTransition === 'function') {
-      this.checkPykePhaseTransition(this.gameState);
+    // Tích trữ Máu Xám (40% sát thương vừa nhận, tối đa 800 HP) & kiểm tra chuyển Phase cho Zombot Đồ Tể Pyke
+    if (this.type === 'zombot_pyke') {
+      if (this.hp > 0 && amount > 0 && amount < 99999) {
+        const hpLost = Math.max(0, prevHp - Math.max(0, this.hp));
+        const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
+        const greyRatio = cfg.greyHealthRatio !== undefined ? cfg.greyHealthRatio : 0.4;
+        const maxGrey = cfg.maxGreyHealth || 800;
+        this.pykeMaxGreyHealth = maxGrey;
+        this.pykeGreyHealth = Math.min(maxGrey, (this.pykeGreyHealth || 0) + hpLost * greyRatio);
+      }
+      if (typeof this.checkPykePhaseTransition === 'function') {
+        this.checkPykePhaseTransition(this.gameState);
+      }
     }
 
     // Kiểm tra mốc Hóa Lớn (< 60% HP) của Thần Khuyển
@@ -8069,16 +8082,29 @@ class Zombie {
     return zone;
   }
 
+  getPykeRCdForPhase() {
+    const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
+    if (this.pykePhase >= 3) return cfg.rCooldownP3 || 12.0;
+    if (this.pykePhase === 2) return cfg.rCooldownP2 || 14.0;
+    return cfg.rCooldownP1 || 16.0;
+  }
+
   checkPykePhaseTransition(gameState) {
     if (this.type !== 'zombot_pyke' || !this.alive) return;
     if (this.hp <= 10000 && this.pykePhase < 2) {
       this.pykePhase = 2;
+      if (typeof this.pykeRCdTimer === 'number') {
+        this.pykeRCdTimer = Math.min(this.pykeRCdTimer, this.getPykeRCdForPhase());
+      }
       if (gameState && typeof gameState.enterBloodharborPhase === 'function') {
         gameState.enterBloodharborPhase(2, this);
       }
     }
     if (this.hp <= 5000 && this.pykePhase < 3) {
       this.pykePhase = 3;
+      if (typeof this.pykeRCdTimer === 'number') {
+        this.pykeRCdTimer = Math.min(this.pykeRCdTimer, this.getPykeRCdForPhase());
+      }
       if (gameState && typeof gameState.enterBloodharborPhase === 'function') {
         gameState.enterBloodharborPhase(3, this);
       }
@@ -8143,16 +8169,7 @@ class Zombie {
       }
     }
 
-    // Chuỗi chém liên tiếp của R (Phase 2: 2 lần; Phase 3: 3 lần)
-    if (this.pykeChainSlashesRemaining > 0) {
-      this.pykeChainDelay -= dt;
-      if (this.pykeChainDelay <= 0) {
-        this.executePykeUltStrike(gameState);
-      }
-      return;
-    }
-
-    // Đang gồng / telegraph chiêu (2.0s cảnh báo rõ ràng để người chơi dùng Xẻng né!)
+    // Đang gồng / telegraph chiêu (Q/E: 2.0s; R nhát 1: 2.2s; R nhát 2–3: 1.8s)
     if (this.pykeTelegraph) {
       this.pykeTelegraph.remaining -= dt;
       if (this.pykeTelegraph.remaining <= 0) {
@@ -8163,14 +8180,67 @@ class Zombie {
       return;
     }
 
-    const interval = this.pykePhase === 3 ? 5.0 : (this.pykePhase === 2 ? 6.5 : 8.0);
+    // Bộ đếm hồi chiêu R độc lập: Phase 1 (16s) / Phase 2 (14s) / Phase 3 (12s)
+    if (this.pykeRCdTimer > 0) {
+      this.pykeRCdTimer = Math.max(0, this.pykeRCdTimer - dt);
+    }
+    if (this.pykeRCdTimer <= 0) {
+      if (this.startPykeRSkill(gameState)) {
+        this.pykeRCdTimer = this.getPykeRCdForPhase();
+        this.pykeSkillTimer = Math.max(this.pykeSkillTimer || 0, 1.5);
+        return;
+      }
+    }
+
+    // Vòng lặp 5s–8s chỉ tung Q (Lao Móc) và E (Lướt Sóng) luân phiên
+    const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
+    const interval = this.pykePhase >= 3
+      ? (cfg.phase3Interval || 5.0)
+      : (this.pykePhase === 2 ? (cfg.phase2Interval || 6.5) : (cfg.phase1Interval || 8.0));
     this.pykeSkillTimer -= dt;
     if (this.pykeSkillTimer <= 0) {
       this.pykeSkillTimer = interval;
-      const skillIdx = this.pykeSkillIndex % 3;
-      this.pykeSkillIndex++;
+      const skillIdx = (this.pykeQEToggle || 0) % 2;
+      this.pykeQEToggle = (this.pykeQEToggle || 0) + 1;
       this.startPykeSkillTelegraph(skillIdx, gameState);
     }
+  }
+
+  startPykeRSkill(gameState) {
+    const targetPlant = this.pickPykeUltTarget(gameState);
+    if (!targetPlant) return false;
+
+    const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
+    const warnFirst = cfg.rWarnFirst || 2.2;
+    const maxSlashes = this.pykePhase >= 3 ? 3 : (this.pykePhase === 2 ? 2 : 1);
+
+    this.pykeRCastHealAvailable = true;
+    this.pykeChainSlashesRemaining = maxSlashes;
+    this.pykeTelegraph = {
+      kind: 'R',
+      targetRow: targetPlant.row,
+      targetCol: targetPlant.col,
+      targetX: targetPlant.x,
+      targetY: targetPlant.y,
+      slashNumber: 1,
+      maxSlashes,
+      remaining: warnFirst,
+      duration: warnFirst
+    };
+    if (gameState.spawnAttackEffect) {
+      gameState.spawnAttackEffect({
+        kind: 'pyke_r_x_mark',
+        x: targetPlant.x,
+        y: targetPlant.y,
+        row: targetPlant.row,
+        col: targetPlant.col,
+        duration: warnFirst
+      });
+    }
+    if (gameState.spawnFloatingText) {
+      gameState.spawnFloatingText(targetPlant.x, targetPlant.y - 36, `❌ DẤU CHỮ X (${warnFirst.toFixed(1)}s)! RÚT CÂY NGAY!`, '#ff1744', 18);
+    }
+    return true;
   }
 
   startPykeSkillTelegraph(skillIdx, gameState) {
@@ -8179,7 +8249,8 @@ class Zombie {
       : [];
     if (plants.length === 0) return;
 
-    const telDur = 2.0;
+    const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
+    const telDur = cfg.telegraphDuration || 2.0;
     if (skillIdx === 0) {
       // Q – Lao Móc: Phase 1/2 bắn 1 hàng; Phase 3 bắn 2 hàng cùng lúc
       const populatedRows = Array.from(new Set(plants.map(p => p.row)));
@@ -8190,7 +8261,7 @@ class Zombie {
       if (gameState.spawnFloatingText) {
         gameState.spawnFloatingText(this.x - 40, this.y - 44, `🪝 LAO MÓC (Q) · HÀNG ${rows.map(r => r + 1).join(' & ')}!`, '#00e5ff', 17);
       }
-    } else if (skillIdx === 1) {
+    } else {
       // E – Lướt Sóng: chọn hàng có nhiều cây nhất và cảnh báo 3 ô để trói 4s
       const rowCounts = [0, 0, 0, 0, 0];
       for (const p of plants) rowCounts[p.row]++;
@@ -8211,33 +8282,6 @@ class Zombie {
       this.pykeTelegraph = { kind: 'E', row: bestRow, cols, remaining: telDur, duration: telDur };
       if (gameState.spawnFloatingText) {
         gameState.spawnFloatingText(this.x - 40, this.y - 44, `🌊 LƯỚT SÓNG (E) · TRÓI HÀNG ${bestRow + 1}!`, '#26c6da', 17);
-      }
-    } else {
-      // R – Dấu Chữ X: Khóa mục tiêu trên cây có DPS cao nhất (hoặc đầu hàng)
-      const targetPlant = this.pickPykeUltTarget(gameState);
-      if (!targetPlant) return;
-      this.pykeAllMissed = true;
-      this.pykeTelegraph = {
-        kind: 'R',
-        targetRow: targetPlant.row,
-        targetCol: targetPlant.col,
-        targetX: targetPlant.x,
-        targetY: targetPlant.y,
-        remaining: telDur,
-        duration: telDur
-      };
-      if (gameState.spawnAttackEffect) {
-        gameState.spawnAttackEffect({
-          kind: 'pyke_r_x_mark',
-          x: targetPlant.x,
-          y: targetPlant.y,
-          row: targetPlant.row,
-          col: targetPlant.col,
-          duration: telDur
-        });
-      }
-      if (gameState.spawnFloatingText) {
-        gameState.spawnFloatingText(targetPlant.x, targetPlant.y - 36, '❌ DẤU CHỮ X! RÚT CÂY NGAY!', '#ff1744', 18);
       }
     }
   }
@@ -8348,16 +8392,27 @@ class Zombie {
     }
 
     if (tel.kind === 'R') {
-      this.pykePendingRTarget = { row: tel.targetRow, col: tel.targetCol, x: tel.targetX, y: tel.targetY };
-      const maxSlashes = this.pykePhase >= 3 ? 3 : (this.pykePhase === 2 ? 2 : 1);
-      this.pykeChainSlashesRemaining = maxSlashes;
+      this.pykePendingRTarget = {
+        row: tel.targetRow,
+        col: tel.targetCol,
+        x: tel.targetX,
+        y: tel.targetY,
+        slashNumber: tel.slashNumber || 1,
+        maxSlashes: tel.maxSlashes || (this.pykePhase >= 3 ? 3 : (this.pykePhase === 2 ? 2 : 1))
+      };
+      if (!this.pykeChainSlashesRemaining || this.pykeChainSlashesRemaining <= 0) {
+        this.pykeChainSlashesRemaining = this.pykePendingRTarget.maxSlashes;
+      }
       this.executePykeUltStrike(gameState);
     }
   }
 
   executePykeUltStrike(gameState) {
     if (!this.alive || !gameState) return;
+    const cfg = (typeof ZOMBIE_CONFIG !== 'undefined' && ZOMBIE_CONFIG.zombot_pyke) ? ZOMBIE_CONFIG.zombot_pyke : {};
     const tgt = this.pykePendingRTarget || null;
+    const currentSlash = (tgt && tgt.slashNumber) || 1;
+    const maxSlashes = (tgt && tgt.maxSlashes) || (this.pykePhase >= 3 ? 3 : (this.pykePhase === 2 ? 2 : 1));
     this.pykeChainSlashesRemaining = Math.max(0, (this.pykeChainSlashesRemaining || 1) - 1);
     this.pykeSlashAnimTimer = 0.45;
 
@@ -8379,26 +8434,59 @@ class Zombie {
     }
 
     if (hitPlant) {
-      this.pykeAllMissed = false;
-      const rDmg = (ZOMBIE_CONFIG.zombot_pyke && ZOMBIE_CONFIG.zombot_pyke.rDamage) || 1800;
+      const rDmg = cfg.rDamage || 1800;
       hitPlant.takeDamage(rDmg, true);
-      const healAmt = Math.round(this.maxHp * ((ZOMBIE_CONFIG.zombot_pyke && ZOMBIE_CONFIG.zombot_pyke.rHealRatio) || 0.10));
-      this.hp = Math.min(this.maxHp, this.hp + healAmt);
       gameState.spawnParticles(strikeX, strikeY, '#ff1744', 22);
-      gameState.spawnParticles(this.x, this.y - 20, '#69f0ae', 16);
       if (gameState.spawnFloatingText) {
         gameState.spawnFloatingText(strikeX, strikeY - 30, `TỬ THẦN PHÁN QUYẾT! -${rDmg} 💀`, '#ff1744', 17);
-        gameState.spawnFloatingText(this.x, this.y - 54, `HỒI +${healAmt} HP! 🩸`, '#69f0ae', 17);
       }
+
+      // Chỉ nhát đầu tiên trúng trong một lần tung R mới tiêu thụ toàn bộ Máu Xám để hồi máu (khóa trần theo Phase)
+      if (this.pykeRCastHealAvailable) {
+        this.pykeRCastHealAvailable = false;
+        const maxGrey = cfg.maxGreyHealth || 800;
+        const greyPool = Math.min(maxGrey, Math.round(Math.max(0, this.pykeGreyHealth || 0)));
+        this.pykeGreyHealth = 0;
+
+        if (greyPool > 0) {
+          const phaseMaxHp = this.pykePhase >= 3 ? 5000 : (this.pykePhase === 2 ? 10000 : this.maxHp);
+          const nextHp = Math.min(phaseMaxHp, this.hp + greyPool);
+          const actualHeal = Math.max(0, nextHp - this.hp);
+          this.hp = nextHp;
+          if (actualHeal > 0) {
+            gameState.spawnParticles(this.x, this.y - 20, '#b0bec5', 14);
+            gameState.spawnParticles(this.x, this.y - 20, '#69f0ae', 14);
+            if (gameState.spawnFloatingText) {
+              gameState.spawnFloatingText(this.x, this.y - 54, `HỒI +${actualHeal} MÁU XÁM! 🩸`, '#cfd8dc', 17);
+            }
+          } else if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(this.x, this.y - 54, `CHẠM TRẦN PHASE (${phaseMaxHp.toLocaleString()} HP)`, '#ffd54f', 15);
+          }
+        }
+      }
+
       if (gameState.audio && gameState.audio.playGargantuarSmash) {
         gameState.audio.playGargantuarSmash();
       }
 
+      // Nếu còn lượt nhảy nối tiếp -> đặt cảnh báo riêng 1.8s cho mục tiêu mới
       if (this.pykeChainSlashesRemaining > 0) {
         const nextPlant = this.pickPykeUltTarget(gameState);
         if (nextPlant) {
-          this.pykePendingRTarget = { row: nextPlant.row, col: nextPlant.col, x: nextPlant.x, y: nextPlant.y };
-          this.pykeChainDelay = 0.42;
+          const warnChain = cfg.rWarnChain || 1.8;
+          const nextSlash = currentSlash + 1;
+          this.pykePendingRTarget = null;
+          this.pykeTelegraph = {
+            kind: 'R',
+            targetRow: nextPlant.row,
+            targetCol: nextPlant.col,
+            targetX: nextPlant.x,
+            targetY: nextPlant.y,
+            slashNumber: nextSlash,
+            maxSlashes,
+            remaining: warnChain,
+            duration: warnChain
+          };
           if (gameState.spawnAttackEffect) {
             gameState.spawnAttackEffect({
               kind: 'pyke_r_x_mark',
@@ -8406,8 +8494,17 @@ class Zombie {
               y: nextPlant.y,
               row: nextPlant.row,
               col: nextPlant.col,
-              duration: 0.42
+              duration: warnChain
             });
+          }
+          if (gameState.spawnFloatingText) {
+            gameState.spawnFloatingText(
+              nextPlant.x,
+              nextPlant.y - 36,
+              `❌ NHÁT ${nextSlash}/${maxSlashes} (${warnChain.toFixed(1)}s)! RÚT XẺNG NGAY!`,
+              '#ff1744',
+              17
+            );
           }
           return;
         }
@@ -8415,22 +8512,26 @@ class Zombie {
       this.pykeChainSlashesRemaining = 0;
       this.pykePendingRTarget = null;
     } else {
-      // Chém hụt (người chơi đã nhanh tay Xẻng rút cây!) -> Kẹt xuống sàn gỗ!
+      // Chém hụt (người chơi rút Xẻng né thành công) -> Xóa sạch Máu Xám, kẹt 4.0s & nhận 150% sát thương!
+      const stuckDur = cfg.rStuckDuration || 4.0;
+      const vulnMult = cfg.rVulnerableMult || 1.5;
       this.pykeChainSlashesRemaining = 0;
       this.pykePendingRTarget = null;
-      const isPhase3Miss = this.pykePhase >= 3 && this.pykeAllMissed;
-      this.pykeStuckTimer = isPhase3Miss ? 4.0 : 3.0;
-      if (isPhase3Miss) {
-        this.pykeVulnerableTimer = 4.0;
-        this.pykeVulnerableMult = 2.0;
-      }
+      this.pykeRCastHealAvailable = false;
+      this.pykeGreyHealth = 0;
+      this.pykeStuckTimer = stuckDur;
+      this.pykeVulnerableTimer = stuckDur;
+      this.pykeVulnerableMult = vulnMult;
       gameState.spawnParticles(strikeX, strikeY, '#ffd54f', 16);
-      gameState.spawnParticles(this.x, this.y, '#ffab00', 14);
+      gameState.spawnParticles(this.x, this.y, '#90a4ae', 16);
       if (gameState.spawnFloatingText) {
-        const msg = isPhase3Miss
-          ? 'CHÉM HỤT! KẸT 4s · CHỊU ×2 SÁT THƯƠNG! 💥⚡'
-          : 'CHÉM HỤT! ZOMBOT BỊ KẸT 3s! ⚓🪵';
-        gameState.spawnFloatingText(this.x - 20, this.y - 54, msg, '#ffd54f', 17);
+        gameState.spawnFloatingText(
+          this.x - 20,
+          this.y - 54,
+          `CHÉM HỤT! XÓA MÁU XÁM · KẸT ${stuckDur.toFixed(0)}s (×1.5 DMG)! 💥⚓`,
+          '#ffd54f',
+          17
+        );
       }
     }
   }

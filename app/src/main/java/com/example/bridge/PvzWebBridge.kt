@@ -152,11 +152,13 @@ class PvzWebBridge(
         bloodharborPhase = obj.optInt("bloodharborPhase", 1),
         maxPlantsOnBoard = obj.optInt("maxPlantsOnBoard", 12),
         plantCountOnBoard = obj.optInt("plantCountOnBoard", 0),
-        yourCutTimer = obj.optDouble("yourCutTimer", 25.0).toFloat(),
+        yourCutTimer = obj.optDouble("yourCutTimer", 20.0).toFloat(),
         recalledPlantHps = recalledHpMap,
         exhaustedSingleUse = exhaustedSet,
         pykeStuckTimer = obj.optDouble("pykeStuckTimer", 0.0).toFloat(),
-        pykeVulnerableTimer = obj.optDouble("pykeVulnerableTimer", 0.0).toFloat()
+        pykeVulnerableTimer = obj.optDouble("pykeVulnerableTimer", 0.0).toFloat(),
+        pykeGreyHealth = obj.optInt("pykeGreyHealth", 0),
+        pykeMaxGreyHealth = obj.optInt("pykeMaxGreyHealth", 800)
       )
       mainHandler.post { onHudSnapshotCallback(snapshot) }
     } catch (_: Exception) {

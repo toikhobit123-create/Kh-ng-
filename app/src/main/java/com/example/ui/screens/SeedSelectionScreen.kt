@@ -191,7 +191,7 @@ fun SeedSelectionScreen(
               border = BorderStroke(1.2.dp, PvZTheme.colors.bloodharborJadeCyan)
             ) {
               Text(
-                text = "KHÔNG SUN · CẤM CÂY SUN · XẺNG 2.5s",
+                text = "KHÔNG SUN · CẤM CÂY SUN · XẺNG 1.2s",
                 style = MaterialTheme.typography.labelMedium,
                 color = PvZTheme.colors.bloodharborJadeCyan,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)

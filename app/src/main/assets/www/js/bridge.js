@@ -44,6 +44,8 @@
     let bossMaxHp = game.currentLevel === 20 ? 15000 : (game.currentLevel === 13 ? 20000 : (game.currentLevel === 12 ? 10000 : 27000));
     let pykeStuckTimer = 0;
     let pykeVulnerableTimer = 0;
+    let pykeGreyHealth = 0;
+    let pykeMaxGreyHealth = 800;
     if (isBossLevel && Array.isArray(game.zombies)) {
       const boss = game.zombies.find(z => z.alive && z.type === expectedBossType);
       const hasSpawned = expectedBossType === 'zombot_pyke'
@@ -55,6 +57,8 @@
         if (boss.type === 'zombot_pyke') {
           pykeStuckTimer = Number((boss.pykeStuckTimer || 0).toFixed(1));
           pykeVulnerableTimer = Number((boss.pykeVulnerableTimer || 0).toFixed(1));
+          pykeGreyHealth = Math.max(0, Math.round(boss.pykeGreyHealth || 0));
+          pykeMaxGreyHealth = Math.max(1, Math.round(boss.pykeMaxGreyHealth || 800));
         }
       } else if (game.isVictory || hasSpawned) {
         bossHp = 0;
@@ -113,11 +117,13 @@
       bloodharborPhase: game.bloodharborPhase || 1,
       maxPlantsOnBoard: game.maxPlantsOnBoard || 12,
       plantCountOnBoard: plantCountOnBoard,
-      yourCutTimer: Number((game.yourCutTimer !== undefined ? game.yourCutTimer : 25).toFixed(1)),
+      yourCutTimer: Number((game.yourCutTimer !== undefined ? game.yourCutTimer : 20).toFixed(1)),
       recalledPlantHps: recalledPlantHps,
       exhaustedSingleUse: exhaustedSingleUse,
       pykeStuckTimer: pykeStuckTimer,
       pykeVulnerableTimer: pykeVulnerableTimer,
+      pykeGreyHealth: pykeGreyHealth,
+      pykeMaxGreyHealth: pykeMaxGreyHealth,
       selectedDeck: Array.isArray(game.selectedDeck) ? game.selectedDeck : [],
       sandboxPlants: Array.isArray(game.sandboxPlantDeck) ? game.sandboxPlantDeck : [],
       sandboxZombies: Array.isArray(game.sandboxZombieDeck) ? game.sandboxZombieDeck : [],

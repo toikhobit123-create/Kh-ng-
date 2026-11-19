@@ -638,8 +638,8 @@ const ZOMBIE_PREVIEW_INFO = {
   zombot_pyke: {
     name: 'BOSS Zombot Đồ Tể Pyke',
     avatar: '🏴‍☠️',
-    hpText: 'HP: 15.000 · 3 Phase · Tuần tra cột 7–9',
-    desc: 'Trùm Bến Cảng Tử Thần! Phase 1 (15k→10k): Lao Móc (Q) kéo cây lên +2 ô, Lướt Sóng (E) trói 3 ô 4s, Dấu Chữ X (R) chém 1 lần (trúng hồi 10% HP, hụt kẹt 3s). Phase 2 (10k→5k): Ngập cột 6, R chém tối đa 2 lần. Phase 3 (<5k): Sương mù cột 5–6 giảm 20% tầm bắn cột 1–2, Q móc 2 hàng, R chém 3 lần (hụt toàn bộ kẹt 4s & nhận ×2 sát thương)!',
+    hpText: 'HP: 15.000 · Máu Xám (40%, tối đa 800) · Cột 7–9',
+    desc: 'Trùm Bến Cảng Tử Thần! Tích 40% sát thương nhận vào thành Máu Xám (tối đa 800 HP) và chỉ hồi khi chém trúng nhát đầu của Dấu Chữ X (R, khóa trần máu theo Phase). R tách hồi chiêu 16s/14s/12s, cảnh báo 2.2s (nhát 1) và 1.8s (nhát 2–3); chém hụt sẽ xóa sạch Máu Xám, kẹt 4s & chịu 150% sát thương!',
     boss: true
   }
 };
@@ -670,7 +670,7 @@ class Game {
     this.rootedTiles = [];
     this.recalledPlantHpMap = {};
     this.exhaustedSingleUse = new Set();
-    this.yourCutTimer = 25.0;
+    this.yourCutTimer = 20.0;
 
     // Đội hình 7 cây đã chọn vào trận (Mặc định 7 cây chuẩn PvZ cân bằng)
     this.selectedDeck = ['sunflower', 'peashooter', 'snow_pea', 'wall_nut', 'cabbage_pult', 'repeater', 'cherry_bomb'];
@@ -1391,7 +1391,7 @@ class Game {
     this.rootedTiles = [];
     this.recalledPlantHpMap = {};
     this.exhaustedSingleUse = new Set();
-    this.yourCutTimer = 25.0;
+    this.yourCutTimer = 20.0;
 
     // Tốc độ mặc định khi bắt đầu luôn là ×2
     this.setSpeed(2);
@@ -2308,7 +2308,7 @@ class Game {
     if (!hasPyke) {
       this.spawnZombie('zombot_pyke', 2);
     }
-    this.yourCutTimer = 25.0;
+    this.yourCutTimer = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[20] && LEVEL_CONFIG[20].yourCutInterval) || 20.0;
     if (this.audio) {
       if (typeof this.audio.playWaveHorn === 'function') this.audio.playWaveHorn();
       if (typeof this.audio.playBGM === 'function') this.audio.playBGM('boss');
@@ -2339,7 +2339,7 @@ class Game {
 
     this.yourCutTimer -= dt;
     if (this.yourCutTimer <= 0) {
-      this.yourCutTimer = 25.0;
+      this.yourCutTimer = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[20] && LEVEL_CONFIG[20].yourCutInterval) || 20.0;
       const targetRow = this.pickLowestDpsRow();
       this.spawnZombie('wanted_captain', targetRow);
       if (this.spawnFloatingText) {
@@ -2719,7 +2719,8 @@ class Game {
         }
         const savedHp = Math.max(1, Math.round(p.hp));
         this.recalledPlantHpMap[p.type].push(savedHp);
-        this.cooldowns[p.type] = this.isSetupPhase ? 0 : 2.5;
+        const recallCd = (typeof LEVEL_CONFIG !== 'undefined' && LEVEL_CONFIG[20] && LEVEL_CONFIG[20].shovelRecallCooldown) || 1.2;
+        this.cooldowns[p.type] = this.isSetupPhase ? 0 : recallCd;
         if (this.spawnFloatingText) {
           this.spawnFloatingText(p.x, p.y - 20, `THU HỒI (${savedHp} HP) ⛏️`, '#26c6da', 15);
         }
@@ -3473,12 +3474,15 @@ class Game {
               : (activeBossType === 'ancient_dragon_boss' ? 'RỒNG NGÀN TUỔI' : 'RỒNG'));
         const bossIcon = activeBossType === 'zombot_pyke' ? '🏴‍☠️' : (activeBossType === 'azir_desert_emperor' ? '☀️' : '🐲');
         const shieldTxt = (boss && boss.bossAllShieldHp > 0) ? ` (+${Math.ceil(boss.bossAllShieldHp).toLocaleString()} 🛡️)` : '';
+        const greyTxt = (boss && boss.type === 'zombot_pyke' && boss.pykeGreyHealth > 0)
+          ? ` (+${Math.round(boss.pykeGreyHealth)} Xám)`
+          : '';
         const statusTxt = (boss && boss.type === 'zombot_pyke' && boss.pykeStuckTimer > 0)
-          ? (boss.pykeVulnerableTimer > 0 ? ' [KẸT ×2 DMG!]' : ' [KẸT!]')
+          ? (boss.pykeVulnerableTimer > 0 ? ' [KẸT ×1.5 DMG!]' : ' [KẸT!]')
           : '';
         const text = (currentHp <= 0 || this.isVictory)
           ? `${bossIcon} ${bossTitle} ĐÃ BỊ HẠ GỤC! (0 / ${maxHp.toLocaleString()} HP)`
-          : `${bossIcon} ${bossTitle}: ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP${shieldTxt}${statusTxt}`;
+          : `${bossIcon} ${bossTitle}: ${Math.ceil(currentHp).toLocaleString()} / ${maxHp.toLocaleString()} HP${greyTxt}${shieldTxt}${statusTxt}`;
         if (this._lastBossHpText !== text) {
           this._lastBossHpText = text;
           this.bossHpLabelEl.textContent = text;
@@ -3723,7 +3727,7 @@ class Game {
                                 : key === 'wanted_captain'
                                   ? '65 DMG / 0.5s · Đi hàng DPS thấp nhất'
                                   : key === 'zombot_pyke'
-                                    ? 'Q Kéo +2 ô · E Trói 4s · R 1800 DMG (+10% HP / Kẹt 3-4s ×2)'
+                                    ? 'Q Kéo +2 ô · E Trói 4s · R 1800 DMG (Máu Xám 40%/800 · Kẹt 4s ×1.5)'
                                     : (proto.damage ? `${proto.damage} DMG / ${proto.attackInterval || 1.0}s` : '50 DMG (100 DPS)');
     if (this.almanacStatsEl) {
       this.almanacStatsEl.innerHTML = `

@@ -604,8 +604,11 @@ private fun TopGutterBar(
                   text = when (hud.currentLevel) {
                     20 -> buildString {
                       append("ZOMBOT ĐỒ TỂ P${hud.bloodharborPhase}: ${hud.bossHp}/${hud.bossMaxHp}")
+                      if (hud.pykeGreyHealth > 0) {
+                        append(" (+${hud.pykeGreyHealth} Xám)")
+                      }
                       if (hud.pykeStuckTimer > 0f || hud.pykeVulnerableTimer > 0f) {
-                        append(" 💥KẸT ×2")
+                        append(" 💥KẸT ×1.5")
                       }
                     }
                     13 -> "AZIR SA MẠC: ${hud.bossHp} / ${hud.bossMaxHp}"
@@ -624,15 +627,60 @@ private fun TopGutterBar(
                   color = PvZTheme.colors.bossEmber,
                   maxLines = 1
                 )
-                LinearProgressIndicator(
-                  progress = { (hud.bossHp.toFloat() / hud.bossMaxHp.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                  modifier = Modifier
-                    .width(if (compactBossBar) 84.dp else 120.dp)
-                    .height(if (compactBossBar) 4.dp else 6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                  color = CrimsonSoul,
-                  trackColor = ObsidianBg
-                )
+                if (hud.currentLevel == 20) {
+                  val maxHpSafe = hud.bossMaxHp.coerceAtLeast(1).toFloat()
+                  val hpRatio = (hud.bossHp / maxHpSafe).coerceIn(0f, 1f)
+                  val phaseMaxHp = when (hud.bloodharborPhase) {
+                    2 -> 10000
+                    3 -> 5000
+                    else -> hud.bossMaxHp.coerceAtLeast(15000)
+                  }
+                  val greyCapEndHp = (hud.bossHp + hud.pykeGreyHealth).coerceAtMost(phaseMaxHp)
+                  val greyRatio = ((greyCapEndHp - hud.bossHp).coerceAtLeast(0) / maxHpSafe)
+                    .coerceIn(0f, 1f - hpRatio)
+                  Canvas(
+                    modifier = Modifier
+                      .width(136.dp)
+                      .height(7.dp)
+                      .clip(RoundedCornerShape(4.dp))
+                      .background(ObsidianBg)
+                  ) {
+                    if (hpRatio > 0f) {
+                      drawRect(
+                        color = CrimsonSoul,
+                        topLeft = Offset.Zero,
+                        size = Size(size.width * hpRatio, size.height)
+                      )
+                    }
+                    if (greyRatio > 0f) {
+                      drawRect(
+                        color = Color(0xFF90A4AE),
+                        topLeft = Offset(size.width * hpRatio, 0f),
+                        size = Size(size.width * greyRatio, size.height)
+                      )
+                    }
+                    // Phase dividers (P2 10k, P3 5k)
+                    listOf(1f / 3f, 2f / 3f).forEach { div ->
+                      val dx = size.width * div
+                      drawLine(
+                        color = Color.Black.copy(alpha = 0.45f),
+                        start = Offset(dx, 0f),
+                        end = Offset(dx, size.height),
+                        strokeWidth = 2f
+                      )
+                    }
+                  }
+                } else {
+                  LinearProgressIndicator(
+                    progress = { (hud.bossHp.toFloat() / hud.bossMaxHp.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                    modifier = Modifier
+                      .width(if (compactBossBar) 84.dp else 120.dp)
+                      .height(if (compactBossBar) 4.dp else 6.dp)
+                      .clip(RoundedCornerShape(3.dp)),
+                    color = CrimsonSoul,
+                    trackColor = ObsidianBg
+                  )
+                }
               }
             }
           } else if (!hud.isSandbox) {

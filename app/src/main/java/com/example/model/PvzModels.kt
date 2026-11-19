@@ -134,11 +134,13 @@ data class HudSnapshot(
   val bloodharborPhase: Int = 1,
   val maxPlantsOnBoard: Int = 12,
   val plantCountOnBoard: Int = 0,
-  val yourCutTimer: Float = 25f,
+  val yourCutTimer: Float = 20f,
   val recalledPlantHps: Map<String, Int> = emptyMap(),
   val exhaustedSingleUse: Set<String> = emptySet(),
   val pykeStuckTimer: Float = 0f,
-  val pykeVulnerableTimer: Float = 0f
+  val pykeVulnerableTimer: Float = 0f,
+  val pykeGreyHealth: Int = 0,
+  val pykeMaxGreyHealth: Int = 800
 )
 
 data class MatchResult(
@@ -619,7 +621,7 @@ object PvzCatalog {
     ZombieCatalogItem("anchor_bearer", "Kẻ Vác Neo", "🪨", "1.350 HP", "7.5s / ô (Chậm)", "75 DMG/0.7s · Đòn 3 Đẩy Lùi 1 Ô", "Thợ lặn biển sâu siêu trâu! Sau mỗi 3 đòn cắn sẽ vung mỏ neo đẩy lùi cây chắn về sau 1 ô nếu ô sau còn trống."),
     ZombieCatalogItem("swimming_ghost", "Ma Bơi Lội", "🌊", "420 HP", "3.0s / ô (Nhanh · Lặn Cột 9→5)", "60 DMG / 0.5s", "Lặn ngầm dưới nước đen từ Cột 9 (né mọi đạn khi đang lặn) và trồi lên bất ngờ ngay tại Cột 5, bỏ qua hàng phòng thủ Cột 6."),
     ZombieCatalogItem("wanted_captain", "Thuyền Trưởng Truy Nã", "💀", "950 HP", "3.2s / ô (Nhanh · Chia Phần)", "80 DMG / 0.5s", "Mang Đầu Lâu Đỏ và luôn chọn đi vào hàng có tổng sát thương thấp nhất! Tiêu diệt giúp nhận ngay 1 Thẻ Hạt Giống (ưu tiên hồi cây dùng 1 lần) và +1 giới hạn cây trên sân (tối đa 16)."),
-    ZombieCatalogItem("zombot_pyke", "TRÙM ZOMBOT ĐỒ TỂ (PYKE)", "🪝", "15.000 HP (3 Giai Đoạn)", "Di chuyển Vùng Nước Đen (Cột 7–9)", "Lao Móc (Q) · Lướt Sóng (E) · Dấu Chữ X (R)", "Trùm Map 20 Bến Cảng Tử Thần! P1 (15k→10k): 8s/chiêu Q/E/R (R chém trúng hồi 10% HP, hụt kẹt 3s). P2 (10k→5k): 6.5s/chiêu, ngập Cột 6 (tự thu hồi cây về tay), triệu hồi Kẻ Vác Neo & Ma Bơi Lội, R nhảy chém lần 2. P3 (5k→0): 5s/chiêu, sương mù cột 5–6 (-20% tầm cột 1–2), Q móc 2 hàng, R nhảy tối đa 3 lần (hụt hết kẹt 4s & chịu ×2 sát thương).", isBoss = true)
+    ZombieCatalogItem("zombot_pyke", "TRÙM ZOMBOT ĐỒ TỂ (PYKE)", "🪝", "15.000 HP (3 Giai Đoạn)", "Di chuyển Vùng Nước Đen (Cột 7–9)", "Lao Móc (Q) · Lướt Sóng (E) · Dấu Chữ X (R · Máu Xám)", "Trùm Map 20 Bến Cảng Tử Thần! Chuyển 40% sát thương nhận vào thành Máu Xám (tối đa 800 HP, khóa trần theo Phase 15k/10k/5k). Dấu Chữ X (R) có hồi chiêu riêng 16s/14s/12s, cảnh báo 2.2s (nhát 1) & 1.8s (nhát 2–3): chém trúng nhát 1 hồi toàn bộ Máu Xám; né hụt làm mất sạch Máu Xám, kẹt lao 4s & chịu ×1.5 sát thương! Q/E luân phiên 8s→6.5s→5s; P2 ngập Cột 6, P3 sương mù cột 5–6 (-20% tầm cột 1–2).", isBoss = true)
   )
 
   val zombieById: Map<String, ZombieCatalogItem> = zombies.associateBy { it.id }
@@ -791,9 +793,9 @@ object PvzCatalog {
       level = 20,
       title = "Bến Cảng Tử Thần",
       subtitle = "MÀN ĐẤU TRÙM · ZOMBOT ĐỒ TỂ 15.000 HP · KHÔNG SUN",
-      description = "Chiến đấu trên sàn gỗ Cột 1–6 đối đầu Zombot Đồ Tể tuần tra vùng nước đen Cột 7–9! Không Sun, không Máy Cắt Cỏ: chọn 6 cây (cấm cây Sun), dàn tối đa 12→16 cây, dùng Xẻng thu hồi (2.5s CD, giữ nguyên HP) để né chiêu Q/E/R và săn Zombie Truy Nã!",
+      description = "Chiến đấu trên sàn gỗ Cột 1–6 đối đầu Zombot Đồ Tể tuần tra vùng nước đen Cột 7–9! Không Sun, không Máy Cắt Cỏ: chọn 6 cây (cấm cây Sun), dàn tối đa 12→16 cây, dùng Xẻng thu hồi (1.2s CD, giữ nguyên HP) để né chiêu Q/E/R và săn Zombie Truy Nã!",
       zombieIds = listOf("zombot_pyke", "drowned_sailor", "anchor_bearer", "swimming_ghost", "wanted_captain"),
-      tacticalTip = "Dùng Xẻng thu hồi cây khỏi ô bị khóa Dấu Chữ X (R) để khiến Boss bị kẹt 3–4s (nhận ×2 sát thương ở Phase 3)! Săn Thuyền Trưởng Truy Nã mỗi 25s để hồi thẻ dùng 1 lần và tăng giới hạn cây!",
+      tacticalTip = "Boss tích 40% sát thương thành Máu Xám (tối đa 800). Dùng Xẻng 1.2s thu hồi cây khỏi Dấu Chữ X (cảnh báo 2.2s/1.8s) để xóa sạch Máu Xám & khiến Boss kẹt 4s (chịu ×1.5 sát thương)! Săn Thuyền Trưởng Truy Nã mỗi 20s để hồi thẻ dùng 1 lần và tăng giới hạn cây!",
       isBoss = true,
       isSpecial = true
     )
